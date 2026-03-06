@@ -1,347 +1,565 @@
-create extension if not exists pgcrypto;
+BEGIN;
 
-create or replace function set_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
+CREATE EXTENSION IF NOT EXISTS citext;
 
-create table if not exists users (
-    id bigserial primary key,
-    username varchar(50) not null unique,
-    email varchar(255) not null unique,
-    password_hash varchar(255) not null,
-    display_name varchar(100) not null,
-    phone_number varchar(30),
-    bio text,
-    profile_image_url varchar(500),
-    primary_role varchar(20) not null default 'OWNER' check (primary_role in ('OWNER','SITTER','ADMIN')),
-    is_active boolean not null default true,
-    is_admin boolean not null default false,
-    holiday_mode boolean not null default false,
-    email_verified boolean not null default false,
-    last_login_at timestamptz,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-);
-create trigger trg_users_updated_at before update on users for each row execute function set_updated_at();
+-- =========================================================
+-- ENUMS
+-- =========================================================
 
-create table if not exists owner_profiles (
-    user_id bigint primary key references users(id) on delete cascade,
-    home_name varchar(120),
-    address_line_1 varchar(255),
-    address_line_2 varchar(255),
-    city varchar(120),
-    region varchar(120),
-    postal_code varchar(30),
-    country_code char(2),
-    latitude numeric(9,6),
-    longitude numeric(9,6),
-    emergency_contact_name varchar(120),
-    emergency_contact_phone varchar(30),
-    holiday_mode boolean not null default false,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-);
-create trigger trg_owner_profiles_updated_at before update on owner_profiles for each row execute function set_updated_at();
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_status') THEN
+        CREATE TYPE user_status AS ENUM ('ACTIVE', 'SUSPENDED', 'DEACTIVATED', 'PENDING_VERIFICATION');
+    END IF;
 
-create table if not exists sitter_profiles (
-    user_id bigint primary key references users(id) on delete cascade,
-    headline varchar(140),
-    sitter_bio text,
-    service_radius_km integer check (service_radius_km is null or service_radius_km >= 0),
-    hourly_rate_cents integer check (hourly_rate_cents is null or hourly_rate_cents >= 0),
-    daily_rate_cents integer check (daily_rate_cents is null or daily_rate_cents >= 0),
-    years_experience integer check (years_experience is null or years_experience >= 0),
-    can_travel boolean not null default false,
-    offers_overnight boolean not null default false,
-    holiday_mode boolean not null default false,
-    verified_status varchar(20) not null default 'UNVERIFIED' check (verified_status in ('UNVERIFIED','PENDING','VERIFIED','REJECTED')),
-    average_rating numeric(3,2) check (average_rating is null or (average_rating >= 0 and average_rating <= 5)),
-    rating_count integer not null default 0 check (rating_count >= 0),
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-);
-create trigger trg_sitter_profiles_updated_at before update on sitter_profiles for each row execute function set_updated_at();
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listing_type') THEN
+        CREATE TYPE listing_type AS ENUM ('SITTING_REQUEST', 'DONATION', 'SWAP', 'SALE');
+    END IF;
 
-create table if not exists sitter_availability (
-    id bigserial primary key,
-    sitter_user_id bigint not null references sitter_profiles(user_id) on delete cascade,
-    start_at timestamptz not null,
-    end_at timestamptz not null,
-    availability_type varchar(20) not null default 'AVAILABLE' check (availability_type in ('AVAILABLE','UNAVAILABLE','TENTATIVE','BOOKED','TIME_OFF')),
-    recurrence_rule varchar(255),
-    notes text,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint chk_sitter_availability_dates check (end_at > start_at)
-);
-create trigger trg_sitter_availability_updated_at before update on sitter_availability for each row execute function set_updated_at();
-create index if not exists idx_sitter_availability_sitter_user_id on sitter_availability(sitter_user_id, start_at);
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listing_status') THEN
+        CREATE TYPE listing_status AS ENUM ('DRAFT', 'OPEN', 'PAUSED', 'MATCHED', 'COMPLETED', 'CANCELLED', 'ARCHIVED');
+    END IF;
 
-create table if not exists plants (
-    id bigserial primary key,
-    owner_id bigint not null references owner_profiles(user_id) on delete cascade,
-    current_sitter_id bigint references sitter_profiles(user_id) on delete set null,
-    name varchar(100) not null,
-    species varchar(120),
-    cultivar varchar(120),
-    profile_image_url varchar(500),
-    room varchar(100),
-    light_requirement varchar(50) check (light_requirement is null or light_requirement in ('LOW','INDIRECT','BRIGHT_INDIRECT','DIRECT','MIXED')),
-    watering_frequency_days integer check (watering_frequency_days is null or watering_frequency_days > 0),
-    watering_times varchar(255),
-    watering_volume_ml integer check (watering_volume_ml is null or watering_volume_ml >= 0),
-    mist_frequency_days integer check (mist_frequency_days is null or mist_frequency_days > 0),
-    fertilizer_frequency_days integer check (fertilizer_frequency_days is null or fertilizer_frequency_days > 0),
-    preferred_temperature_c integer,
-    preferred_humidity_percent integer check (preferred_humidity_percent is null or (preferred_humidity_percent between 0 and 100)),
-    height_cm integer check (height_cm is null or height_cm >= 0),
-    width_cm integer check (width_cm is null or width_cm >= 0),
-    weight_g integer check (weight_g is null or weight_g >= 0),
-    plant_bio text,
-    toxicity_notes text,
-    care_notes text,
-    quirk text,
-    last_watered_on date,
-    archived boolean not null default false,
-    date_added timestamptz not null default now(),
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint uq_plants_owner_name unique (owner_id, name)
-);
-create trigger trg_plants_updated_at before update on plants for each row execute function set_updated_at();
-create index if not exists idx_plants_owner_id on plants(owner_id);
-create index if not exists idx_plants_current_sitter_id on plants(current_sitter_id);
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_status') THEN
+        CREATE TYPE application_status AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED', 'WITHDRAWN', 'EXPIRED');
+    END IF;
 
-create table if not exists plant_photos (
-    id bigserial primary key,
-    plant_id bigint not null references plants(id) on delete cascade,
-    image_url varchar(500) not null,
-    caption varchar(255),
-    taken_at timestamptz,
-    uploaded_by_user_id bigint references users(id) on delete set null,
-    created_at timestamptz not null default now()
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'swap_status') THEN
+        CREATE TYPE swap_status AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED', 'COMPLETED');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contract_status') THEN
+        CREATE TYPE contract_status AS ENUM ('DRAFT', 'PENDING_OWNER', 'PENDING_SITTER', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'DISPUTED');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'message_type') THEN
+        CREATE TYPE message_type AS ENUM ('TEXT', 'SYSTEM', 'IMAGE', 'FILE');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_type') THEN
+        CREATE TYPE notification_type AS ENUM (
+            'APPLICATION_RECEIVED',
+            'APPLICATION_ACCEPTED',
+            'APPLICATION_DECLINED',
+            'SWAP_PROPOSAL_RECEIVED',
+            'SWAP_PROPOSAL_ACCEPTED',
+            'SWAP_PROPOSAL_DECLINED',
+            'CONTRACT_CREATED',
+            'CONTRACT_ACCEPTED',
+            'MESSAGE_RECEIVED',
+            'ORDER_CREATED',
+            'PAYMENT_POSTED',
+            'SYSTEM_ALERT'
+        );
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_direction') THEN
+        CREATE TYPE payment_direction AS ENUM ('DEBIT', 'CREDIT');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status') THEN
+        CREATE TYPE payment_status AS ENUM ('PENDING', 'AUTHORIZED', 'SETTLED', 'FAILED', 'REFUNDED', 'VOIDED');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'availability_status') THEN
+        CREATE TYPE availability_status AS ENUM ('AVAILABLE', 'UNAVAILABLE', 'BOOKED', 'TENTATIVE');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'attachment_kind') THEN
+        CREATE TYPE attachment_kind AS ENUM ('IMAGE', 'VIDEO', 'DOCUMENT', 'OTHER');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'moderation_status') THEN
+        CREATE TYPE moderation_status AS ENUM ('OPEN', 'UNDER_REVIEW', 'ACTION_TAKEN', 'DISMISSED');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+        CREATE TYPE order_status AS ENUM ('PENDING', 'PAID', 'FULFILLED', 'CANCELLED', 'REFUNDED');
+    END IF;
+END$$;
+
+-- =========================================================
+-- USERS + ROLE PROFILES
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS users (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    username                    CITEXT NOT NULL UNIQUE,
+    email                       CITEXT NOT NULL UNIQUE,
+    password_hash               VARCHAR(255) NOT NULL,
+    phone_number                VARCHAR(30),
+    first_name                  VARCHAR(100),
+    last_name                   VARCHAR(100),
+    bio                         TEXT,
+    city                        VARCHAR(120),
+    region                      VARCHAR(120),
+    country_code                CHAR(2),
+    profile_photo_url           TEXT,
+    status                      user_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    email_verified_at           TIMESTAMPTZ,
+    last_login_at               TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at                  TIMESTAMPTZ
 );
 
-create table if not exists plant_care_tasks (
-    id bigserial primary key,
-    plant_id bigint not null references plants(id) on delete cascade,
-    assigned_sitter_id bigint references sitter_profiles(user_id) on delete set null,
-    task_type varchar(30) not null check (task_type in ('WATER','MIST','ROTATE','FERTILIZE','PRUNE','CHECK_SOIL','OTHER')),
-    instructions text,
-    due_at timestamptz,
-    completed_at timestamptz,
-    status varchar(20) not null default 'PENDING' check (status in ('PENDING','COMPLETED','SKIPPED','CANCELLED')),
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-);
-create trigger trg_plant_care_tasks_updated_at before update on plant_care_tasks for each row execute function set_updated_at();
-
-create table if not exists plant_interest (
-    id bigserial primary key,
-    plant_id bigint not null references plants(id) on delete cascade,
-    owner_id bigint not null references owner_profiles(user_id) on delete cascade,
-    sitter_id bigint not null references sitter_profiles(user_id) on delete cascade,
-    message text,
-    proposed_start_at timestamptz,
-    proposed_end_at timestamptz,
-    status varchar(20) not null default 'EXPRESSED' check (status in ('EXPRESSED','VIEWED','OWNER_SHORTLISTED','OWNER_DECLINED','WITHDRAWN','CONVERTED_TO_CONTRACT')),
-    owner_responded_at timestamptz,
-    contract_id bigint,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint uq_plant_interest_open unique (plant_id, sitter_id)
-);
-create trigger trg_plant_interest_updated_at before update on plant_interest for each row execute function set_updated_at();
-create index if not exists idx_plant_interest_owner_id on plant_interest(owner_id, status);
-
-create table if not exists contracts (
-    id bigserial primary key,
-    owner_id bigint not null references owner_profiles(user_id) on delete restrict,
-    sitter_id bigint not null references sitter_profiles(user_id) on delete restrict,
-    primary_plant_id bigint references plants(id) on delete set null,
-    interest_id bigint unique references plant_interest(id) on delete set null,
-    contract_type varchar(20) not null default 'SIT' check (contract_type in ('SIT','EXCHANGE','DONATE','STORE_HELP')),
-    status varchar(20) not null default 'REQUESTED' check (status in ('REQUESTED','PENDING_OWNER','PENDING_SITTER','ACCEPTED','IN_PROGRESS','COMPLETED','CANCELLED','DISPUTED','EXPIRED','DECLINED')),
-    title varchar(140),
-    request_message text,
-    start_at timestamptz not null,
-    end_at timestamptz not null,
-    meet_and_greet_at timestamptz,
-    access_notes text,
-    service_address_line_1 varchar(255),
-    service_address_line_2 varchar(255),
-    service_city varchar(120),
-    service_region varchar(120),
-    service_postal_code varchar(30),
-    service_country_code char(2),
-    total_price_cents integer check (total_price_cents is null or total_price_cents >= 0),
-    currency_code char(3) not null default 'GBP',
-    owner_accepted_at timestamptz,
-    sitter_accepted_at timestamptz,
-    cancelled_at timestamptz,
-    cancelled_by_user_id bigint references users(id) on delete set null,
-    cancellation_reason text,
-    completed_at timestamptz,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint chk_contract_dates check (end_at > start_at),
-    constraint chk_contract_owner_sitter_distinct check (owner_id <> sitter_id)
-);
-create trigger trg_contracts_updated_at before update on contracts for each row execute function set_updated_at();
-create index if not exists idx_contracts_owner_id on contracts(owner_id, status);
-create index if not exists idx_contracts_sitter_id on contracts(sitter_id, status);
-
-alter table plant_interest add constraint fk_interest_contract foreign key (contract_id) references contracts(id) on delete set null;
-
-create table if not exists contract_plants (
-    contract_id bigint not null references contracts(id) on delete cascade,
-    plant_id bigint not null references plants(id) on delete restrict,
-    care_summary text,
-    pickup_required boolean not null default false,
-    primary key (contract_id, plant_id)
+CREATE TABLE IF NOT EXISTS owner_profiles (
+    user_id                     BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    display_name                VARCHAR(120),
+    address_line_1              VARCHAR(255),
+    address_line_2              VARCHAR(255),
+    postal_code                 VARCHAR(30),
+    emergency_contact_name      VARCHAR(120),
+    emergency_contact_phone     VARCHAR(30),
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-create table if not exists conversations (
-    id bigserial primary key,
-    owner_id bigint not null references owner_profiles(user_id) on delete cascade,
-    sitter_id bigint not null references sitter_profiles(user_id) on delete cascade,
-    contract_id bigint unique references contracts(id) on delete set null,
-    interest_id bigint unique references plant_interest(id) on delete set null,
-    last_message_at timestamptz,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint chk_conversation_owner_sitter_distinct check (owner_id <> sitter_id),
-    constraint uq_conversation_context unique (owner_id, sitter_id, contract_id, interest_id)
-);
-create trigger trg_conversations_updated_at before update on conversations for each row execute function set_updated_at();
-
-create table if not exists messages (
-    id bigserial primary key,
-    conversation_id bigint not null references conversations(id) on delete cascade,
-    sender_user_id bigint not null references users(id) on delete restrict,
-    message_type varchar(20) not null default 'TEXT' check (message_type in ('TEXT','IMAGE','SYSTEM','CONTRACT_UPDATE','FILE')),
-    body text,
-    media_url varchar(500),
-    sent_at timestamptz not null default now(),
-    edited_at timestamptz,
-    deleted_at timestamptz,
-    read_at timestamptz,
-    created_at timestamptz not null default now(),
-    constraint chk_message_payload check (
-        (message_type = 'TEXT' and body is not null) or message_type in ('IMAGE','SYSTEM','CONTRACT_UPDATE','FILE')
-    )
-);
-create index if not exists idx_messages_conversation_id on messages(conversation_id, sent_at desc);
-
-create table if not exists message_attachments (
-    id bigserial primary key,
-    message_id bigint not null references messages(id) on delete cascade,
-    storage_key varchar(255),
-    original_filename varchar(255) not null,
-    mime_type varchar(100),
-    byte_size bigint check (byte_size is null or byte_size >= 0),
-    width_px integer,
-    height_px integer,
-    checksum_sha256 varchar(64),
-    preview_url varchar(500),
-    download_url varchar(500),
-    created_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS sitter_profiles (
+    user_id                     BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    display_name                VARCHAR(120),
+    experience_summary          TEXT,
+    years_experience            INTEGER,
+    base_daily_rate             NUMERIC(10,2),
+    rating_average              NUMERIC(3,2) NOT NULL DEFAULT 0.00,
+    rating_count                INTEGER NOT NULL DEFAULT 0,
+    can_travel                  BOOLEAN NOT NULL DEFAULT FALSE,
+    travel_radius_km            INTEGER,
+    identity_verified_at        TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT sitter_profiles_years_chk CHECK (years_experience IS NULL OR years_experience >= 0),
+    CONSTRAINT sitter_profiles_rate_chk CHECK (base_daily_rate IS NULL OR base_daily_rate >= 0)
 );
 
-create table if not exists notifications (
-    id bigserial primary key,
-    user_id bigint not null references users(id) on delete cascade,
-    actor_user_id bigint references users(id) on delete set null,
-    notification_type varchar(40) not null check (notification_type in ('MESSAGE','CONTRACT_REQUEST','CONTRACT_STATUS','PLANT_INTEREST','PAYMENT','SYSTEM','REVIEW','REMINDER')),
-    title varchar(140) not null,
-    body text,
-    deep_link varchar(255),
-    related_entity_type varchar(40),
-    related_entity_id bigint,
-    is_read boolean not null default false,
-    read_at timestamptz,
-    created_at timestamptz not null default now()
-);
-create index if not exists idx_notifications_user_id on notifications(user_id, is_read, created_at desc);
-
-create table if not exists payment_ledger (
-    id bigserial primary key,
-    contract_id bigint references contracts(id) on delete set null,
-    payer_user_id bigint references users(id) on delete set null,
-    payee_user_id bigint references users(id) on delete set null,
-    ledger_type varchar(30) not null check (ledger_type in ('PAYMENT_INTENT','AUTH','CHARGE','REFUND','PAYOUT','FEE','ADJUSTMENT')),
-    direction varchar(20) not null check (direction in ('DEBIT','CREDIT')),
-    status varchar(20) not null default 'PENDING' check (status in ('PENDING','AUTHORIZED','SETTLED','FAILED','REFUNDED','REVERSED','CANCELLED')),
-    amount_cents integer not null check (amount_cents >= 0),
-    currency_code char(3) not null default 'GBP',
-    external_reference varchar(120),
-    notes text,
-    created_at timestamptz not null default now(),
-    settled_at timestamptz
-);
-create index if not exists idx_payment_ledger_contract_id on payment_ledger(contract_id, created_at desc);
-
-create table if not exists refresh_tokens (
-    id bigserial primary key,
-    user_id bigint not null references users(id) on delete cascade,
-    token_hash varchar(255) not null,
-    issued_at timestamptz not null default now(),
-    expires_at timestamptz not null,
-    revoked_at timestamptz,
-    replaced_by_token_id bigint references refresh_tokens(id) on delete set null,
-    user_agent varchar(255),
-    ip_address inet
-);
-create unique index if not exists uq_refresh_tokens_token_hash on refresh_tokens(token_hash);
-
-create table if not exists sitter_reviews (
-    id bigserial primary key,
-    contract_id bigint not null unique references contracts(id) on delete cascade,
-    owner_id bigint not null references owner_profiles(user_id) on delete restrict,
-    sitter_id bigint not null references sitter_profiles(user_id) on delete restrict,
-    rating integer not null check (rating between 1 and 5),
-    review_text text,
-    created_at timestamptz not null default now(),
-    constraint chk_review_owner_sitter_distinct check (owner_id <> sitter_id)
+CREATE TABLE IF NOT EXISTS store_owner_profiles (
+    user_id                     BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    store_name                  VARCHAR(180) NOT NULL,
+    business_email              CITEXT,
+    business_phone              VARCHAR(30),
+    business_address_line_1     VARCHAR(255),
+    business_address_line_2     VARCHAR(255),
+    business_postal_code        VARCHAR(30),
+    tax_identifier              VARCHAR(100),
+    payout_account_ref          VARCHAR(255),
+    approved_at                 TIMESTAMPTZ,
+    approved_by_user_id         BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    approval_notes              TEXT,
+    is_approved                 BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-create table if not exists audit_log (
-    id bigserial primary key,
-    actor_user_id bigint references users(id) on delete set null,
-    target_user_id bigint references users(id) on delete set null,
-    entity_type varchar(40) not null,
-    entity_id bigint,
-    action varchar(50) not null,
-    summary text,
-    metadata_json jsonb,
-    ip_address inet,
-    user_agent varchar(255),
-    created_at timestamptz not null default now()
-);
-create index if not exists idx_audit_log_entity on audit_log(entity_type, entity_id, created_at desc);
+-- =========================================================
+-- PLANTS
+-- =========================================================
 
-create table if not exists moderation_cases (
-    id bigserial primary key,
-    reported_by_user_id bigint references users(id) on delete set null,
-    subject_user_id bigint references users(id) on delete set null,
-    entity_type varchar(40),
-    entity_id bigint,
-    reason_code varchar(40) not null,
-    notes text,
-    status varchar(20) not null default 'OPEN' check (status in ('OPEN','UNDER_REVIEW','RESOLVED','DISMISSED')),
-    resolved_by_user_id bigint references users(id) on delete set null,
-    resolved_at timestamptz,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS plants (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    current_owner_user_id       BIGINT NOT NULL REFERENCES owner_profiles(user_id) ON DELETE RESTRICT,
+    name                        VARCHAR(150) NOT NULL,
+    species                     VARCHAR(150),
+    description                 TEXT,
+    age_description             VARCHAR(100),
+    size_description            VARCHAR(100),
+    health_status               VARCHAR(100),
+    watering_frequency_days     INTEGER,
+    light_requirements          VARCHAR(120),
+    humidity_requirements       VARCHAR(120),
+    special_instructions        TEXT,
+    location_notes              TEXT,
+    is_active                   BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    archived_at                 TIMESTAMPTZ,
+    CONSTRAINT plants_watering_chk CHECK (watering_frequency_days IS NULL OR watering_frequency_days > 0)
 );
-create trigger trg_moderation_cases_updated_at before update on moderation_cases for each row execute function set_updated_at();
 
-create or replace view v_users_with_roles as
-select u.*,
-    exists(select 1 from owner_profiles op where op.user_id = u.id) as has_owner_profile,
-    exists(select 1 from sitter_profiles sp where sp.user_id = u.id) as has_sitter_profile
-from users u;
+CREATE TABLE IF NOT EXISTS plant_photos (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    plant_id                    BIGINT NOT NULL REFERENCES plants(id) ON DELETE CASCADE,
+    storage_key                 TEXT NOT NULL,
+    public_url                  TEXT,
+    content_type                VARCHAR(100),
+    file_size_bytes             BIGINT,
+    sort_order                  INTEGER NOT NULL DEFAULT 0,
+    uploaded_by_user_id         BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS plant_care_tasks (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    plant_id                    BIGINT NOT NULL REFERENCES plants(id) ON DELETE CASCADE,
+    task_name                   VARCHAR(150) NOT NULL,
+    instructions                TEXT,
+    frequency_days              INTEGER,
+    preferred_time_note         VARCHAR(120),
+    is_required                 BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =========================================================
+-- PLANT LISTINGS
+-- owner: sitting request / donation / swap
+-- store owner: sale
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS plant_listings (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    plant_id                    BIGINT NOT NULL REFERENCES plants(id) ON DELETE CASCADE,
+    listing_type                listing_type NOT NULL,
+    status                      listing_status NOT NULL DEFAULT 'DRAFT',
+
+    owner_user_id               BIGINT REFERENCES owner_profiles(user_id) ON DELETE CASCADE,
+    store_owner_user_id         BIGINT REFERENCES store_owner_profiles(user_id) ON DELETE CASCADE,
+
+    title                       VARCHAR(200) NOT NULL,
+    description                 TEXT,
+
+    desired_swap_notes          TEXT,
+    donation_notes              TEXT,
+    sitting_start_date          DATE,
+    sitting_end_date            DATE,
+    sitting_notes               TEXT,
+
+    sale_price                  NUMERIC(10,2),
+    currency_code               CHAR(3),
+
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    published_at                TIMESTAMPTZ,
+    closed_at                   TIMESTAMPTZ,
+
+    CONSTRAINT plant_listings_sale_price_chk
+        CHECK (sale_price IS NULL OR sale_price >= 0),
+
+    CONSTRAINT plant_listings_sitting_dates_chk
+        CHECK (
+            sitting_start_date IS NULL
+            OR sitting_end_date IS NULL
+            OR sitting_end_date >= sitting_start_date
+        ),
+
+    CONSTRAINT plant_listings_owner_or_store_chk
+        CHECK (
+            (owner_user_id IS NOT NULL AND store_owner_user_id IS NULL)
+            OR
+            (owner_user_id IS NULL AND store_owner_user_id IS NOT NULL)
+        ),
+
+    CONSTRAINT plant_listings_sale_requires_store_chk
+        CHECK (
+            (listing_type <> 'SALE')
+            OR
+            (store_owner_user_id IS NOT NULL AND sale_price IS NOT NULL AND currency_code IS NOT NULL)
+        ),
+
+    CONSTRAINT plant_listings_non_sale_requires_owner_chk
+        CHECK (
+            (listing_type = 'SALE')
+            OR
+            (owner_user_id IS NOT NULL)
+        )
+);
+
+-- =========================================================
+-- APPLICATIONS
+-- Used for:
+-- - sitter applying to sitting request
+-- - sitter expressing interest in donation
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS listing_applications (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    listing_id                  BIGINT NOT NULL REFERENCES plant_listings(id) ON DELETE CASCADE,
+    applicant_user_id           BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message_to_lister           TEXT,
+    proposed_start_date         DATE,
+    proposed_end_date           DATE,
+    proposed_price              NUMERIC(10,2),
+    status                      application_status NOT NULL DEFAULT 'PENDING',
+    responded_at                TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT listing_applications_price_chk CHECK (proposed_price IS NULL OR proposed_price >= 0),
+    CONSTRAINT listing_applications_dates_chk CHECK (
+        proposed_start_date IS NULL
+        OR proposed_end_date IS NULL
+        OR proposed_end_date >= proposed_start_date
+    ),
+    CONSTRAINT listing_applications_unique UNIQUE (listing_id, applicant_user_id)
+);
+
+-- =========================================================
+-- SWAP PROPOSALS
+-- owner responds to owner swap listing with another plant
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS swap_proposals (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    listing_id                  BIGINT NOT NULL REFERENCES plant_listings(id) ON DELETE CASCADE,
+    proposer_owner_user_id      BIGINT NOT NULL REFERENCES owner_profiles(user_id) ON DELETE CASCADE,
+    offered_plant_id            BIGINT NOT NULL REFERENCES plants(id) ON DELETE RESTRICT,
+    message_to_owner            TEXT,
+    status                      swap_status NOT NULL DEFAULT 'PENDING',
+    responded_at                TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT swap_proposals_unique UNIQUE (listing_id, proposer_owner_user_id, offered_plant_id)
+);
+
+-- =========================================================
+-- SITTING CONTRACTS
+-- only for confirmed sitting arrangements
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS contracts (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    listing_id                  BIGINT REFERENCES plant_listings(id) ON DELETE SET NULL,
+    application_id              BIGINT UNIQUE REFERENCES listing_applications(id) ON DELETE SET NULL,
+    owner_user_id               BIGINT NOT NULL REFERENCES owner_profiles(user_id) ON DELETE RESTRICT,
+    sitter_user_id              BIGINT NOT NULL REFERENCES sitter_profiles(user_id) ON DELETE RESTRICT,
+    title                       VARCHAR(200),
+    description                 TEXT,
+    start_date                  DATE NOT NULL,
+    end_date                    DATE NOT NULL,
+    agreed_price                NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    currency_code               CHAR(3) NOT NULL DEFAULT 'USD',
+    status                      contract_status NOT NULL DEFAULT 'DRAFT',
+    owner_accepted_at           TIMESTAMPTZ,
+    sitter_accepted_at          TIMESTAMPTZ,
+    cancelled_at                TIMESTAMPTZ,
+    completed_at                TIMESTAMPTZ,
+    created_by_user_id          BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT contracts_dates_chk CHECK (end_date >= start_date),
+    CONSTRAINT contracts_price_chk CHECK (agreed_price >= 0),
+    CONSTRAINT contracts_distinct_parties_chk CHECK (owner_user_id <> sitter_user_id)
+);
+
+CREATE TABLE IF NOT EXISTS contract_plants (
+    contract_id                 BIGINT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    plant_id                    BIGINT NOT NULL REFERENCES plants(id) ON DELETE RESTRICT,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (contract_id, plant_id)
+);
+
+-- =========================================================
+-- STORE SALES
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS store_orders (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    listing_id                  BIGINT NOT NULL REFERENCES plant_listings(id) ON DELETE RESTRICT,
+    buyer_user_id               BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    store_owner_user_id         BIGINT NOT NULL REFERENCES store_owner_profiles(user_id) ON DELETE RESTRICT,
+    amount                      NUMERIC(10,2) NOT NULL,
+    currency_code               CHAR(3) NOT NULL DEFAULT 'USD',
+    status                      order_status NOT NULL DEFAULT 'PENDING',
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    paid_at                     TIMESTAMPTZ,
+    fulfilled_at                TIMESTAMPTZ,
+    cancelled_at                TIMESTAMPTZ,
+    CONSTRAINT store_orders_amount_chk CHECK (amount >= 0)
+);
+
+-- =========================================================
+-- CONVERSATIONS / MESSAGES
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS conversations (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    listing_id                  BIGINT REFERENCES plant_listings(id) ON DELETE SET NULL,
+    contract_id                 BIGINT REFERENCES contracts(id) ON DELETE SET NULL,
+    order_id                    BIGINT REFERENCES store_orders(id) ON DELETE SET NULL,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_message_at             TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS conversation_participants (
+    conversation_id             BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id                     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at                   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    conversation_id             BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_user_id              BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    message_type                message_type NOT NULL DEFAULT 'TEXT',
+    body                        TEXT,
+    is_edited                   BOOLEAN NOT NULL DEFAULT FALSE,
+    edited_at                   TIMESTAMPTZ,
+    delivered_at                TIMESTAMPTZ,
+    read_at                     TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at                  TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS message_attachments (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    message_id                  BIGINT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    attachment_kind             attachment_kind NOT NULL,
+    original_filename           VARCHAR(255),
+    storage_key                 TEXT NOT NULL,
+    public_url                  TEXT,
+    content_type                VARCHAR(100),
+    file_size_bytes             BIGINT,
+    image_width                 INTEGER,
+    image_height                INTEGER,
+    checksum_sha256             VARCHAR(128),
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =========================================================
+-- NOTIFICATIONS
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    user_id                     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    notification_type           notification_type NOT NULL,
+    title                       VARCHAR(200) NOT NULL,
+    body                        TEXT,
+    related_listing_id          BIGINT REFERENCES plant_listings(id) ON DELETE SET NULL,
+    related_application_id      BIGINT REFERENCES listing_applications(id) ON DELETE SET NULL,
+    related_swap_proposal_id    BIGINT REFERENCES swap_proposals(id) ON DELETE SET NULL,
+    related_contract_id         BIGINT REFERENCES contracts(id) ON DELETE SET NULL,
+    related_order_id            BIGINT REFERENCES store_orders(id) ON DELETE SET NULL,
+    related_message_id          BIGINT REFERENCES messages(id) ON DELETE SET NULL,
+    is_read                     BOOLEAN NOT NULL DEFAULT FALSE,
+    read_at                     TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =========================================================
+-- PAYMENTS / LEDGER
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS payment_ledger (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    contract_id                 BIGINT REFERENCES contracts(id) ON DELETE SET NULL,
+    order_id                    BIGINT REFERENCES store_orders(id) ON DELETE SET NULL,
+    payer_user_id               BIGINT REFERENCES users(id) ON DELETE RESTRICT,
+    payee_user_id               BIGINT REFERENCES users(id) ON DELETE RESTRICT,
+    direction                   payment_direction NOT NULL,
+    amount                      NUMERIC(12,2) NOT NULL,
+    currency_code               CHAR(3) NOT NULL DEFAULT 'USD',
+    status                      payment_status NOT NULL DEFAULT 'PENDING',
+    external_reference          VARCHAR(255),
+    notes                       TEXT,
+    occurred_at                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT payment_ledger_amount_chk CHECK (amount >= 0)
+);
+
+-- =========================================================
+-- AVAILABILITY
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS sitter_availability (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    sitter_user_id              BIGINT NOT NULL REFERENCES sitter_profiles(user_id) ON DELETE CASCADE,
+    start_at                    TIMESTAMPTZ NOT NULL,
+    end_at                      TIMESTAMPTZ NOT NULL,
+    status                      availability_status NOT NULL DEFAULT 'AVAILABLE',
+    notes                       TEXT,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT sitter_availability_time_chk CHECK (end_at > start_at)
+);
+
+-- =========================================================
+-- AUTH / REVIEWS / MODERATION / AUDIT
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    user_id                     BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash                  VARCHAR(255) NOT NULL UNIQUE,
+    expires_at                  TIMESTAMPTZ NOT NULL,
+    revoked_at                  TIMESTAMPTZ,
+    replaced_by_token_hash      VARCHAR(255),
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    user_agent                  TEXT,
+    ip_address                  INET
+);
+
+CREATE TABLE IF NOT EXISTS sitter_reviews (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    contract_id                 BIGINT NOT NULL UNIQUE REFERENCES contracts(id) ON DELETE CASCADE,
+    sitter_user_id              BIGINT NOT NULL REFERENCES sitter_profiles(user_id) ON DELETE CASCADE,
+    owner_user_id               BIGINT NOT NULL REFERENCES owner_profiles(user_id) ON DELETE CASCADE,
+    rating                      INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    review_text                 TEXT,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS moderation_cases (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    reported_by_user_id         BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    target_user_id              BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    target_message_id           BIGINT REFERENCES messages(id) ON DELETE SET NULL,
+    target_contract_id          BIGINT REFERENCES contracts(id) ON DELETE SET NULL,
+    target_listing_id           BIGINT REFERENCES plant_listings(id) ON DELETE SET NULL,
+    reason                      VARCHAR(255) NOT NULL,
+    description                 TEXT,
+    status                      moderation_status NOT NULL DEFAULT 'OPEN',
+    reviewed_by_user_id         BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at                 TIMESTAMPTZ,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id                          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    actor_user_id               BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    action_type                 VARCHAR(100) NOT NULL,
+    target_table                VARCHAR(100) NOT NULL,
+    target_id                   BIGINT,
+    metadata_json               JSONB,
+    ip_address                  INET,
+    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =========================================================
+-- INDEXES
+-- =========================================================
+
+CREATE INDEX IF NOT EXISTS idx_plants_current_owner ON plants(current_owner_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_plant_listings_plant_id ON plant_listings(plant_id);
+CREATE INDEX IF NOT EXISTS idx_plant_listings_type ON plant_listings(listing_type);
+CREATE INDEX IF NOT EXISTS idx_plant_listings_status ON plant_listings(status);
+CREATE INDEX IF NOT EXISTS idx_plant_listings_owner_user_id ON plant_listings(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_plant_listings_store_owner_user_id ON plant_listings(store_owner_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_listing_applications_listing_id ON listing_applications(listing_id);
+CREATE INDEX IF NOT EXISTS idx_listing_applications_applicant_user_id ON listing_applications(applicant_user_id);
+CREATE INDEX IF NOT EXISTS idx_listing_applications_status ON listing_applications(status);
+
+CREATE INDEX IF NOT EXISTS idx_swap_proposals_listing_id ON swap_proposals(listing_id);
+CREATE INDEX IF NOT EXISTS idx_swap_proposals_proposer_owner ON swap_proposals(proposer_owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_swap_proposals_status ON swap_proposals(status);
+
+CREATE INDEX IF NOT EXISTS idx_contracts_owner ON contracts(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_sitter ON contracts(sitter_user_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
+
+CREATE INDEX IF NOT EXISTS idx_store_orders_listing_id ON store_orders(listing_id);
+CREATE INDEX IF NOT EXISTS idx_store_orders_buyer ON store_orders(buyer_user_id);
+CREATE INDEX IF NOT EXISTS idx_store_orders_store_owner ON store_orders(store_owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_store_orders_status ON store_orders(status);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_payment_ledger_contract_id ON payment_ledger(contract_id);
+CREATE INDEX IF NOT EXISTS idx_payment_ledger_order_id ON payment_ledger(order_id);
+CREATE INDEX IF NOT EXISTS idx_sitter_availability_sitter_user_id ON sitter_availability(sitter_user_id);
+
+COMMIT;
