@@ -3,31 +3,29 @@ import {
   View, Text, TextInput, TouchableOpacity,
   ActivityIndicator, StyleSheet, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { api } from '../api/apiService';
-import { SessionManager } from '../storage/SessionManager';
+import { supabase } from '../lib/supabase';
 
 export default function LoginScreen({ navigation }) {
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!usernameOrEmail.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
     setLoading(true);
-    try {
-      const res = await api.login(usernameOrEmail.trim(), password);
-      const { accessToken, user } = res.data.data;
-      await SessionManager.saveSession(accessToken, user);
-      navigation.replace('Plants');
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Login failed. Please try again.';
-      Alert.alert('Error', msg);
-    } finally {
-      setLoading(false);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setLoading(false);
+    if (error) {
+      Alert.alert('Login failed', error.message);
+      return;
     }
+    navigation.replace('Main');
   };
 
   return (
@@ -37,11 +35,12 @@ export default function LoginScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Username or Email"
+        placeholder="Email"
         placeholderTextColor="#999"
         autoCapitalize="none"
-        value={usernameOrEmail}
-        onChangeText={setUsernameOrEmail}
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}

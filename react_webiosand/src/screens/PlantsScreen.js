@@ -14,11 +14,10 @@ export default function PlantsScreen({ navigation }) {
   const fetchPlants = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.getPlants();
-      setPlants(res.data.data || []);
+      const data = await api.getPlants();
+      setPlants(data);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to load plants';
-      Alert.alert('Error', msg);
+      Alert.alert('Error', err.message || 'Failed to load plants');
     } finally {
       setLoading(false);
     }
@@ -28,18 +27,30 @@ export default function PlantsScreen({ navigation }) {
 
   const handleLogout = async () => {
     await SessionManager.clear();
-    navigation.replace('Login');
+    navigation.getParent()?.getParent()?.replace('Login');
   };
 
   const renderPlant = ({ item }) => {
-    const subtitle = [item.species, item.room].filter(Boolean).join(' · ') || 'No details added';
+    const subtitle = [item.species, item.location_notes].filter(Boolean).join(' · ') || 'No details added';
     return (
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('AddEditPlant', { plant: item })}
+        activeOpacity={0.75}
       >
-        <Text style={styles.plantName}>{item.name}</Text>
-        <Text style={styles.plantSubtitle}>{subtitle}</Text>
+        <View style={styles.cardBody}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.plantName}>{item.name}</Text>
+            <Text style={styles.plantSubtitle}>{subtitle}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.sitBtn}
+            onPress={() => navigation.navigate('PostListing', { plantId: item.id })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.sitBtnText}>Find sitter</Text>
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -62,6 +73,7 @@ export default function PlantsScreen({ navigation }) {
           renderItem={renderPlant}
           contentContainerStyle={plants.length === 0 && styles.emptyContainer}
           ListEmptyComponent={<Text style={styles.emptyText}>No plants yet. Add your first one!</Text>}
+          showsVerticalScrollIndicator={false}
         />
       )}
 
@@ -88,11 +100,17 @@ const styles = StyleSheet.create({
   loader: { flex: 1 },
   card: {
     backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12,
-    borderRadius: 10, padding: 16, elevation: 2,
+    borderRadius: 12, padding: 16, elevation: 2,
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
   },
+  cardBody: { flexDirection: 'row', alignItems: 'center' },
   plantName: { fontSize: 17, fontWeight: '600', color: '#1b5e20', marginBottom: 4 },
   plantSubtitle: { fontSize: 13, color: '#777' },
+  sitBtn: {
+    backgroundColor: '#e8f5e9', borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 6, marginLeft: 12,
+  },
+  sitBtnText: { fontSize: 12, fontWeight: '700', color: '#2e7d32' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { color: '#999', fontSize: 16 },
   fab: {

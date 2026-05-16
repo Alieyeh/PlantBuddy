@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  Text, TextInput, TouchableOpacity,
   ActivityIndicator, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { api } from '../api/apiService';
-import { SessionManager } from '../storage/SessionManager';
+import { supabase } from '../lib/supabase';
 
 export default function RegisterScreen({ navigation }) {
   const [displayName, setDisplayName] = useState('');
@@ -22,18 +21,34 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
-    setLoading(true);
-    try {
-      const res = await api.register(username.trim(), email.trim(), password, displayName.trim());
-      const { accessToken, user } = res.data.data;
-      await SessionManager.saveSession(accessToken, user);
-      navigation.replace('Plants');
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
-      Alert.alert('Error', msg);
-    } finally {
-      setLoading(false);
+    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
+      Alert.alert('Error', 'Username can only contain letters, numbers, and underscores');
+      return;
     }
+
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          username: username.trim().toLowerCase(),
+          display_name: displayName.trim(),
+        },
+      },
+    });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Registration failed', error.message);
+      return;
+    }
+
+    Alert.alert(
+      'Account created',
+      'Check your email to confirm your account, then log in.',
+      [{ text: 'Go to Login', onPress: () => navigation.replace('Login') }]
+    );
   };
 
   return (
@@ -51,7 +66,7 @@ export default function RegisterScreen({ navigation }) {
         />
         <TextInput
           style={styles.input}
-          placeholder="Username"
+          placeholder="Username (letters, numbers, _)"
           placeholderTextColor="#999"
           autoCapitalize="none"
           value={username}

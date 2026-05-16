@@ -1,30 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const KEYS = {
-  TOKEN: 'plantbuddy_token',
-  USER_ID: 'plantbuddy_user_id',
-  USERNAME: 'plantbuddy_username',
-};
+import { supabase } from '../lib/supabase';
 
 export const SessionManager = {
-  async saveSession(token, user) {
-    await AsyncStorage.multiSet([
-      [KEYS.TOKEN, token],
-      [KEYS.USER_ID, String(user.id)],
-      [KEYS.USERNAME, user.username],
-    ]);
-  },
-
-  async getAccessToken() {
-    return AsyncStorage.getItem(KEYS.TOKEN);
-  },
-
   async isLoggedIn() {
-    const token = await AsyncStorage.getItem(KEYS.TOKEN);
-    return token !== null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session !== null;
   },
 
   async clear() {
-    await AsyncStorage.multiRemove(Object.values(KEYS));
+    await supabase.auth.signOut();
+  },
+
+  async getUserId() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id ?? null;
   },
 };

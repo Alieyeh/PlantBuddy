@@ -1,39 +1,55 @@
-import axios from 'axios';
-import { SessionManager } from '../storage/SessionManager';
-
-const BASE_URL = 'http://10.0.2.2:8080/'; // Android emulator loopback; change for physical device
-
-const client = axios.create({
-  baseURL: BASE_URL,
-  timeout: 30000,
-});
-
-client.interceptors.request.use(async (config) => {
-  const token = await SessionManager.getAccessToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import { supabase } from '../lib/supabase';
 
 export const api = {
-  // Auth
-  register: (username, email, password, displayName) =>
-    client.post('api/auth/register', { username, email, password, displayName }),
+  async getPlants() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('plants')
+      .select('id, name, species, description, size_description, health_status, watering_frequency_days, light_requirements, humidity_requirements, special_instructions, location_notes, is_active, created_at, updated_at')
+      .eq('current_owner_user_id', user.id)
+      .eq('is_active', true)
+      .order('name');
+    if (error) throw error;
+    return data;
+  },
 
-  login: (usernameOrEmail, password) =>
-    client.post('api/auth/login', { usernameOrEmail, password }),
+  async getPlant(id) {
+    const { data, error } = await supabase
+      .from('plants')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-  me: () => client.get('api/me'),
+  async createPlant(plantData) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('plants')
+      .insert({ ...plantData, current_owner_user_id: user.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-  // Plants
-  getPlants: () => client.get('api/plants'),
+  async updatePlant(id, plantData) {
+    const { data, error } = await supabase
+      .from('plants')
+      .update(plantData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-  getPlant: (id) => client.get(`api/plants/${id}`),
-
-  createPlant: (plantData) => client.post('api/plants', plantData),
-
-  updatePlant: (id, plantData) => client.put(`api/plants/${id}`, plantData),
-
-  deletePlant: (id) => client.delete(`api/plants/${id}`),
+  async deletePlant(id) {
+    const { error } = await supabase
+      .from('plants')
+      .update({ is_active: false, archived_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+  },
 };

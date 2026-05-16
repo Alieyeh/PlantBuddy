@@ -17,12 +17,16 @@ export default function AddEditPlantScreen({ route, navigation }) {
 
   const [name, setName] = useState(existing?.name ?? '');
   const [species, setSpecies] = useState(existing?.species ?? '');
-  const [room, setRoom] = useState(existing?.room ?? '');
-  const [careNotes, setCareNotes] = useState(existing?.careNotes ?? '');
-  const [lightRequirement, setLightRequirement] = useState(existing?.lightRequirement ?? '');
-  const [waterFreq, setWaterFreq] = useState(existing?.wateringFrequencyDays != null ? String(existing.wateringFrequencyDays) : '');
-  const [waterVol, setWaterVol] = useState(existing?.wateringVolumeMl != null ? String(existing.wateringVolumeMl) : '');
-  const [quirk, setQuirk] = useState(existing?.quirk ?? '');
+  const [description, setDescription] = useState(existing?.description ?? '');
+  const [locationNotes, setLocationNotes] = useState(existing?.location_notes ?? '');
+  const [sizeDescription, setSizeDescription] = useState(existing?.size_description ?? '');
+  const [healthStatus, setHealthStatus] = useState(existing?.health_status ?? '');
+  const [lightRequirements, setLightRequirements] = useState(existing?.light_requirements ?? '');
+  const [humidityRequirements, setHumidityRequirements] = useState(existing?.humidity_requirements ?? '');
+  const [wateringFrequency, setWateringFrequency] = useState(
+    existing?.watering_frequency_days != null ? String(existing.watering_frequency_days) : ''
+  );
+  const [specialInstructions, setSpecialInstructions] = useState(existing?.special_instructions ?? '');
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
@@ -33,17 +37,14 @@ export default function AddEditPlantScreen({ route, navigation }) {
     const plantData = {
       name: name.trim(),
       species: species.trim() || null,
-      profileImageUrl: null,
-      room: room.trim() || null,
-      careNotes: careNotes.trim() || null,
-      lightRequirement: lightRequirement.trim() || null,
-      wateringFrequencyDays: parseInteger(waterFreq),
-      wateringVolumeMl: parseInteger(waterVol),
-      preferredTemperatureC: null,
-      heightCm: null,
-      widthCm: null,
-      weightG: null,
-      quirk: quirk.trim() || null,
+      description: description.trim() || null,
+      location_notes: locationNotes.trim() || null,
+      size_description: sizeDescription.trim() || null,
+      health_status: healthStatus.trim() || null,
+      light_requirements: lightRequirements.trim() || null,
+      humidity_requirements: humidityRequirements.trim() || null,
+      watering_frequency_days: parseInteger(wateringFrequency),
+      special_instructions: specialInstructions.trim() || null,
     };
 
     setLoading(true);
@@ -53,12 +54,11 @@ export default function AddEditPlantScreen({ route, navigation }) {
         Alert.alert('Success', 'Plant updated');
       } else {
         await api.createPlant(plantData);
-        Alert.alert('Success', 'Plant saved');
+        Alert.alert('Success', 'Plant added');
       }
       navigation.goBack();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to save plant';
-      Alert.alert('Error', msg);
+      Alert.alert('Error', err.message || 'Failed to save plant');
     } finally {
       setLoading(false);
     }
@@ -70,28 +70,34 @@ export default function AddEditPlantScreen({ route, navigation }) {
         <Text style={styles.title}>{isEdit ? 'Edit Plant' : 'Add Plant'}</Text>
 
         <Text style={styles.label}>Name *</Text>
-        <TextInput style={styles.input} placeholder="e.g. Monstera" placeholderTextColor="#999" value={name} onChangeText={setName} />
+        <TextInput style={styles.input} placeholder="e.g. Gerald" placeholderTextColor="#999" value={name} onChangeText={setName} />
 
         <Text style={styles.label}>Species</Text>
         <TextInput style={styles.input} placeholder="e.g. Monstera deliciosa" placeholderTextColor="#999" value={species} onChangeText={setSpecies} />
 
-        <Text style={styles.label}>Room / Location</Text>
-        <TextInput style={styles.input} placeholder="e.g. Living Room" placeholderTextColor="#999" value={room} onChangeText={setRoom} />
+        <Text style={styles.label}>Description</Text>
+        <TextInput style={[styles.input, styles.multiline]} placeholder="Personality, history, quirks..." placeholderTextColor="#999" multiline value={description} onChangeText={setDescription} />
 
-        <Text style={styles.label}>Care Notes</Text>
-        <TextInput style={[styles.input, styles.multiline]} placeholder="Any care instructions..." placeholderTextColor="#999" multiline value={careNotes} onChangeText={setCareNotes} />
+        <Text style={styles.label}>Location / Room</Text>
+        <TextInput style={styles.input} placeholder="e.g. Lives in the living room, east window" placeholderTextColor="#999" value={locationNotes} onChangeText={setLocationNotes} />
 
-        <Text style={styles.label}>Light Requirement</Text>
-        <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor="#999" value={lightRequirement} onChangeText={setLightRequirement} />
+        <Text style={styles.label}>Size</Text>
+        <TextInput style={styles.input} placeholder="e.g. Medium, about 60cm tall" placeholderTextColor="#999" value={sizeDescription} onChangeText={setSizeDescription} />
+
+        <Text style={styles.label}>Health Status</Text>
+        <TextInput style={styles.input} placeholder="e.g. Healthy, new growth appearing" placeholderTextColor="#999" value={healthStatus} onChangeText={setHealthStatus} />
+
+        <Text style={styles.label}>Light Requirements</Text>
+        <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor="#999" value={lightRequirements} onChangeText={setLightRequirements} />
+
+        <Text style={styles.label}>Humidity Requirements</Text>
+        <TextInput style={styles.input} placeholder="e.g. High humidity, mist weekly" placeholderTextColor="#999" value={humidityRequirements} onChangeText={setHumidityRequirements} />
 
         <Text style={styles.label}>Watering Frequency (days)</Text>
-        <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor="#999" keyboardType="numeric" value={waterFreq} onChangeText={setWaterFreq} />
+        <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor="#999" keyboardType="numeric" value={wateringFrequency} onChangeText={setWateringFrequency} />
 
-        <Text style={styles.label}>Watering Volume (ml)</Text>
-        <TextInput style={styles.input} placeholder="e.g. 250" placeholderTextColor="#999" keyboardType="numeric" value={waterVol} onChangeText={setWaterVol} />
-
-        <Text style={styles.label}>Quirks</Text>
-        <TextInput style={[styles.input, styles.multiline]} placeholder="Any special notes..." placeholderTextColor="#999" multiline value={quirk} onChangeText={setQuirk} />
+        <Text style={styles.label}>Special Instructions</Text>
+        <TextInput style={[styles.input, styles.multiline]} placeholder="Anything a sitter must know..." placeholderTextColor="#999" multiline value={specialInstructions} onChangeText={setSpecialInstructions} />
 
         {loading ? (
           <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
