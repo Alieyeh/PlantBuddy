@@ -5,26 +5,43 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { listingsService } from '../api/listingsService';
-import { daysBetween, formatShortDate } from '../utils/listingForm';
+import { C, T, S } from '../lib/theme';
 
-/**
- * Browse feed for open sitting requests. It currently lists only the sitting
- * MVP, even though the database supports more listing types.
- */
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const daysBetween = (start, end) => {
+  if (!start || !end) return null;
+  return Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
+};
+
+function MetaChip({ label }) {
+  return (
+    <View style={styles.chip}>
+      <Text style={styles.chipText}>{label}</Text>
+    </View>
+  );
+}
+
 export default function ListingsScreen({ navigation }) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchListings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await listingsService.getOpenListings();
-      setListings(data);
-    } catch (err) {
-      Alert.alert('Error', err.message || 'Failed to load listings');
-    } finally {
-      setLoading(false);
+  const fetchListings = useCallback(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await listingsService.getOpenListings();
+        setListings(data);
+      } catch (err) {
+        Alert.alert('Error', err.message || 'Failed to load listings');
+      } finally {
+        setLoading(false);
+      }
     }
+    load();
   }, []);
 
   useFocusEffect(fetchListings);
@@ -33,38 +50,39 @@ export default function ListingsScreen({ navigation }) {
     const plant = item.plants;
     const days = daysBetween(item.sitting_start_date, item.sitting_end_date);
     const dateRange = item.sitting_start_date
-      ? `${formatShortDate(item.sitting_start_date)} - ${formatShortDate(item.sitting_end_date)}`
+      ? `${formatDate(item.sitting_start_date)} - ${formatDate(item.sitting_end_date)}`
       : null;
 
     return (
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('ListingDetail', { listingId: item.id })}
-        activeOpacity={0.75}
+        activeOpacity={0.78}
       >
-        <View style={styles.cardHeader}>
-          <Text style={styles.plantName}>{plant?.name ?? 'Unknown plant'}</Text>
+        <View style={styles.cardTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.plantName}>{plant?.name ?? 'Unknown plant'}</Text>
+            {plant?.species ? <Text style={styles.species}>{plant.species}</Text> : null}
+          </View>
           {days != null && (
             <View style={styles.daysBadge}>
-              <Text style={styles.daysText}>{days}d</Text>
+              <Text style={styles.daysText}>{days} days</Text>
             </View>
           )}
         </View>
 
-        {plant?.species ? (
-          <Text style={styles.species}>{plant.species}</Text>
-        ) : null}
-
         <Text style={styles.listingTitle}>{item.title}</Text>
 
-        <View style={styles.metaRow}>
-          {dateRange ? <Text style={styles.meta}>{dateRange}</Text> : null}
-          {plant?.light_requirements ? (
-            <Text style={styles.meta}>{plant.light_requirements}</Text>
-          ) : null}
-          {plant?.watering_frequency_days ? (
-            <Text style={styles.meta}>Water every {plant.watering_frequency_days}d</Text>
-          ) : null}
+        {dateRange && (
+          <View style={styles.dateRow}>
+            <Text style={styles.dateIcon}>📅</Text>
+            <Text style={styles.dateText}>{dateRange}</Text>
+          </View>
+        )}
+
+        <View style={styles.chips}>
+          {plant?.light_requirements ? <MetaChip label={`☀️ ${plant.light_requirements}`} /> : null}
+          {plant?.watering_frequency_days ? <MetaChip label={`💧 Every ${plant.watering_frequency_days}d`} /> : null}
         </View>
       </TouchableOpacity>
     );
@@ -74,21 +92,22 @@ export default function ListingsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Browse Plants</Text>
+        <Text style={styles.subtitle}>Open sitting requests</Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
+        <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
       ) : (
         <FlatList
           data={listings}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderListing}
-          contentContainerStyle={listings.length === 0 && styles.emptyContainer}
+          contentContainerStyle={listings.length === 0 ? styles.emptyContainer : styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyInner}>
-              <Text style={styles.emptyIcon}>🌱</Text>
-              <Text style={styles.emptyText}>No sitting requests open yet.</Text>
-              <Text style={styles.emptyHint}>Be the first to list a plant!</Text>
+              <Text style={styles.emptyIcon}>🔍</Text>
+              <Text style={styles.emptyTitle}>No listings right now</Text>
+              <Text style={styles.emptyBody}>Check back soon, or post your own plant to get started.</Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -99,57 +118,46 @@ export default function ListingsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: C.cream },
   header: {
-    padding: 16,
-    paddingTop: 48,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingHorizontal: S.base, paddingTop: 52, paddingBottom: S.base,
+    backgroundColor: C.white,
+    borderBottomWidth: 1, borderBottomColor: C.mist,
   },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#2e7d32' },
+  title: { ...T.h1 },
+  subtitle: { ...T.caption, color: C.stone, marginTop: 2 },
   loader: { flex: 1 },
+  listContent: { paddingTop: S.sm, paddingBottom: S.xxxl },
   card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    backgroundColor: C.white,
+    marginHorizontal: S.base, marginTop: S.md,
+    borderRadius: S.card, padding: S.base,
+    ...S.cardShadow,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  plantName: { fontSize: 18, fontWeight: '700', color: '#1b5e20' },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: S.xs },
+  plantName: { ...T.h2, color: C.forest },
+  species: { ...T.caption, color: C.stone, fontStyle: 'italic', marginTop: 2 },
   daysBadge: {
-    backgroundColor: '#e8f5e9',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    backgroundColor: C.amberLight, borderRadius: S.chip,
+    paddingHorizontal: S.md, paddingVertical: 4,
+    borderWidth: 1, borderColor: C.amber,
+    marginLeft: S.sm,
   },
-  daysText: { fontSize: 12, fontWeight: '700', color: '#2e7d32' },
-  species: { fontSize: 13, color: '#888', marginBottom: 6, fontStyle: 'italic' },
-  listingTitle: { fontSize: 15, color: '#333', marginBottom: 10 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  meta: {
-    fontSize: 12,
-    color: '#fff',
-    backgroundColor: '#66bb6a',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    overflow: 'hidden',
+  daysText: { ...T.badge, color: C.clay },
+  listingTitle: { ...T.body, color: C.slate, marginBottom: S.sm },
+  dateRow: { flexDirection: 'row', alignItems: 'center', marginBottom: S.sm },
+  dateIcon: { fontSize: 13, marginRight: S.xs },
+  dateText: { ...T.caption, color: C.slate, fontWeight: '600' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: S.xs },
+  chip: {
+    backgroundColor: C.mist, borderRadius: S.chip,
+    paddingHorizontal: S.md, paddingVertical: 4,
+    borderWidth: 1, borderColor: C.sage,
   },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyInner: { alignItems: 'center', gap: 8 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 17, color: '#555', fontWeight: '600' },
-  emptyHint: { fontSize: 14, color: '#999' },
+  chipText: { ...T.caption, color: C.moss, fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: S.xl },
+  emptyInner: { alignItems: 'center' },
+  emptyIcon: { fontSize: 56, marginBottom: S.md },
+  emptyTitle: { ...T.h2, textAlign: 'center', marginBottom: S.sm },
+  emptyBody: { ...T.body, color: C.stone, textAlign: 'center', lineHeight: 22 },
 });

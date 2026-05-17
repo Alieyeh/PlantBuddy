@@ -1,15 +1,35 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  ActivityIndicator, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform,
+  ActivityIndicator, StyleSheet, Alert, ScrollView,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { api } from '../api/apiService';
-import { buildPlantPayload, validatePlantForm } from '../utils/plantForm';
+import { C, T, S, shared } from '../lib/theme';
 
-/**
- * Screen for creating or editing the current user's plant profile. The UI keeps
- * friendly camelCase state, then normalizes it into Supabase columns on save.
- */
+const parseInteger = (val) => {
+  if (!val || val.trim() === '') return null;
+  const n = parseInt(val.trim(), 10);
+  return isNaN(n) ? null : n;
+};
+
+function SectionDivider({ label }) {
+  return (
+    <View style={sectionStyles.row}>
+      <View style={sectionStyles.line} />
+      <Text style={sectionStyles.label}>{label}</Text>
+      <View style={sectionStyles.line} />
+    </View>
+  );
+}
+
+const sectionStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', marginVertical: S.lg },
+  line: { flex: 1, height: 1, backgroundColor: C.mist },
+  label: { ...T.caption, color: C.moss, paddingHorizontal: S.sm, textTransform: 'uppercase', letterSpacing: 0.8 },
+});
+
+>>>>>>> Stashed changes
 export default function AddEditPlantScreen({ route, navigation }) {
   const existing = route.params?.plant;
   const isEdit = !!existing;
@@ -29,35 +49,32 @@ export default function AddEditPlantScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    const form = {
-      name,
-      species,
-      description,
-      locationNotes,
-      sizeDescription,
-      healthStatus,
-      lightRequirements,
-      humidityRequirements,
-      wateringFrequency,
-      specialInstructions,
-    };
-    const validation = validatePlantForm(form);
-
-    if (!validation.valid) {
-      Alert.alert(validation.title, validation.message);
+    if (!name.trim()) {
+      Alert.alert('Required', 'Please give your plant a name.');
       return;
     }
 
-    const plantData = buildPlantPayload(form);
+    const plantData = {
+      name: name.trim(),
+      species: species.trim() || null,
+      description: description.trim() || null,
+      location_notes: locationNotes.trim() || null,
+      size_description: sizeDescription.trim() || null,
+      health_status: healthStatus.trim() || null,
+      light_requirements: lightRequirements.trim() || null,
+      humidity_requirements: humidityRequirements.trim() || null,
+      watering_frequency_days: parseInteger(wateringFrequency),
+      special_instructions: specialInstructions.trim() || null,
+    };
 
     setLoading(true);
     try {
       if (isEdit) {
         await api.updatePlant(existing.id, plantData);
-        Alert.alert('Success', 'Plant updated');
+        Alert.alert('Saved', 'Plant updated successfully.');
       } else {
         await api.createPlant(plantData);
-        Alert.alert('Success', 'Plant added');
+        Alert.alert('Added', 'Your plant has been added.');
       }
       navigation.goBack();
     } catch (err) {
@@ -69,44 +86,52 @@ export default function AddEditPlantScreen({ route, navigation }) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{isEdit ? 'Edit Plant' : 'Add Plant'}</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <SectionDivider label="Identity" />
 
-        <Text style={styles.label}>Name *</Text>
-        <TextInput style={styles.input} placeholder="e.g. Gerald" placeholderTextColor="#999" value={name} onChangeText={setName} />
+        <Text style={styles.fieldLabel}>Name *</Text>
+        <TextInput style={styles.input} placeholder="e.g. Gerald" placeholderTextColor={C.stone} value={name} onChangeText={setName} />
 
-        <Text style={styles.label}>Species</Text>
-        <TextInput style={styles.input} placeholder="e.g. Monstera deliciosa" placeholderTextColor="#999" value={species} onChangeText={setSpecies} />
+        <Text style={styles.fieldLabel}>Species</Text>
+        <TextInput style={styles.input} placeholder="e.g. Monstera deliciosa" placeholderTextColor={C.stone} value={species} onChangeText={setSpecies} />
 
-        <Text style={styles.label}>Description</Text>
-        <TextInput style={[styles.input, styles.multiline]} placeholder="Personality, history, quirks..." placeholderTextColor="#999" multiline value={description} onChangeText={setDescription} />
+        <Text style={styles.fieldLabel}>Description</Text>
+        <TextInput style={[styles.input, styles.multiline]} placeholder="Personality, history, quirks..." placeholderTextColor={C.stone} multiline value={description} onChangeText={setDescription} />
 
-        <Text style={styles.label}>Location / Room</Text>
-        <TextInput style={styles.input} placeholder="e.g. Lives in the living room, east window" placeholderTextColor="#999" value={locationNotes} onChangeText={setLocationNotes} />
+        <SectionDivider label="Physical" />
 
-        <Text style={styles.label}>Size</Text>
-        <TextInput style={styles.input} placeholder="e.g. Medium, about 60cm tall" placeholderTextColor="#999" value={sizeDescription} onChangeText={setSizeDescription} />
+        <Text style={styles.fieldLabel}>Location / Room</Text>
+        <TextInput style={styles.input} placeholder="e.g. East-facing living room window" placeholderTextColor={C.stone} value={locationNotes} onChangeText={setLocationNotes} />
 
-        <Text style={styles.label}>Health Status</Text>
-        <TextInput style={styles.input} placeholder="e.g. Healthy, new growth appearing" placeholderTextColor="#999" value={healthStatus} onChangeText={setHealthStatus} />
+        <Text style={styles.fieldLabel}>Size</Text>
+        <TextInput style={styles.input} placeholder="e.g. Medium, about 60cm tall" placeholderTextColor={C.stone} value={sizeDescription} onChangeText={setSizeDescription} />
 
-        <Text style={styles.label}>Light Requirements</Text>
-        <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor="#999" value={lightRequirements} onChangeText={setLightRequirements} />
+        <Text style={styles.fieldLabel}>Health Status</Text>
+        <TextInput style={styles.input} placeholder="e.g. Healthy, new growth appearing" placeholderTextColor={C.stone} value={healthStatus} onChangeText={setHealthStatus} />
 
-        <Text style={styles.label}>Humidity Requirements</Text>
-        <TextInput style={styles.input} placeholder="e.g. High humidity, mist weekly" placeholderTextColor="#999" value={humidityRequirements} onChangeText={setHumidityRequirements} />
+        <SectionDivider label="Care" />
 
-        <Text style={styles.label}>Watering Frequency (days)</Text>
-        <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor="#999" keyboardType="numeric" value={wateringFrequency} onChangeText={setWateringFrequency} />
+        <Text style={styles.fieldLabel}>💧 Watering Frequency (days)</Text>
+        <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor={C.stone} keyboardType="numeric" value={wateringFrequency} onChangeText={setWateringFrequency} />
 
-        <Text style={styles.label}>Special Instructions</Text>
-        <TextInput style={[styles.input, styles.multiline]} placeholder="Anything a sitter must know..." placeholderTextColor="#999" multiline value={specialInstructions} onChangeText={setSpecialInstructions} />
+        <Text style={styles.fieldLabel}>☀️ Light Requirements</Text>
+        <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor={C.stone} value={lightRequirements} onChangeText={setLightRequirements} />
+
+        <Text style={styles.fieldLabel}>💧 Humidity Requirements</Text>
+        <TextInput style={styles.input} placeholder="e.g. High humidity, mist weekly" placeholderTextColor={C.stone} value={humidityRequirements} onChangeText={setHumidityRequirements} />
+
+        <Text style={styles.fieldLabel}>Special Instructions</Text>
+        <TextInput style={[styles.input, styles.multiline, styles.specialInput]} placeholder="Anything a sitter must know..." placeholderTextColor={C.stone} multiline value={specialInstructions} onChangeText={setSpecialInstructions} />
 
         {loading ? (
-          <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
+          <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
         ) : (
-          <TouchableOpacity style={styles.button} onPress={handleSave}>
-            <Text style={styles.buttonText}>Save Plant</Text>
+          <TouchableOpacity style={styles.button} onPress={handleSave} activeOpacity={0.85}>
+            <Text style={styles.buttonText}>{isEdit ? 'Save changes' : 'Add plant'}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -115,15 +140,15 @@ export default function AddEditPlantScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, backgroundColor: '#f5f5f5', paddingBottom: 48 },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#2e7d32', marginBottom: 24 },
-  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 4, marginTop: 8 },
-  input: {
-    backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12,
-    fontSize: 15, marginBottom: 4, borderWidth: 1, borderColor: '#ddd', color: '#333',
+  container: { paddingHorizontal: S.base, paddingBottom: S.xxxl, backgroundColor: C.cream },
+  fieldLabel: { ...T.label, marginBottom: S.xs, marginTop: S.xs },
+  input: { ...shared.input },
+  multiline: { minHeight: 90, textAlignVertical: 'top' },
+  specialInput: {
+    borderColor: C.amberLight,
+    backgroundColor: '#fffaf7',
   },
-  multiline: { minHeight: 80, textAlignVertical: 'top' },
-  button: { backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  loader: { marginVertical: 24 },
+  button: { ...shared.primaryButton, marginTop: S.xl },
+  buttonText: { ...shared.primaryButtonText },
+  loader: { marginVertical: S.xl },
 });

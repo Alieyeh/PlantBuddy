@@ -105,6 +105,77 @@ export const listingsService = {
     return data;
   },
 
+  async applyToListing({ listingId, applicantUserId, message, proposedStartDate, proposedEndDate }) {
+    const { data, error } = await supabase
+      .from('listing_applications')
+      .insert({
+        listing_id: listingId,
+        applicant_user_id: applicantUserId,
+        message_to_lister: message || null,
+        proposed_start_date: proposedStartDate || null,
+        proposed_end_date: proposedEndDate || null,
+        status: 'PENDING',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getApplicationsForListing(listingId) {
+    const { data, error } = await supabase
+      .from('listing_applications')
+      .select(`
+        id,
+        status,
+        message_to_lister,
+        proposed_start_date,
+        proposed_end_date,
+        created_at,
+        applicant_user_id,
+        users (
+          username,
+          first_name
+        )
+      `)
+      .eq('listing_id', listingId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async getMyApplications(applicantUserId) {
+    const { data, error } = await supabase
+      .from('listing_applications')
+      .select(`
+        id,
+        status,
+        message_to_lister,
+        proposed_start_date,
+        proposed_end_date,
+        created_at,
+        plant_listings (
+          id,
+          title,
+          sitting_start_date,
+          sitting_end_date,
+          plants ( name, species )
+        )
+      `)
+      .eq('applicant_user_id', applicantUserId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async updateApplicationStatus(applicationId, status) {
+    const { error } = await supabase
+      .from('listing_applications')
+      .update({ status, responded_at: new Date().toISOString() })
+      .eq('id', applicationId);
+    if (error) throw error;
+  },
+
   /**
    * Loads a single listing with its linked plant details.
    *

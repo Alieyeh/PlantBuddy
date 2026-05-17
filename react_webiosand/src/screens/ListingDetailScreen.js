@@ -4,12 +4,21 @@ import {
   ActivityIndicator, StyleSheet, Alert,
 } from 'react-native';
 import { listingsService } from '../api/listingsService';
-import { formatLongDate } from '../utils/listingForm';
+import { C, T, S, shared } from '../lib/theme';
 
-/**
- * Small display helper for label/value rows in the listing detail page.
- */
-const InfoRow = ({ label, value }) => {
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'long', day: 'numeric', year: 'numeric',
+  });
+};
+
+const daysBetween = (start, end) => {
+  if (!start || !end) return null;
+  return Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24));
+};
+
+function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <View style={styles.infoRow}>
@@ -17,7 +26,17 @@ const InfoRow = ({ label, value }) => {
       <Text style={styles.infoValue}>{value}</Text>
     </View>
   );
-};
+}
+
+function CareChip({ icon, label }) {
+  if (!label) return null;
+  return (
+    <View style={styles.careChip}>
+      <Text style={styles.careChipIcon}>{icon}</Text>
+      <Text style={styles.careChipText}>{label}</Text>
+    </View>
+  );
+}
 
 /**
  * Detail page for one sitting request, including the linked plant's care notes.
@@ -36,134 +55,142 @@ export default function ListingDetailScreen({ route, navigation }) {
   }, [listingId]);
 
   if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color={C.amber} /></View>;
   }
-
   if (!listing) return null;
 
   const plant = listing.plants;
+  const days = daysBetween(listing.sitting_start_date, listing.sitting_end_date);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.plantCard}>
-        <Text style={styles.plantName}>{plant?.name}</Text>
-        {plant?.species ? <Text style={styles.species}>{plant.species}</Text> : null}
-      </View>
+    <View style={{ flex: 1, backgroundColor: C.cream }}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-      <Text style={styles.sectionHeader}>Sitting Period</Text>
-      <View style={styles.section}>
-        <InfoRow label="From" value={formatLongDate(listing.sitting_start_date)} />
-        <InfoRow label="Until" value={formatLongDate(listing.sitting_end_date)} />
-      </View>
-
-      <Text style={styles.sectionHeader}>About This Listing</Text>
-      <View style={styles.section}>
-        <Text style={styles.listingTitle}>{listing.title}</Text>
-        {listing.description ? (
-          <Text style={styles.description}>{listing.description}</Text>
-        ) : null}
-        {listing.sitting_notes ? (
-          <Text style={styles.notes}>{listing.sitting_notes}</Text>
-        ) : null}
-      </View>
-
-      <Text style={styles.sectionHeader}>Plant Care</Text>
-      <View style={styles.section}>
-        <InfoRow label="Size" value={plant?.size_description} />
-        <InfoRow label="Health" value={plant?.health_status} />
-        <InfoRow
-          label="Watering"
-          value={plant?.watering_frequency_days ? `Every ${plant.watering_frequency_days} days` : null}
-        />
-        <InfoRow label="Light" value={plant?.light_requirements} />
-        <InfoRow label="Humidity" value={plant?.humidity_requirements} />
-        {plant?.special_instructions ? (
-          <View style={styles.specialBox}>
-            <Text style={styles.specialLabel}>Special Instructions</Text>
-            <Text style={styles.specialText}>{plant.special_instructions}</Text>
+        {/* Hero card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.plantName}>{plant?.name}</Text>
+              {plant?.species ? <Text style={styles.species}>{plant.species}</Text> : null}
+            </View>
+            {days != null && (
+              <View style={styles.daysBadge}>
+                <Text style={styles.daysText}>{days} days</Text>
+              </View>
+            )}
           </View>
-        ) : null}
-      </View>
 
-      <TouchableOpacity
-        style={styles.applyBtn}
-        onPress={() => Alert.alert('Coming soon', 'Application flow is in Stage 2.')}
-      >
-        <Text style={styles.applyBtnText}>Apply to Sit</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <View style={styles.careChips}>
+            <CareChip icon="💧" label={plant?.watering_frequency_days ? `Every ${plant.watering_frequency_days} days` : null} />
+            <CareChip icon="☀️" label={plant?.light_requirements} />
+            <CareChip icon="🌫️" label={plant?.humidity_requirements} />
+          </View>
+        </View>
+
+        {/* Sitting period */}
+        <Text style={shared.sectionLabel}>Sitting Period</Text>
+        <View style={styles.section}>
+          <InfoRow label="From" value={formatDate(listing.sitting_start_date)} />
+          <InfoRow label="Until" value={formatDate(listing.sitting_end_date)} />
+        </View>
+
+        {/* About listing */}
+        <Text style={shared.sectionLabel}>About this listing</Text>
+        <View style={styles.section}>
+          <Text style={styles.listingTitle}>{listing.title}</Text>
+          {listing.description ? <Text style={styles.bodyText}>{listing.description}</Text> : null}
+          {listing.sitting_notes ? <Text style={styles.notesText}>{listing.sitting_notes}</Text> : null}
+        </View>
+
+        {/* Plant care */}
+        <Text style={shared.sectionLabel}>Plant care</Text>
+        <View style={styles.section}>
+          <InfoRow label="Size" value={plant?.size_description} />
+          <InfoRow label="Health" value={plant?.health_status} />
+          {plant?.special_instructions && (
+            <View style={styles.specialBox}>
+              <Text style={styles.specialLabel}>Special instructions</Text>
+              <Text style={styles.specialText}>{plant.special_instructions}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Sticky apply button */}
+      <View style={styles.stickyBar}>
+        <TouchableOpacity
+          style={styles.applyBtn}
+          onPress={() => navigation.navigate('Apply', {
+            listingId: listing.id,
+            plantName: plant?.name,
+            sittingStart: listing.sitting_start_date,
+            sittingEnd: listing.sitting_end_date,
+          })}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.applyBtnText}>Apply to Sit</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  content: { padding: 16, paddingBottom: 48 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  plantCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+  content: { padding: S.base, paddingBottom: S.sm },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.cream },
+  heroCard: {
+    backgroundColor: C.white, borderRadius: S.card,
+    padding: S.base, marginBottom: S.md,
+    ...S.cardShadowElevated,
   },
-  plantName: { fontSize: 26, fontWeight: 'bold', color: '#1b5e20' },
-  species: { fontSize: 15, color: '#888', fontStyle: 'italic', marginTop: 4 },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#555',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    marginTop: 8,
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: S.md },
+  plantName: { ...T.hero, fontSize: 30, lineHeight: 36 },
+  species: { ...T.caption, fontStyle: 'italic', color: C.stone, marginTop: 3 },
+  daysBadge: {
+    backgroundColor: C.amberLight, borderRadius: S.chip,
+    paddingHorizontal: S.md, paddingVertical: 5,
+    borderWidth: 1, borderColor: C.amber, marginLeft: S.sm, marginTop: 4,
   },
+  daysText: { ...T.badge, color: C.clay },
+  careChips: { flexDirection: 'row', flexWrap: 'wrap', gap: S.xs },
+  careChip: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: C.mist, borderRadius: S.chip,
+    paddingHorizontal: S.md, paddingVertical: 5,
+    borderWidth: 1, borderColor: C.sage,
+  },
+  careChipIcon: { fontSize: 13, marginRight: S.xs },
+  careChipText: { ...T.caption, color: C.moss, fontWeight: '600' },
   section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
+    backgroundColor: C.white, borderRadius: S.card,
+    padding: S.base, marginBottom: S.md,
+    ...S.cardShadow,
   },
-  listingTitle: { fontSize: 17, fontWeight: '600', color: '#222', marginBottom: 8 },
-  description: { fontSize: 14, color: '#555', lineHeight: 20 },
-  notes: { fontSize: 14, color: '#555', lineHeight: 20, marginTop: 8, fontStyle: 'italic' },
+  listingTitle: { ...T.h3, color: C.ink, marginBottom: S.sm },
+  bodyText: { ...T.body, color: C.slate, lineHeight: 22 },
+  notesText: { ...T.body, color: C.slate, fontStyle: 'italic', marginTop: S.sm },
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingVertical: S.sm, borderBottomWidth: 1, borderBottomColor: C.mist,
   },
-  infoLabel: { fontSize: 14, color: '#888' },
-  infoValue: { fontSize: 14, color: '#222', fontWeight: '500', flexShrink: 1, textAlign: 'right' },
+  infoLabel: { ...T.label, color: C.stone },
+  infoValue: { ...T.label, color: C.ink, flex: 1, textAlign: 'right' },
   specialBox: {
-    backgroundColor: '#f9fbe7',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#aed581',
+    backgroundColor: '#fffaf7', borderRadius: S.md,
+    padding: S.md, marginTop: S.sm,
+    borderLeftWidth: 4, borderLeftColor: C.amber,
   },
-  specialLabel: { fontSize: 12, fontWeight: '700', color: '#558b2f', marginBottom: 4 },
-  specialText: { fontSize: 14, color: '#444', lineHeight: 20 },
-  applyBtn: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
+  specialLabel: { ...T.badge, color: C.clay, marginBottom: S.xs },
+  specialText: { ...T.body, color: C.ink, lineHeight: 22 },
+  stickyBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: C.white, padding: S.base, paddingBottom: 32,
+    borderTopWidth: 1, borderTopColor: C.mist,
+    shadowColor: C.forest, shadowOpacity: 0.1, shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 }, elevation: 8,
   },
-  applyBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  applyBtn: { ...shared.primaryButton },
+  applyBtnText: { ...shared.primaryButtonText, fontSize: 17 },
 });

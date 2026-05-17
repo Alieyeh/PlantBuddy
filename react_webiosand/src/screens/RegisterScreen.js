@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Text, TextInput, TouchableOpacity,
-  ActivityIndicator, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, TouchableOpacity,
+  ActivityIndicator, StyleSheet, Alert, ScrollView,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { C, T, S, shared } from '../lib/theme';
 
 /**
  * Account creation screen. Username and display name are passed into Supabase
@@ -34,12 +36,7 @@ export default function RegisterScreen({ navigation }) {
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: {
-        data: {
-          username: username.trim().toLowerCase(),
-          display_name: displayName.trim(),
-        },
-      },
+      options: { data: { username: username.trim().toLowerCase(), display_name: displayName.trim() } },
     });
     setLoading(false);
 
@@ -47,63 +44,70 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Registration failed', error.message);
       return;
     }
-
-    Alert.alert(
-      'Account created',
-      'Check your email to confirm your account, then log in.',
-      [{ text: 'Go to Login', onPress: () => navigation.replace('Login') }]
-    );
+    navigation.replace('ProfileSetup');
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join the PlantBuddies community</Text>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Join the community</Text>
+        <Text style={styles.subtitle}>Plant owners and plant sitters, united.</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Display Name"
-          placeholderTextColor="#999"
-          value={displayName}
-          onChangeText={setDisplayName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Username (letters, numbers, _)"
-          placeholderTextColor="#999"
-          autoCapitalize="none"
-          value={username}
-          onChangeText={setUsername}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password (min 8 characters)"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.steps}>
+          {[0, 1].map((i) => (
+            <View key={i} style={[styles.step, i === 0 && styles.stepActive]} />
+          ))}
+        </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={handleRegister}>
-            <Text style={styles.buttonText}>Register</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.form}>
+          <Text style={styles.fieldLabel}>Display Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="How should we call you?"
+            placeholderTextColor={C.stone}
+            value={displayName}
+            onChangeText={setDisplayName}
+          />
+          <Text style={styles.fieldLabel}>Username</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="letters, numbers, underscores"
+            placeholderTextColor={C.stone}
+            autoCapitalize="none"
+            value={username}
+            onChangeText={setUsername}
+          />
+          <Text style={styles.fieldLabel}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="you@example.com"
+            placeholderTextColor={C.stone}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <Text style={styles.fieldLabel}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="min 8 characters"
+            placeholderTextColor={C.stone}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          {loading ? (
+            <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleRegister} activeOpacity={0.85}>
+              <Text style={styles.buttonText}>Create account</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.link}>Already have an account? Login</Text>
+          <Text style={styles.loginLink}>Already have an account? <Text style={styles.loginLinkBold}>Log in</Text></Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -111,15 +115,22 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f5f5f5' },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#2e7d32', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 32 },
-  input: {
-    backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12,
-    fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: '#ddd', color: '#333',
+  container: { flex: 1, backgroundColor: C.cream },
+  inner: {
+    flexGrow: 1, justifyContent: 'center',
+    paddingHorizontal: S.lg, paddingVertical: S.xxxl,
   },
-  button: { backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 16 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  link: { color: '#4CAF50', textAlign: 'center', fontSize: 14 },
-  loader: { marginVertical: 16 },
+  title: { ...T.h1, textAlign: 'center', marginBottom: S.xs },
+  subtitle: { ...T.body, color: C.stone, textAlign: 'center', fontStyle: 'italic', marginBottom: S.lg },
+  steps: { flexDirection: 'row', justifyContent: 'center', gap: S.sm, marginBottom: S.xl },
+  step: { width: 24, height: 4, borderRadius: 2, backgroundColor: C.sage },
+  stepActive: { backgroundColor: C.amber, width: 32 },
+  form: { backgroundColor: C.white, borderRadius: S.card, padding: S.lg, marginBottom: S.xl, ...S.cardShadow },
+  fieldLabel: { ...T.label, marginBottom: S.xs, marginTop: S.sm },
+  input: { ...shared.input },
+  button: { ...shared.primaryButton, marginTop: S.md },
+  buttonText: { ...shared.primaryButtonText },
+  loader: { marginVertical: S.lg },
+  loginLink: { ...T.body, color: C.stone, textAlign: 'center' },
+  loginLinkBold: { color: C.amber, fontWeight: '700' },
 });

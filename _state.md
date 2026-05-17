@@ -1,14 +1,14 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-17 (docs and handoff refresh)_
+_Last updated: 2026-05-17 (design system + session 5 + docs refresh)_
 
 ---
 
 ## Current Phase
 
-**Phase 1 — Core Sitting Flow (in progress)**
+**Phase 1 — Core Sitting Flow (Stage 2 complete)**
 
-Schema (UUID users.id) and RLS policies are written on disk. Supabase dashboard setup still requires: (1) run `sql_build_tables.sql` to drop+recreate schema with UUID user ids if needed, (2) run `rls_policies.sql`. The active app folder is still `react_webiosand/` until the team confirms any rename. Current checkout still needs `react_webiosand/.env` and `npm.cmd install` before running Expo. Next product work: sitter profile setup + application flow.
+Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen shown post-register, full apply/accept/decline flow live. Design system implemented (theme.js + Fraunces + Bricolage Grotesque fonts). Supabase dashboard still needs the schema+RLS applied (drop old tables first). Next: Stage 3 — contract generation from accepted application.
 
 ---
 
@@ -51,13 +51,17 @@ Schema (UUID users.id) and RLS policies are written on disk. Supabase dashboard 
 - [x] **apiService.js** — all plants CRUD now uses `supabase.from('plants')` (session 3)
 - [x] **PlantsScreen** — updated to consume direct Supabase response (no `.data.data` wrapper) (session 3)
 - [x] **AddEditPlantScreen** — field names updated to match schema snake_case columns (session 3)
-- [ ] `.env` credentials are not present in this checkout; create `react_webiosand/.env` locally with `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] `npm.cmd install` run after adding `@supabase/supabase-js` + `@react-navigation/bottom-tabs`
+- [x] `.env` credentials filled in (`EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`)
+- [ ] `npm install` run after adding `@supabase/supabase-js` + `@react-navigation/bottom-tabs`
 - [x] Node unit tests added for plant and listing form helpers
 - [x] Node smoke tests added for app structure, Supabase env wiring, and schema/RLS files
-- [x] **Stage 2a: owner_profiles auto-creation** — `handle_new_user()` trigger now also inserts into `owner_profiles`; every signup gets owner mode immediately
-- [ ] **Stage 2: SitterProfileScreen** — activate sitter mode; set bio, daily rate, availability
-- [ ] **Stage 2: Application flow** — apply to sit (ApplyScreen), owner inbox (ApplicationsScreen), accept
+- [x] **Stage 2a: owner_profiles auto-creation** — `handle_new_user()` trigger also inserts into `owner_profiles`; every signup gets owner mode immediately
+- [x] **Stage 2b: ProfileSetupScreen** — post-register prompt; display name + sitter opt-in; writes sitter_profiles if toggled on; skippable
+- [x] **Stage 2c: ApplyScreen** — sitter applies to a listing with message + proposed dates; duplicate guard on 23505
+- [x] **Stage 2c: ApplicationsScreen** — owner views all applicants per listing; Accept / Decline with confirmation
+- [x] **Stage 2c: listingsService** — `applyToListing`, `getApplicationsForListing`, `getMyApplications`, `updateApplicationStatus`
+- [x] **Stage 2c: PlantsScreen** — plant cards show "Applicants" button when an open listing exists; "Find sitter" when none
+- [x] **Design system** — `theme.js` (C/T/S/shared tokens), Fraunces + Bricolage Grotesque fonts, all 10 screens restyled
 - [ ] Contract screens (Stage 3)
 - [ ] Messaging (Stage 4)
 - [ ] Notifications
@@ -156,6 +160,16 @@ Schema (UUID users.id) and RLS policies are written on disk. Supabase dashboard 
 - Confirmed `sql_build_tables.sql` on disk is correct — `users.id UUID PRIMARY KEY REFERENCES auth.users(id)`, all user FK columns are UUID, `handle_new_user()` trigger included
 - Provided drop-all SQL to clear old schema from Supabase before re-running the fixed schema
 - **Pending user action:** run drop SQL → run `sql_build_tables.sql` → run `rls_policies.sql` in Supabase dashboard
+
+## Last Session (2026-05-16, session 5)
+
+- Built **Stage 2b**: `ProfileSetupScreen` — post-register one-time prompt with display name field and "I want to sit plants" toggle; writes `owner_profiles.display_name` and optionally creates `sitter_profiles`; has "Skip for now" escape hatch
+- Wired `ProfileSetup` into root stack navigator; `RegisterScreen` now navigates → `ProfileSetup` instead of alerting
+- Built **Stage 2c**: `ApplyScreen` — sitter submits application with message + proposed dates (pre-filled from listing); duplicate application guard (Postgres 23505)
+- Built **Stage 2c**: `ApplicationsScreen` — owner sees all applicants for a listing; Accept/Decline with confirmation dialogs; live optimistic status update
+- Extended `listingsService` with `applyToListing`, `getApplicationsForListing`, `getMyApplications`, `updateApplicationStatus`
+- Updated `PlantsScreen`: plant cards dynamically show "Applicants" (blue) when an open listing exists, "Find sitter" (green) when none
+- `Applications` screen wired into `PlantsStack`; `Apply` screen wired into `BrowseStack`
 
 ## Last Session (2026-05-16, session 3)
 

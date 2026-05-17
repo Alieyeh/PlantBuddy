@@ -6,28 +6,25 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ProfileSetupScreen from '../screens/ProfileSetupScreen';
 import PlantsScreen from '../screens/PlantsScreen';
 import AddEditPlantScreen from '../screens/AddEditPlantScreen';
 import ListingsScreen from '../screens/ListingsScreen';
 import ListingDetailScreen from '../screens/ListingDetailScreen';
 import PostListingScreen from '../screens/PostListingScreen';
+import ApplyScreen from '../screens/ApplyScreen';
+import ApplicationsScreen from '../screens/ApplicationsScreen';
 
 import { SessionManager } from '../storage/SessionManager';
+import { C } from '../lib/theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const GREEN = '#2e7d32';
-const LIGHT_GREEN = '#4CAF50';
-const GREY = '#9e9e9e';
-
-/**
- * Minimal tab icon renderer used by the current bottom navigation.
- */
 function TabIcon({ label, focused }) {
-  const icons = { 'My Plants': '🌿', Browse: '🔍' };
+  const icons = { 'My Plants': '🌿', Browse: '🔍', Profile: '👤' };
   return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
+    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
       {icons[label] ?? '●'}
     </Text>
   );
@@ -38,7 +35,12 @@ function TabIcon({ label, focused }) {
  */
 function PlantsStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerTintColor: GREEN }}>
+    <Stack.Navigator screenOptions={{
+      headerTintColor: C.forest,
+      headerStyle: { backgroundColor: C.white },
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: C.cream },
+    }}>
       <Stack.Screen name="PlantsList" component={PlantsScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="AddEditPlant"
@@ -50,6 +52,11 @@ function PlantsStack() {
         component={PostListingScreen}
         options={{ title: 'Post Sitting Request', headerBackTitle: 'Back' }}
       />
+      <Stack.Screen
+        name="Applications"
+        component={ApplicationsScreen}
+        options={{ title: 'Applicants', headerBackTitle: 'Back' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -59,12 +66,22 @@ function PlantsStack() {
  */
 function BrowseStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerTintColor: GREEN }}>
+    <Stack.Navigator screenOptions={{
+      headerTintColor: C.forest,
+      headerStyle: { backgroundColor: C.white },
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: C.cream },
+    }}>
       <Stack.Screen name="ListingsFeed" component={ListingsScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="ListingDetail"
         component={ListingDetailScreen}
         options={{ title: 'Sitting Request', headerBackTitle: 'Browse' }}
+      />
+      <Stack.Screen
+        name="Apply"
+        component={ApplyScreen}
+        options={{ title: 'Apply to Sit', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );
@@ -78,9 +95,17 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: LIGHT_GREEN,
-        tabBarInactiveTintColor: GREY,
-        tabBarStyle: { borderTopColor: '#eee', paddingBottom: 4 },
+        tabBarActiveTintColor: C.forest,
+        tabBarInactiveTintColor: C.stone,
+        tabBarStyle: {
+          backgroundColor: C.white,
+          borderTopColor: C.mist,
+          borderTopWidth: 1,
+          paddingBottom: 6,
+          paddingTop: 4,
+          height: 60,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
       })}
     >
@@ -105,8 +130,8 @@ export default function AppNavigator() {
 
   if (!initialRoute) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={LIGHT_GREEN} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.cream }}>
+        <ActivityIndicator size="large" color={C.amber} />
       </View>
     );
   }
@@ -116,6 +141,7 @@ export default function AppNavigator() {
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>

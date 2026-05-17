@@ -6,6 +6,17 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../api/apiService';
 import { SessionManager } from '../storage/SessionManager';
+import { supabase } from '../lib/supabase';
+import { C, T, S, shared } from '../lib/theme';
+
+function InitialsAvatar({ name, onPress }) {
+  const initials = (name ?? '?').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+  return (
+    <TouchableOpacity style={styles.avatar} onPress={onPress}>
+      <Text style={styles.avatarText}>{initials}</Text>
+    </TouchableOpacity>
+  );
+}
 
 /**
  * Owner dashboard for viewing active plants and starting the sitting request
@@ -13,18 +24,42 @@ import { SessionManager } from '../storage/SessionManager';
  */
 export default function PlantsScreen({ navigation }) {
   const [plants, setPlants] = useState([]);
+  const [activeListings, setActiveListings] = useState({});
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const fetchPlants = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.getPlants();
-      setPlants(data);
-    } catch (err) {
-      Alert.alert('Error', err.message || 'Failed to load plants');
-    } finally {
-      setLoading(false);
+  const fetchPlants = useCallback(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const data = await api.getPlants();
+        setPlants(data);
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from('owner_profiles')
+            .select('display_name')
+            .eq('user_id', user.id)
+            .single();
+          setDisplayName(profile?.display_name || user.email?.split('@')[0] || '');
+
+          const { data: listings } = await supabase
+            .from('plant_listings')
+            .select('id, title, plant_id, status')
+            .eq('owner_user_id', user.id)
+            .eq('status', 'OPEN');
+          const map = {};
+          (listings ?? []).forEach((l) => { map[l.plant_id] = l; });
+          setActiveListings(map);
+        }
+      } catch (err) {
+        Alert.alert('Error', err.message || 'Failed to load plants');
+      } finally {
+        setLoading(false);
+      }
     }
+    load();
   }, []);
 
   useFocusEffect(fetchPlants);
@@ -35,25 +70,41 @@ export default function PlantsScreen({ navigation }) {
   };
 
   const renderPlant = ({ item }) => {
-    const subtitle = [item.species, item.location_notes].filter(Boolean).join(' · ') || 'No details added';
+    const subtitle = [item.species, item.location_notes].filter(Boolean).join(' · ') || 'No details yet';
+    const activeListing = activeListings[item.id];
     return (
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('AddEditPlant', { plant: item })}
-        activeOpacity={0.75}
+        activeOpacity={0.78}
       >
         <View style={styles.cardBody}>
           <View style={{ flex: 1 }}>
             <Text style={styles.plantName}>{item.name}</Text>
             <Text style={styles.plantSubtitle}>{subtitle}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.sitBtn}
-            onPress={() => navigation.navigate('PostListing', { plantId: item.id })}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.sitBtnText}>Find sitter</Text>
-          </TouchableOpacity>
+          <View style={styles.cardActions}>
+            {activeListing ? (
+              <TouchableOpacity
+                style={[styles.actionChip, styles.applicantsChip]}
+                onPress={() => navigation.navigate('Applications', {
+                  listingId: activeListing.id,
+                  listingTitle: activeListing.title,
+                })}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.applicantsChipText}>Applicants</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.actionChip, styles.sitterChip]}
+                onPress={() => navigation.navigate('PostListing', { plantId: item.id })}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.sitterChipText}>Find sitter</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -63,20 +114,30 @@ export default function PlantsScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Plants</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        <InitialsAvatar name={displayName} onPress={handleLogout} />
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
+        <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
       ) : (
         <FlatList
           data={plants}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderPlant}
-          contentContainerStyle={plants.length === 0 && styles.emptyContainer}
-          ListEmptyComponent={<Text style={styles.emptyText}>No plants yet. Add your first one!</Text>}
+          contentContainerStyle={plants.length === 0 ? styles.emptyContainer : styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyInner}>
+              <Text style={styles.emptyIcon}>🪴</Text>
+              <Text style={styles.emptyTitle}>Your garden is empty</Text>
+              <Text style={styles.emptyBody}>Add your first plant and introduce it to the community.</Text>
+              <TouchableOpacity
+                style={styles.emptyButton}
+                onPress={() => navigation.navigate('AddEditPlant', {})}
+              >
+                <Text style={styles.emptyButtonText}>Add a plant</Text>
+              </TouchableOpacity>
+            </View>
+          }
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -84,6 +145,7 @@ export default function PlantsScreen({ navigation }) {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('AddEditPlant', {})}
+        activeOpacity={0.85}
       >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
@@ -92,36 +154,53 @@ export default function PlantsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: C.cream },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, paddingTop: 48, backgroundColor: '#fff',
-    borderBottomWidth: 1, borderBottomColor: '#eee',
+    paddingHorizontal: S.base, paddingTop: 52, paddingBottom: S.base,
+    backgroundColor: C.white,
+    borderBottomWidth: 1, borderBottomColor: C.mist,
   },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#2e7d32' },
-  logoutBtn: { padding: 8 },
-  logoutText: { color: '#e53935', fontSize: 14, fontWeight: '600' },
+  title: { ...T.h1 },
+  avatar: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: C.mist, borderWidth: 1.5, borderColor: C.sage,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  avatarText: { ...T.label, color: C.forest, fontSize: 14 },
   loader: { flex: 1 },
+  listContent: { paddingTop: S.sm, paddingBottom: S.xxxl },
   card: {
-    backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12,
-    borderRadius: 12, padding: 16, elevation: 2,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+    backgroundColor: C.white,
+    marginHorizontal: S.base, marginTop: S.md,
+    borderRadius: S.card, padding: S.base,
+    ...S.cardShadow,
   },
   cardBody: { flexDirection: 'row', alignItems: 'center' },
-  plantName: { fontSize: 17, fontWeight: '600', color: '#1b5e20', marginBottom: 4 },
-  plantSubtitle: { fontSize: 13, color: '#777' },
-  sitBtn: {
-    backgroundColor: '#e8f5e9', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 6, marginLeft: 12,
+  plantName: { ...T.h3, color: C.forest, marginBottom: 3 },
+  plantSubtitle: { ...T.caption, color: C.stone },
+  cardActions: { flexDirection: 'column', alignItems: 'flex-end', marginLeft: S.md },
+  actionChip: {
+    borderRadius: S.chip, paddingHorizontal: S.md, paddingVertical: 6,
+    borderWidth: 1,
   },
-  sitBtnText: { fontSize: 12, fontWeight: '700', color: '#2e7d32' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { color: '#999', fontSize: 16 },
+  sitterChip: { backgroundColor: C.amberLight, borderColor: C.amber },
+  sitterChipText: { ...T.badge, color: C.clay },
+  applicantsChip: { backgroundColor: C.mist, borderColor: C.sage },
+  applicantsChipText: { ...T.badge, color: C.forest },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: S.xl },
+  emptyInner: { alignItems: 'center' },
+  emptyIcon: { fontSize: 64, marginBottom: S.md },
+  emptyTitle: { ...T.h2, textAlign: 'center', marginBottom: S.sm },
+  emptyBody: { ...T.body, color: C.stone, textAlign: 'center', lineHeight: 22, marginBottom: S.xl },
+  emptyButton: { ...shared.primaryButton, paddingHorizontal: S.xl },
+  emptyButtonText: { ...shared.primaryButtonText },
   fab: {
     position: 'absolute', bottom: 28, right: 24,
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#4CAF50', justifyContent: 'center', alignItems: 'center',
-    elevation: 6, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 },
+    backgroundColor: C.amber, justifyContent: 'center', alignItems: 'center',
+    shadowColor: C.amber, shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
-  fabText: { fontSize: 28, color: '#fff', lineHeight: 32 },
+  fabText: { fontSize: 28, color: C.white, lineHeight: 32 },
 });

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  ActivityIndicator, StyleSheet, Alert, KeyboardAvoidingView, Platform,
+  ActivityIndicator, StyleSheet, Alert,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { C, T, S, shared } from '../lib/theme';
 
 /**
  * Email/password sign-in screen backed by Supabase Auth.
@@ -19,10 +21,7 @@ export default function LoginScreen({ navigation }) {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
       Alert.alert('Login failed', error.message);
@@ -33,52 +32,84 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Text style={styles.title}>PlantBuddies</Text>
-      <Text style={styles.subtitle}>Sign in to your account</Text>
+      <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
+        <View style={styles.brandMark}>
+          <Text style={styles.leaf}>🌿</Text>
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#999"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <Text style={styles.wordmark}>PlantBuddy</Text>
+        <Text style={styles.tagline}>Every plant deserves a caretaker.</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
-      ) : (
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <View style={styles.form}>
+          <Text style={styles.fieldLabel}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="you@example.com"
+            placeholderTextColor={C.stone}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <Text style={styles.fieldLabel}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••"
+            placeholderTextColor={C.stone}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          {loading ? (
+            <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.85}>
+              <Text style={styles.buttonText}>Welcome back</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <Text style={styles.registerLink}>New here? <Text style={styles.registerLinkBold}>Create an account</Text></Text>
         </TouchableOpacity>
-      )}
-
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>Don't have an account? Register</Text>
-      </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f5f5f5' },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#2e7d32', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 32 },
-  input: {
-    backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12,
-    fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: '#ddd', color: '#333',
+  container: { flex: 1, backgroundColor: C.cream },
+  inner: {
+    flexGrow: 1, justifyContent: 'center',
+    paddingHorizontal: S.lg, paddingVertical: S.xxxl,
   },
-  button: { backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginBottom: 16 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  link: { color: '#4CAF50', textAlign: 'center', fontSize: 14 },
-  loader: { marginVertical: 16 },
+  brandMark: { alignItems: 'center', marginBottom: S.sm },
+  leaf: { fontSize: 52 },
+  wordmark: {
+    ...T.hero,
+    textAlign: 'center',
+    marginBottom: S.xs,
+  },
+  tagline: {
+    ...T.body,
+    color: C.stone,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: S.xxl,
+  },
+  form: {
+    backgroundColor: C.white,
+    borderRadius: S.card,
+    padding: S.lg,
+    marginBottom: S.xl,
+    ...S.cardShadow,
+  },
+  fieldLabel: { ...T.label, marginBottom: S.xs, marginTop: S.sm },
+  input: { ...shared.input },
+  button: { ...shared.primaryButton, marginTop: S.md },
+  buttonText: { ...shared.primaryButtonText },
+  loader: { marginVertical: S.lg },
+  registerLink: { ...T.body, color: C.stone, textAlign: 'center' },
+  registerLinkBold: { color: C.amber, fontWeight: '700' },
 });

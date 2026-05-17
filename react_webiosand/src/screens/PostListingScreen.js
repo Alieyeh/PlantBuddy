@@ -5,7 +5,10 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { listingsService } from '../api/listingsService';
-import { buildSittingRequestPayload, validateSittingRequestForm } from '../utils/listingForm';
+import { C, T, S, shared } from '../lib/theme';
+
+const TODAY = new Date().toISOString().slice(0, 10);
+const validateDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 /**
  * Lets an owner publish one of their active plants as an open sitting request.
@@ -30,14 +33,12 @@ export default function PostListingScreen({ route, navigation }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setOwnerUserId(user.id);
-
       const { data, error } = await supabase
         .from('plants')
         .select('id, name, species')
         .eq('current_owner_user_id', user.id)
         .eq('is_active', true)
         .order('name');
-
       if (!error) setMyPlants(data ?? []);
       setLoadingPlants(false);
     };
@@ -45,25 +46,21 @@ export default function PostListingScreen({ route, navigation }) {
   }, []);
 
   const handlePost = async () => {
-    const form = {
-      selectedPlantId,
-      ownerUserId,
-      title,
-      description,
-      startDate,
-      endDate,
-      sittingNotes,
-    };
-    const validation = validateSittingRequestForm(form);
-
-    if (!validation.valid) {
-      Alert.alert(validation.title, validation.message);
-      return;
+    if (!selectedPlantId) { Alert.alert('Required', 'Please select a plant.'); return; }
+    if (!title.trim()) { Alert.alert('Required', 'Please add a listing title.'); return; }
+    if (!validateDate(startDate) || !validateDate(endDate)) {
+      Alert.alert('Invalid dates', 'Use YYYY-MM-DD format (e.g. 2026-06-01).'); return;
     }
+    if (endDate < startDate) { Alert.alert('Invalid dates', 'End date must be on or after start date.'); return; }
+    if (startDate < TODAY) { Alert.alert('Invalid dates', 'Start date cannot be in the past.'); return; }
 
     setLoading(true);
     try {
-      await listingsService.createSittingRequest(buildSittingRequestPayload(form));
+      await listingsService.createSittingRequest({
+        plantId: selectedPlantId, ownerUserId,
+        title: title.trim(), description: description.trim() || null,
+        startDate, endDate, sittingNotes: sittingNotes.trim() || null,
+      });
       Alert.alert('Posted!', 'Your sitting request is now live.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -78,16 +75,20 @@ export default function PostListingScreen({ route, navigation }) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Post a Sitting Request</Text>
-        <Text style={styles.subtitle}>Find someone to care for your plant while you're away.</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>Find a Sitter</Text>
+        <Text style={styles.subtitle}>Your listing will be visible to all sitters immediately.</Text>
 
-        <Text style={styles.label}>Which plant needs a sitter? *</Text>
+        <Text style={styles.fieldLabel}>Which plant needs a sitter? *</Text>
         {loadingPlants ? (
-          <ActivityIndicator color="#4CAF50" style={{ marginVertical: 12 }} />
+          <ActivityIndicator color={C.amber} style={{ marginVertical: S.md }} />
         ) : myPlants.length === 0 ? (
           <View style={styles.noPlants}>
-            <Text style={styles.noPlantsText}>You have no plants yet.</Text>
+            <Text style={styles.noPlantsText}>You haven't added any plants yet.</Text>
             <TouchableOpacity onPress={() => navigation.navigate('AddEditPlant', {})}>
               <Text style={styles.noPlantsLink}>Add your first plant →</Text>
             </TouchableOpacity>
@@ -116,62 +117,70 @@ export default function PostListingScreen({ route, navigation }) {
           </ScrollView>
         )}
 
-        <Text style={styles.label}>Listing Title *</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardSectionLabel}>Sitting period *</Text>
+          <View style={styles.dateRow}>
+            <View style={{ flex: 1, marginRight: S.sm }}>
+              <Text style={styles.fieldLabel}>Start (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2026-06-01"
+                placeholderTextColor={C.stone}
+                value={startDate}
+                onChangeText={setStartDate}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>End (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2026-06-14"
+                placeholderTextColor={C.stone}
+                value={endDate}
+                onChangeText={setEndDate}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+              />
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.fieldLabel}>Listing Title *</Text>
         <TextInput
           style={styles.input}
           placeholder={selectedPlant ? `Sitter needed for ${selectedPlant.name}` : 'e.g. Sitter needed June 1–14'}
-          placeholderTextColor="#999"
+          placeholderTextColor={C.stone}
           value={title}
           onChangeText={setTitle}
         />
 
-        <Text style={styles.label}>Description</Text>
+        <Text style={styles.fieldLabel}>Description</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
           placeholder="Tell sitters about your plant and what you're looking for..."
-          placeholderTextColor="#999"
+          placeholderTextColor={C.stone}
           multiline
           value={description}
           onChangeText={setDescription}
         />
 
-        <Text style={styles.label}>Start Date * (YYYY-MM-DD)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 2026-06-01"
-          placeholderTextColor="#999"
-          value={startDate}
-          onChangeText={setStartDate}
-          keyboardType="numbers-and-punctuation"
-          maxLength={10}
-        />
-
-        <Text style={styles.label}>End Date * (YYYY-MM-DD)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 2026-06-14"
-          placeholderTextColor="#999"
-          value={endDate}
-          onChangeText={setEndDate}
-          keyboardType="numbers-and-punctuation"
-          maxLength={10}
-        />
-
-        <Text style={styles.label}>Care Notes for Sitter</Text>
+        <Text style={styles.fieldLabel}>Care notes for sitter</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
           placeholder="Anything specific the sitter should know during this period..."
-          placeholderTextColor="#999"
+          placeholderTextColor={C.stone}
           multiline
           value={sittingNotes}
           onChangeText={setSittingNotes}
         />
 
         {loading ? (
-          <ActivityIndicator size="large" color="#4CAF50" style={styles.loader} />
+          <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
         ) : (
-          <TouchableOpacity style={styles.button} onPress={handlePost}>
-            <Text style={styles.buttonText}>Post Sitting Request</Text>
+          <TouchableOpacity style={styles.button} onPress={handlePost} activeOpacity={0.85}>
+            <Text style={styles.buttonText}>Post sitting request</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -180,48 +189,30 @@ export default function PostListingScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, backgroundColor: '#f5f5f5', paddingBottom: 48 },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#2e7d32', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#777', marginBottom: 24 },
-  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 4, marginTop: 12 },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    color: '#333',
-  },
-  multiline: { minHeight: 80, textAlignVertical: 'top' },
-  plantPicker: { flexDirection: 'row', marginBottom: 4 },
+  container: { paddingHorizontal: S.base, paddingBottom: S.xxxl, paddingTop: S.base, backgroundColor: C.cream },
+  title: { ...T.h1, marginBottom: S.xs },
+  subtitle: { ...T.caption, color: C.stone, marginBottom: S.xl },
+  fieldLabel: { ...T.label, marginBottom: S.xs, marginTop: S.md },
+  input: { ...shared.input },
+  multiline: { minHeight: 90, textAlignVertical: 'top' },
+  plantPicker: { flexDirection: 'row', marginBottom: S.xs },
   plantChip: {
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginRight: 10,
-    minWidth: 90,
-    alignItems: 'center',
+    backgroundColor: C.white, borderWidth: 1.5, borderColor: C.sage,
+    borderRadius: S.card, paddingHorizontal: S.md, paddingVertical: S.sm,
+    marginRight: S.sm, minWidth: 90, alignItems: 'center',
   },
-  plantChipSelected: { borderColor: '#4CAF50', backgroundColor: '#e8f5e9' },
-  plantChipName: { fontSize: 14, fontWeight: '600', color: '#444' },
-  plantChipNameSelected: { color: '#2e7d32' },
-  plantChipSpecies: { fontSize: 11, color: '#999', fontStyle: 'italic', marginTop: 2 },
-  plantChipSpeciesSelected: { color: '#558b2f' },
-  noPlants: { backgroundColor: '#fff', borderRadius: 8, padding: 16, alignItems: 'center', marginBottom: 8 },
-  noPlantsText: { fontSize: 14, color: '#888', marginBottom: 8 },
-  noPlantsLink: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
-  button: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  loader: { marginVertical: 24 },
+  plantChipSelected: { borderColor: C.leaf, backgroundColor: C.mist },
+  plantChipName: { ...T.label, color: C.slate },
+  plantChipNameSelected: { color: C.forest },
+  plantChipSpecies: { ...T.caption, fontStyle: 'italic', marginTop: 2 },
+  plantChipSpeciesSelected: { color: C.moss },
+  card: { backgroundColor: C.white, borderRadius: S.card, padding: S.base, marginTop: S.md, ...S.cardShadow },
+  cardSectionLabel: { ...T.label, color: C.moss, marginBottom: S.sm },
+  dateRow: { flexDirection: 'row' },
+  noPlants: { backgroundColor: C.white, borderRadius: S.md, padding: S.base, alignItems: 'center', marginBottom: S.sm, ...S.cardShadow },
+  noPlantsText: { ...T.body, color: C.stone, marginBottom: S.sm },
+  noPlantsLink: { ...T.label, color: C.amber },
+  button: { ...shared.primaryButton, marginTop: S.xl },
+  buttonText: { ...shared.primaryButtonText },
+  loader: { marginVertical: S.xl },
 });
