@@ -19,16 +19,20 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/App.js',
     'react_webiosand/src/navigation/AppNavigator.js',
     'react_webiosand/src/lib/supabase.js',
+    'react_webiosand/src/lib/theme.js',
     'react_webiosand/src/storage/SessionManager.js',
     'react_webiosand/src/api/apiService.js',
     'react_webiosand/src/api/listingsService.js',
     'react_webiosand/src/screens/LoginScreen.js',
     'react_webiosand/src/screens/RegisterScreen.js',
+    'react_webiosand/src/screens/ProfileSetupScreen.js',
     'react_webiosand/src/screens/PlantsScreen.js',
     'react_webiosand/src/screens/AddEditPlantScreen.js',
     'react_webiosand/src/screens/ListingsScreen.js',
     'react_webiosand/src/screens/ListingDetailScreen.js',
     'react_webiosand/src/screens/PostListingScreen.js',
+    'react_webiosand/src/screens/ApplyScreen.js',
+    'react_webiosand/src/screens/ApplicationsScreen.js',
   ].forEach((file) => assert.equal(exists(file), true, `${file} should exist`));
 });
 
@@ -40,6 +44,8 @@ test('package.json exposes runnable app and test scripts', () => {
   assert.equal(pkg.scripts.test, 'npm run test:unit && npm run test:smoke');
   assert.ok(pkg.dependencies['@supabase/supabase-js']);
   assert.ok(pkg.dependencies.expo);
+  assert.ok(pkg.dependencies['@expo-google-fonts/fraunces']);
+  assert.ok(pkg.dependencies['@expo-google-fonts/bricolage-grotesque']);
 });
 
 test('Supabase client reads only public Expo environment variables', () => {
@@ -73,9 +79,17 @@ test('database schema and RLS files include the current MVP tables', () => {
   ].forEach((statement) => assert.match(rls, new RegExp(statement)));
 });
 
-test('current listing detail still marks application flow as not implemented', () => {
+test('current application flow screens are wired into navigation and services', () => {
+  const navigator = read('react_webiosand/src/navigation/AppNavigator.js');
   const detailScreen = read('react_webiosand/src/screens/ListingDetailScreen.js');
+  const service = read('react_webiosand/src/api/listingsService.js');
 
+  assert.match(navigator, /ProfileSetup/);
+  assert.match(navigator, /Apply/);
+  assert.match(navigator, /Applications/);
   assert.match(detailScreen, /Apply to Sit/);
-  assert.match(detailScreen, /Application flow is in Stage 2/);
+  assert.match(detailScreen, /navigation\.navigate\('Apply'/);
+  assert.match(service, /applyToListing/);
+  assert.match(service, /getApplicationsForListing/);
+  assert.match(service, /updateApplicationStatus/);
 });

@@ -8,7 +8,7 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 - Run `npm.cmd install` in `react_webiosand/`.
 - Confirm Supabase schema has been recreated with UUID user IDs.
 - Run `rls_policies.sql` after schema creation.
-- Smoke-test register, login, add plant, post listing, browse listing.
+- Smoke-test register, profile setup, login, add plant, post listing, browse listing, apply, and owner accept/decline.
 - Decide whether Supabase email confirmation should be on or off for local development.
 
 ## Priority 1 - Security And Data Integrity
@@ -21,35 +21,28 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 - Add missing sitter-role enforcement for listing applications.
 - Keep generated local folders and `local.properties` out of commits.
 
-## Priority 2 - Sitter Profile
+## Priority 2 - Complete Sitter Profile
 
-- Add `SitterProfileScreen`.
-- Allow current user to create/update a row in `sitter_profiles`.
-- Add fields:
-  - display name
-  - experience summary
+- Expand the current post-register `ProfileSetupScreen` or add a dedicated sitter profile edit screen.
+- Add missing sitter fields:
   - years experience
-  - base daily rate
   - can travel
   - travel radius
 - Add availability CRUD for `sitter_availability`.
 - Add navigation entry for sitter mode/profile.
+- Let users edit sitter profile after initial setup.
 
-## Priority 3 - Application Flow
+## Priority 3 - Harden Application Flow
 
-- Replace the `Apply to Sit` placeholder in `ListingDetailScreen`.
-- Add `ApplyScreen`.
-- Insert into `listing_applications`.
 - Prevent owners from applying to their own listings.
 - Require or encourage sitter profile activation before applying.
 - Show submitted applications to the sitter.
 - Handle duplicate applications cleanly.
+- Add validation around proposed dates and listing status at the database/RLS level.
 
-## Priority 4 - Owner Application Inbox
+## Priority 4 - Complete Owner Application Management
 
-- Add `ApplicationsScreen` for owners.
-- Show applications for the owner's listings.
-- Allow accept/decline.
+- Add a broader owner inbox across all open listings.
 - When accepting:
   - mark selected application accepted
   - decline or expire competing applications
@@ -99,7 +92,8 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 
 ## Priority 10 - Delivery And Quality
 
-- Add automated tests.
+- Keep smoke tests aligned with implemented screens and flows.
+- Expand automated tests beyond form utilities and static smoke checks.
 - Add CI.
 - Add formal Supabase migrations.
 - Add seed data.

@@ -41,7 +41,7 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - [x] Auth-gated navigation
 - [x] **Tab navigation** — My Plants tab + Browse tab (Stage 1)
 - [x] **ListingsScreen** — feed of open SITTING_REQUEST listings (Stage 1)
-- [x] **ListingDetailScreen** — full plant + listing info, "Apply to Sit" stub (Stage 1)
+- [x] **ListingDetailScreen** — full plant + listing info; "Apply to Sit" navigates to `ApplyScreen`
 - [x] **PostListingScreen** — create sitting request, plant picker, date validation (Stage 1)
 - [x] **listingsService.js** — Supabase queries for listings CRUD (Stage 1)
 - [x] **supabase.js** — Supabase client with AsyncStorage session persistence (Stage 1)
@@ -51,8 +51,8 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - [x] **apiService.js** — all plants CRUD now uses `supabase.from('plants')` (session 3)
 - [x] **PlantsScreen** — updated to consume direct Supabase response (no `.data.data` wrapper) (session 3)
 - [x] **AddEditPlantScreen** — field names updated to match schema snake_case columns (session 3)
-- [x] `.env` credentials filled in (`EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`)
-- [ ] `npm install` run after adding `@supabase/supabase-js` + `@react-navigation/bottom-tabs`
+- [ ] `.env` credentials are not present in this checkout; create `react_webiosand/.env` locally with `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] `npm.cmd install` still needed in this checkout; `react_webiosand/node_modules` is not present
 - [x] Node unit tests added for plant and listing form helpers
 - [x] Node smoke tests added for app structure, Supabase env wiring, and schema/RLS files
 - [x] **Stage 2a: owner_profiles auto-creation** — `handle_new_user()` trigger also inserts into `owner_profiles`; every signup gets owner mode immediately
@@ -99,11 +99,11 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 
 ## Build Order (Agreed)
 
-1. **Listings** — `POST/GET /api/listings` (sitting request type only); Post Listing screen in Expo; public listings feed
-2. **Sitter profile setup** — activate sitter mode; set availability and daily rate
-3. **Browse + Apply** — sitters browse open listings; apply with message and proposed dates
-4. **Owner inbox + Accept** — owners review applications; accept one
-5. **Contracts** — auto-generate from accepted application; dual-confirm screen
+1. **Listings** — done for sitting requests
+2. **Basic sitter profile setup** — done through `ProfileSetupScreen`; availability still missing
+3. **Browse + Apply** — done for sitting requests
+4. **Owner listing applications** — done for per-listing accept/decline
+5. **Contracts** — next: auto-generate from accepted application; dual-confirm screen
 6. **Messaging** — chat attached to a listing or contract
 7. **Reviews** — post-contract review flow (owner reviews sitter)
 8. **Push notifications** — FCM integration (Android/iOS); web fallback
@@ -136,6 +136,8 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - Added and linked `docs/risk-and-best-practices-guide.md`
 - Added and linked `docs/ai-opportunities.md`
 - Updated setup, testing, architecture, security, roadmap, and handoff docs to match current repo state
+- Updated docs after the Stage 2b/2c PR so `ProfileSetupScreen`, `ApplyScreen`, `ApplicationsScreen`, and the design system are reflected as current implementation
+- Updated smoke tests to verify the application-flow screens are wired instead of expecting the old placeholder
 - Confirmed `npm.cmd test` passes from `react_webiosand/` with 16 tests passing
 - Confirmed `react_webiosand/.env` and `react_webiosand/node_modules` are not present in this checkout, so full Expo runtime setup is still pending
 

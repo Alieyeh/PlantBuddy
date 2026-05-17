@@ -21,11 +21,26 @@
 | [react-native-safe-area-context](https://github.com/th3rdwave/react-native-safe-area-context) | `~5.6.0` | https://github.com/th3rdwave/react-native-safe-area-context |
 | [react-native-gesture-handler](https://docs.swmansion.com/react-native-gesture-handler/) | `~2.28.0` | https://docs.swmansion.com/react-native-gesture-handler/docs |
 
-### Networking
+### Supabase Client / Data Access
 
 | Package | Version | Docs |
 |---|---|---|
-| [axios](https://axios-http.com) | `^1.16.0` | https://axios-http.com/docs/intro |
+| [@supabase/supabase-js](https://github.com/supabase/supabase-js) | `^2.49.4` | https://supabase.com/docs/reference/javascript/introduction |
+| [@react-native-async-storage/async-storage](https://react-native-async-storage.github.io/async-storage/) | `2.2.0` | https://react-native-async-storage.github.io/async-storage/docs/install |
+
+### Design And Fonts
+
+| Package | Version | Docs |
+|---|---|---|
+| [expo-font](https://docs.expo.dev/versions/latest/sdk/font/) | `~14.0.11` | https://docs.expo.dev/versions/latest/sdk/font |
+| [@expo-google-fonts/fraunces](https://github.com/expo/google-fonts) | `^0.4.1` | https://github.com/expo/google-fonts |
+| [@expo-google-fonts/bricolage-grotesque](https://github.com/expo/google-fonts) | `^0.4.1` | https://github.com/expo/google-fonts |
+
+### Legacy / Currently Unused Dependency
+
+| Package | Version | Notes |
+|---|---|---|
+| [axios](https://axios-http.com) | `^1.16.0` | Still in `package.json`, but active Expo data access now uses `@supabase/supabase-js`. |
 
 ### Storage
 
@@ -108,9 +123,9 @@ Supabase replaces the custom Java/Tomcat backend. It provides auth, a PostgREST 
 |---|---|---|
 | [@supabase/supabase-js](https://github.com/supabase/supabase-js) | `^2.x` (latest) | https://supabase.com/docs/reference/javascript/introduction |
 
-Install:
-```bash
-npx expo install @supabase/supabase-js @supabase/storage-js
+Install current dependencies from `react_webiosand/`:
+```powershell
+npm.cmd install
 ```
 
 AsyncStorage is used as the Supabase auth persistence layer (already installed as `@react-native-async-storage/async-storage`).

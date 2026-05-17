@@ -4,16 +4,16 @@
 
 PlantBuddy is currently a partially implemented Expo / React Native app backed by Supabase. The product goal is a plant-sitting marketplace, with future support for donations, swaps, and plant sales.
 
-The active app already supports login/register, plant profile management, creating sitting requests, browsing open sitting requests, and viewing listing details. The next major missing piece is the sitter application flow.
+The active app already supports login/register, post-register profile setup, plant profile management, creating sitting requests, browsing open sitting requests, applying to sit, and owner accept/decline decisions. The next major missing piece is contract generation from an accepted application.
 
 ## What To Work On First
 
 1. Get the app running locally with real Supabase credentials.
 2. Confirm the database schema is the UUID version.
 3. Fix high-priority RLS issues around listing creation and private profile data.
-4. Build sitter profile setup.
-5. Build application submission.
-6. Build owner application inbox and accept/decline.
+4. Harden application authorization so owners cannot apply to their own listings and sitter requirements are clear.
+5. Move accept/decline into a transactional RPC that also creates contracts.
+6. Build contract list/detail and dual-confirmation screens.
 
 ## Current Source Of Truth
 
@@ -61,11 +61,14 @@ If Supabase still has old BIGINT user IDs, the current app/schema will break. Th
 
 - Login
 - Register
+- Profile Setup
 - My Plants
 - Add/Edit Plant
 - Post Sitting Request
 - Browse Listings
 - Listing Detail
+- Apply
+- Applications
 
 ## Current Database Breadth
 
@@ -91,13 +94,14 @@ This is useful, but it also means the frontend is far behind the schema.
 
 A strong next PR would be:
 
-- Add root `.gitignore` cleanup.
 - Add Supabase env guard.
 - Fix plant-listing ownership RLS.
-- Add sitter profile screen and service.
+- Add RLS/database checks for application eligibility.
+- Add RPC for accepting an application and creating a contract.
+- Add contract screens.
 - Add docs note if setup changes.
 
-This would make the project safer and move directly toward the missing application flow.
+This would make the project safer and move directly toward a complete sitting contract flow.
 
 ## Open Questions
 

@@ -18,12 +18,15 @@ Files:
 
 - `react_webiosand/src/screens/LoginScreen.js`
 - `react_webiosand/src/screens/RegisterScreen.js`
+- `react_webiosand/src/screens/ProfileSetupScreen.js`
 - `react_webiosand/src/storage/SessionManager.js`
 - `react_webiosand/src/lib/supabase.js`
 
 Current behavior:
 
 - Register uses `supabase.auth.signUp`.
+- After registration, users are sent to `ProfileSetupScreen`.
+- Profile setup updates `owner_profiles.display_name` and can create/update a `sitter_profiles` row when the user opts into plant sitting.
 - Login uses `supabase.auth.signInWithPassword`.
 - Session is persisted through Supabase Auth using AsyncStorage.
 - Navigation starts on either Login or Main depending on current session.
@@ -64,6 +67,8 @@ Files:
 - `react_webiosand/src/screens/PostListingScreen.js`
 - `react_webiosand/src/screens/ListingsScreen.js`
 - `react_webiosand/src/screens/ListingDetailScreen.js`
+- `react_webiosand/src/screens/ApplyScreen.js`
+- `react_webiosand/src/screens/ApplicationsScreen.js`
 - `react_webiosand/src/api/listingsService.js`
 
 Current behavior:
@@ -72,7 +77,35 @@ Current behavior:
 - The listing is inserted into `plant_listings` with status `OPEN`.
 - Users can browse open sitting requests.
 - Users can view listing detail, including plant care information.
-- `Apply to Sit` is currently a placeholder alert.
+- `Apply to Sit` opens `ApplyScreen`.
+- Users can submit an application with a message and proposed dates.
+- Duplicate applications are handled from Postgres error code `23505`.
+- Owners can open `ApplicationsScreen` from plant cards that already have an open listing.
+- Owners can view applicants and mark applications as `ACCEPTED` or `DECLINED`.
+
+Current application-flow limitations:
+
+- Accepting an application only updates the selected application status.
+- Accepting does not yet mark the listing as matched.
+- Accepting does not yet decline competing applications.
+- Accepting does not yet create a contract.
+- The frontend does not yet prevent owners from applying to their own listings.
+- The frontend does not yet require a sitter profile before applying.
+
+### Design System
+
+Files:
+
+- `design.md`
+- `react_webiosand/src/lib/theme.js`
+- `react_webiosand/App.js`
+
+Current behavior:
+
+- Shared color, spacing, typography, shadow, button, input, card, and section-label styles live in `theme.js`.
+- App-level font loading uses Fraunces and Bricolage Grotesque through Expo Google Fonts.
+- The current Expo screens have been restyled around the shared theme tokens.
+- `design.md` documents the intended visual language and interaction patterns.
 
 ### Navigation
 
@@ -85,6 +118,7 @@ Current navigation:
 - Auth stack:
   - Login
   - Register
+  - ProfileSetup
   - Main
 - Main tabs:
   - My Plants
@@ -93,9 +127,11 @@ Current navigation:
   - Plants list
   - Add/edit plant
   - Post sitting request
+  - Applications
 - Browse stack:
   - Listings feed
   - Listing detail
+  - Apply
 
 ## Implemented In The Database
 
@@ -166,11 +202,9 @@ Limitations:
 
 Frontend missing:
 
-- Sitter profile setup.
 - Sitter availability screen.
-- Application form.
-- Owner application inbox.
-- Accept/decline application.
+- Submitted-applications view for sitters.
+- Transactional accept flow that marks a listing matched, declines/expires competing applications, and creates a contract.
 - Contract screens.
 - Messaging.
 - Notifications UI.

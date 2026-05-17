@@ -15,7 +15,7 @@ npm.cmd test
 Available scripts:
 
 - `npm.cmd run test:unit` - tests extracted plant and listing form utilities.
-- `npm.cmd run test:smoke` - checks the expected app files, Supabase wiring, and key schema/RLS files.
+- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, Supabase wiring, design dependencies, and key schema/RLS files.
 - `npm.cmd test` - runs both unit and smoke tests.
 
 Manual testing is still required for actual Supabase login/register/database flows.
@@ -47,6 +47,10 @@ Run this after dependency install, `.env` setup, and Supabase schema/RLS setup.
 - Create a sitting request with valid dates.
 - Confirm the listing appears in Browse.
 - Open the listing detail screen.
+- Tap `Apply to Sit`.
+- Submit an application with a message and proposed dates.
+- As the listing owner, open the plant card's `Applicants` action.
+- Accept and decline test applications.
 - Try invalid dates and confirm validation catches them.
 
 ### Database
@@ -85,6 +89,10 @@ Test important screens with mocked services:
 - `AddEditPlantScreen`
 - `PostListingScreen`
 - `ListingsScreen`
+- `ListingDetailScreen`
+- `ApplyScreen`
+- `ApplicationsScreen`
+- `ProfileSetupScreen`
 
 Focus on:
 
@@ -113,6 +121,10 @@ Minimum RLS tests:
 - User cannot update another user's plant.
 - User can create listing only for their own plant.
 - User can browse open listings.
+- User cannot apply to their own listing.
+- User can apply only once to the same listing.
+- Owner can see applications for their own listing.
+- Owner cannot accept applications for someone else's listing.
 - User cannot see private profile details they should not see.
 - User cannot add themselves to unrelated conversations.
 
@@ -146,6 +158,8 @@ Before showing this as an MVP:
 - Plant CRUD works.
 - Sitting request creation works.
 - Browse/detail works.
+- Application submission works.
+- Owner application review works.
 - At least the high-priority RLS issues are fixed.
 - No service role key or database password is present in source.
 - Root generated files are cleaned or intentionally ignored.

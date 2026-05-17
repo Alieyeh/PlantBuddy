@@ -22,6 +22,7 @@ The repo also has older or broader planning documents:
 
 - `PRODUCT.md` - full product vision and domain model.
 - `tech-stack.md` - intended technical stack.
+- `design.md` - visual design system and user experience guide.
 - `_state.md` - previous session notes and current phase tracking.
 - `android_only/README.md` - older Android/backend-oriented README. Some of it is now outdated because the project moved to Supabase and Expo.
 

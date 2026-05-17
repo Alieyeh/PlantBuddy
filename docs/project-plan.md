@@ -16,7 +16,7 @@ PlantBuddy is designed around additive roles. One account can have more than one
 | Sitter | Browse sitting requests, apply, set availability and daily rate |
 | Store owner | Sell plants after platform approval |
 
-The current app automatically creates an owner profile for every signed-up user. Sitter and store-owner flows are not implemented in the frontend yet.
+The current app automatically creates an owner profile for every signed-up user. A post-register profile setup screen can also create a basic sitter profile. Store-owner flows are not implemented in the frontend yet.
 
 ## Target Core Loop
 
@@ -88,23 +88,25 @@ Status: mostly implemented in Expo.
 
 ### Phase 2 - Sitter Application Flow
 
-Status: not implemented.
+Status: partly implemented.
 
-- Add sitter profile screen.
-- Allow users to activate sitter mode.
-- Add availability and base daily rate fields.
-- Replace the current `Apply to Sit` placeholder with an application form.
+- Post-register `ProfileSetupScreen`.
+- Allow users to activate basic sitter mode.
+- Capture display name, experience summary, and optional base daily rate.
+- `Apply to Sit` opens `ApplyScreen`.
 - Insert into `listing_applications`.
-- Show user's own submitted applications.
+- Still missing sitter availability CRUD.
+- Still missing a screen for users to view their own submitted applications.
+- Still missing owner/self-application prevention and sitter-profile enforcement.
 
 ### Phase 3 - Owner Application Management
 
-Status: not implemented.
+Status: partly implemented.
 
-- Add owner inbox for listing applications.
-- Allow owner to accept or decline.
-- Ensure accepting one application updates the listing and other applications safely.
-- Create a contract record from the accepted application.
+- `ApplicationsScreen` lets owners view applications for one listing.
+- Owners can accept or decline an application.
+- Still missing a transactional accept flow that updates the listing, handles competing applications, and creates a contract.
+- Still missing a broader owner inbox across all listings.
 
 ### Phase 4 - Contracts
 

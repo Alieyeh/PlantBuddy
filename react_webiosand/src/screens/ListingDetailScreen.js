@@ -40,7 +40,7 @@ function CareChip({ icon, label }) {
 
 /**
  * Detail page for one sitting request, including the linked plant's care notes.
- * Applying is intentionally still a Stage 2 placeholder.
+ * The sticky CTA opens the sitter application form for the selected listing.
  */
 export default function ListingDetailScreen({ route, navigation }) {
   const { listingId } = route.params;

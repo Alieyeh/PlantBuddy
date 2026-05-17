@@ -58,14 +58,14 @@ The schema supports four listing types:
 - `SWAP`
 - `SALE`
 
-Only `SITTING_REQUEST` is currently implemented in the frontend.
+Only `SITTING_REQUEST` listings are currently implemented in the frontend. The frontend also writes and reads `listing_applications` for sitter applications and owner accept/decline decisions.
 
 ### Contracts
 
 - `contracts`
 - `contract_plants`
 
-Contracts are designed to represent accepted sitting arrangements. Frontend screens for this do not exist yet.
+Contracts are designed to represent accepted sitting arrangements. Frontend screens and transactional contract creation do not exist yet.
 
 ### Communication
 

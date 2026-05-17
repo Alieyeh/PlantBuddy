@@ -23,7 +23,7 @@ cd C:\PlantBuddy\react_webiosand
 npm.cmd install
 ```
 
-This installs Expo, React Native, React Navigation, Supabase JS, and related dependencies.
+This installs Expo, React Native, React Navigation, Supabase JS, Expo Google Fonts, and related dependencies.
 
 ## 2. Create Supabase Environment File
 

@@ -482,10 +482,9 @@ The current build is a partially implemented portfolio project. Planned evolutio
 | Priority | Feature |
 |---|---|
 | High | Tighten high-priority RLS policies before real user data |
-| High | Sitter profile setup |
-| High | Sitting request application flow |
-| High | Owner application inbox and accept/decline flow |
-| High | Contract creation and dual-confirmation flow |
+| High | Harden sitter/application eligibility rules |
+| High | Transactional accept flow that creates contracts |
+| High | Contract detail and dual-confirmation screens |
 | Medium | Plant photos with Supabase Storage |
 | Medium | Messaging and notifications |
 | Medium | Reviews and sitter reputation scoring |

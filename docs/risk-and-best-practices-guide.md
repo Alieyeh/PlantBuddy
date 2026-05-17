@@ -23,7 +23,7 @@ Best practices:
 
 - Use `EXISTS` checks against `plants` in insert/update policies.
 - Prevent changing `plant_id` on an existing listing unless the new plant is also owned by the user.
-- Add RLS tests before implementing applications.
+- Add RLS tests before relying on applications with real users.
 
 ### Profile Data Exposure
 
@@ -45,6 +45,7 @@ Best practices:
 - Keep those functions idempotent where possible.
 - Return the resulting contract/application state from the RPC.
 - Avoid doing important multi-step state changes entirely in client code.
+- Treat the current accept/decline UI as an interim implementation until contract creation is transactional.
 
 ## Current Functionality Risks
 

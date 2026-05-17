@@ -110,12 +110,13 @@ Files:
 
 - `android_only/db/sql_build_tables.sql`
 - `android_only/db/rls_policies.sql`
+- `react_webiosand/src/screens/ApplyScreen.js`
 
 The RLS comment says sitter role is enforced by schema constraints, but `listing_applications.applicant_user_id` references `users(id)`, not `sitter_profiles(user_id)`.
 
 Risk:
 
-Any authenticated user can apply, even if they have not activated sitter mode.
+Any authenticated user may be able to apply, even if they have not activated sitter mode. The frontend now has basic sitter profile setup, but application eligibility is not enforced as a database rule.
 
 Recommended fix:
 
@@ -124,6 +125,36 @@ Either:
 - change `applicant_user_id` to reference `sitter_profiles(user_id)`, or
 - add RLS `EXISTS` checks requiring a sitter profile, or
 - intentionally allow applications from any user and create sitter profile during application onboarding.
+
+### Owners May Apply To Their Own Listings
+
+Files:
+
+- `react_webiosand/src/screens/ApplyScreen.js`
+- `android_only/db/rls_policies.sql`
+
+Risk:
+
+The application screen inserts the current authenticated user as `applicant_user_id`, but the frontend and RLS policies do not currently appear to block a listing owner from applying to their own listing.
+
+Recommended fix:
+
+Add a database/RLS check that prevents `listing_applications.applicant_user_id` from matching the listing's `owner_user_id` or `store_owner_user_id`.
+
+### Accepting Applications Is Not Transactional
+
+Files:
+
+- `react_webiosand/src/screens/ApplicationsScreen.js`
+- `react_webiosand/src/api/listingsService.js`
+
+Risk:
+
+The current owner screen can mark one application as `ACCEPTED`, but it does not yet mark the listing as matched, decline/expire competing applications, or create a contract. This can leave the marketplace in a partial state.
+
+Recommended fix:
+
+Move application acceptance into a Supabase RPC function that updates the selected application, competing applications, listing status, and contract rows in one transaction.
 
 ### Active Plants Are Visible To All Authenticated Users
 
@@ -204,7 +235,7 @@ Noise, accidental local config commits, and confusion about source vs generated 
 
 Recommended fix:
 
-Add root `.gitignore` coverage and clean generated output after confirming it is not needed.
+Keep root `.gitignore` coverage in place and clean generated output after confirming it is not needed.
 
 ### Automated Tests Are Still Narrow
 
@@ -219,7 +250,7 @@ Continue expanding tests around:
 - plant CRUD
 - listing creation
 - listing browse
-- application flow when implemented
+- application submission and owner accept/decline
 - RLS policy expectations
 
 ### No Service Boundary For Multi-Step Business Operations
