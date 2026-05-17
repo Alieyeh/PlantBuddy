@@ -48,3 +48,4 @@ yarn-error.*
 
 # Accidental nested repository/checkouts
 PlantBuddy/
+frontend/

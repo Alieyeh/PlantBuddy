@@ -2,6 +2,8 @@
 
 > *"Every plant deserves a caretaker. Every caretaker deserves a community."*
 
+This is the product vision and intended full scope. For the current implementation status, setup steps, risks, and handoff notes, use the `docs/` folder as the day-to-day source of truth.
+
 ---
 
 ## The Problem Worth Solving
@@ -165,7 +167,7 @@ One account. Multiple plants owned. Multiple sitting arrangements active. It's c
 
 ## Architecture
 
-PlantBuddy is built as a **three-tier application** with a shared backend serving three frontend surfaces:
+PlantBuddy is built around a managed Supabase backend serving the active Expo frontend, with the older native Android code retained as a reference build:
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -312,7 +314,7 @@ users ── audit_log
 | Framework | Expo (React Native) |
 | Language | JavaScript / TypeScript |
 | Platforms | Android, iOS, Web (single codebase) |
-| Networking | Fetch / Axios |
+| Networking | `@supabase/supabase-js` |
 
 ### Native Android (Reference Build)
 | Component | Technology |
@@ -392,7 +394,7 @@ plantbuddy/
 
 1. Create a project at https://app.supabase.com
 2. Run the schema in the SQL editor: `android_only/db/sql_build_tables.sql`
-3. Enable Row Level Security on each table via the dashboard
+3. Run the RLS policies in the SQL editor: `android_only/db/rls_policies.sql`
 4. Copy your project URL and anon key from **Settings → API**
 
 ### 2. Environment Variables
@@ -408,7 +410,7 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 Install dependencies:
 ```bash
 cd react_webiosand
-npm install
+npm.cmd install
 ```
 
 Run on your target platform:
@@ -425,7 +427,11 @@ Open `android_only/` in Android Studio. Update `BuildConfig.BASE_URL` to your Su
 
 ---
 
-## API Reference
+## Current Data Access Reference
+
+The active Expo app does not use a custom REST backend. It talks directly to Supabase Auth and Supabase PostgREST through `@supabase/supabase-js`.
+
+The endpoint-style list below is a conceptual product API surface for future planning, not a set of implemented custom server routes.
 
 ### Authentication
 ```
@@ -471,18 +477,24 @@ POST /api/messages
 
 ## What's Next
 
-The current build is a working portfolio demonstration of the full stack. Planned evolution:
+The current build is a partially implemented portfolio project. Planned evolution:
 
 | Priority | Feature |
 |---|---|
-| High | Push notifications (FCM) |
-| High | Cloud image storage (S3 / GCS) |
-| High | Payment provider integration (Stripe) |
-| Medium | Advanced care scheduling with reminders |
-| Medium | Sitter reputation scoring algorithm |
+| High | Tighten high-priority RLS policies before real user data |
+| High | Sitter profile setup |
+| High | Sitting request application flow |
+| High | Owner application inbox and accept/decline flow |
+| High | Contract creation and dual-confirmation flow |
+| Medium | Plant photos with Supabase Storage |
+| Medium | Messaging and notifications |
+| Medium | Reviews and sitter reputation scoring |
 | Medium | Location-based listing discovery |
-| Medium | Docker deployment + CI/CD |
-| Low | Automated test suite (unit + integration) |
+| Medium | AI-assisted plant profile, care instruction, search, and matching features |
+| Medium | Expanded automated test suite beyond current unit/smoke tests |
+| Medium | CI/CD |
+| Low | Push notifications (FCM) |
+| Low | Payment provider integration (Stripe) |
 | Low | Admin dashboard for store owner approval |
 | Low | Rate limiting and HTTPS enforcement |
 

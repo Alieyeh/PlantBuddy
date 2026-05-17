@@ -1,6 +1,6 @@
 # Testing And Quality Plan
 
-PlantBuddy currently has no automated test suite. This document suggests a practical path to add confidence without overbuilding too early.
+PlantBuddy currently has a small automated test suite. This document explains what it covers and what should be added next.
 
 ## Current Test Coverage
 
@@ -63,7 +63,7 @@ In Supabase, confirm:
 
 ### Unit Tests
 
-Add tests for pure logic:
+Continue expanding tests for pure logic:
 
 - date validation
 - date range formatting
@@ -72,8 +72,8 @@ Add tests for pure logic:
 
 Suggested tools:
 
-- Jest
-- React Native Testing Library
+- Keep the built-in Node test runner for pure JavaScript helpers.
+- Consider Jest and React Native Testing Library when screen/component tests are added.
 
 ### Component Tests
 

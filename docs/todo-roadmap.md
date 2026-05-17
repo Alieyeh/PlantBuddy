@@ -5,7 +5,7 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 ## Immediate Setup Tasks
 
 - Add `react_webiosand/.env` locally with Supabase URL and anon key.
-- Run `npm install` in `react_webiosand/`.
+- Run `npm.cmd install` in `react_webiosand/`.
 - Confirm Supabase schema has been recreated with UUID user IDs.
 - Run `rls_policies.sql` after schema creation.
 - Smoke-test register, login, add plant, post listing, browse listing.
@@ -19,7 +19,7 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 - Restrict public visibility of sensitive profile fields such as email, phone, address, and emergency contacts.
 - Fix or redesign permissive conversation participant policies before implementing messaging.
 - Add missing sitter-role enforcement for listing applications.
-- Add root `.gitignore` coverage for generated local folders and `local.properties`.
+- Keep generated local folders and `local.properties` out of commits.
 
 ## Priority 2 - Sitter Profile
 

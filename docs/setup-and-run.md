@@ -20,7 +20,7 @@ From PowerShell:
 
 ```powershell
 cd C:\PlantBuddy\react_webiosand
-npm install
+npm.cmd install
 ```
 
 This installs Expo, React Native, React Navigation, Supabase JS, and related dependencies.
@@ -74,7 +74,7 @@ This is a Supabase dashboard setting, not a code setting in this repo.
 
 ```powershell
 cd C:\PlantBuddy\react_webiosand
-npm run web
+npm.cmd run web
 ```
 
 Equivalent command:
@@ -91,7 +91,7 @@ With Android Studio/emulator configured:
 
 ```powershell
 cd C:\PlantBuddy\react_webiosand
-npm run android
+npm.cmd run android
 ```
 
 Equivalent command:
@@ -104,7 +104,7 @@ npx expo start --android
 
 ```powershell
 cd C:\PlantBuddy\react_webiosand
-npm start
+npm.cmd start
 ```
 
 From there you can choose web, Android, iOS, or a QR code flow if supported.
@@ -137,7 +137,7 @@ Run:
 
 ```powershell
 cd C:\PlantBuddy\react_webiosand
-npm install
+npm.cmd install
 ```
 
 ### Supabase URL Or Anon Key Missing

@@ -206,15 +206,15 @@ Recommended fix:
 
 Add root `.gitignore` coverage and clean generated output after confirming it is not needed.
 
-### No Automated Tests
+### Automated Tests Are Still Narrow
 
 Risk:
 
-Auth, RLS behavior, and core flows can regress without warning.
+The current Node unit and smoke tests cover helper logic and static project structure, but not real auth, RLS behavior, or end-to-end app flows.
 
 Recommended fix:
 
-Add focused tests around:
+Continue expanding tests around:
 
 - plant CRUD
 - listing creation

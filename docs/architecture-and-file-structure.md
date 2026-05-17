@@ -84,7 +84,13 @@ C:\PlantBuddy
 |       |   |-- ListingDetailScreen.js
 |       |   |-- PostListingScreen.js
 |       |-- storage\
-|           |-- SessionManager.js
+|       |   |-- SessionManager.js
+|       |-- utils\
+|       |   |-- plantForm.js
+|       |   |-- listingForm.js
+|   |-- test\
+|       |-- smoke\
+|       |-- unit\
 |
 |-- android_only\
 |   |-- README.md
@@ -128,6 +134,8 @@ Key files:
 - `src/api/apiService.js` - plant CRUD.
 - `src/api/listingsService.js` - listing queries and creation.
 - `src/screens/*` - UI screens.
+- `src/utils/*` - shared form validation/payload helpers used by screens and tests.
+- `test/` - Node unit and smoke tests.
 
 ### `android_only/`
 
@@ -161,7 +169,6 @@ The root `PlantBuddy/` folder contains only a nested `.git` directory and appear
 
 Do not delete these without confirming with the team, but the repo would be clearer if later cleanup addressed:
 
-- Add root `.gitignore` entries for `.gradle/`, `.idea/`, `build/`, `app/build/`, and `local.properties`.
 - Decide whether to remove the root `app/` generated output.
 - Decide whether to remove or document the nested `PlantBuddy/` folder.
 - Consider renaming `react_webiosand/` to something clearer, such as `app/` or `frontend/`, if the team can handle the path change.

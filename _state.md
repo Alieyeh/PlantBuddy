@@ -1,6 +1,6 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-16 (session 4)_
+_Last updated: 2026-05-17 (docs and handoff refresh)_
 
 ---
 
@@ -8,7 +8,7 @@ _Last updated: 2026-05-16 (session 4)_
 
 **Phase 1 — Core Sitting Flow (in progress)**
 
-Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabase dashboard setup requires: (1) run `sql_build_tables.sql` to drop+recreate schema with UUID user ids, (2) run `rls_policies.sql`. Then `npm install` + `npx expo start`. Next: Stage 2 — owner_profiles auto-creation + sitter profile setup + application flow.
+Schema (UUID users.id) and RLS policies are written on disk. Supabase dashboard setup still requires: (1) run `sql_build_tables.sql` to drop+recreate schema with UUID user ids if needed, (2) run `rls_policies.sql`. The active app folder is still `react_webiosand/` until the team confirms any rename. Current checkout still needs `react_webiosand/.env` and `npm.cmd install` before running Expo. Next product work: sitter profile setup + application flow.
 
 ---
 
@@ -29,7 +29,7 @@ Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabas
 - [x] Plants table; PostgREST auto-exposes CRUD
 - [x] **RLS policies written for all 23 tables** (`android_only/db/rls_policies.sql`) — `refresh_tokens` section removed (session 4 fix)
 - [x] `plant_listings`, `listing_applications`, `contracts` secured by RLS and accessible via PostgREST
-- [x] `.env` credentials filled in (`react_webiosand/.env`)
+- [ ] `react_webiosand/.env` is not present in this checkout; create it locally with Supabase URL + anon key
 - [ ] **PENDING: run `rls_policies.sql` in Supabase dashboard** (after re-running schema above)
 
 ### Expo Frontend (`react_webiosand/`) — Android + iOS + Web
@@ -51,8 +51,10 @@ Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabas
 - [x] **apiService.js** — all plants CRUD now uses `supabase.from('plants')` (session 3)
 - [x] **PlantsScreen** — updated to consume direct Supabase response (no `.data.data` wrapper) (session 3)
 - [x] **AddEditPlantScreen** — field names updated to match schema snake_case columns (session 3)
-- [x] `.env` credentials filled in (`EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`)
-- [ ] `npm install` run after adding `@supabase/supabase-js` + `@react-navigation/bottom-tabs`
+- [ ] `.env` credentials are not present in this checkout; create `react_webiosand/.env` locally with `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] `npm.cmd install` run after adding `@supabase/supabase-js` + `@react-navigation/bottom-tabs`
+- [x] Node unit tests added for plant and listing form helpers
+- [x] Node smoke tests added for app structure, Supabase env wiring, and schema/RLS files
 - [x] **Stage 2a: owner_profiles auto-creation** — `handle_new_user()` trigger now also inserts into `owner_profiles`; every signup gets owner mode immediately
 - [ ] **Stage 2: SitterProfileScreen** — activate sitter mode; set bio, daily rate, availability
 - [ ] **Stage 2: Application flow** — apply to sit (ApplyScreen), owner inbox (ApplicationsScreen), accept
@@ -87,6 +89,7 @@ Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabas
 | 2026-05-16 | Image uploads deferred (stub with URLs) | Supabase Storage ready but not blocking core flow |
 | 2026-05-16 | Payments deferred until sitting flow works end-to-end | High complexity (Stripe), low day-1 value; add after core loop is validated |
 | 2026-05-16 | Store owner / sale listing type deferred | Requires admin approval workflow; entirely separate user type |
+| 2026-05-17 | Folder rename paused | `react_webiosand/` remains active until the team agrees on a rename; leftover `frontend/` folder is ignored locally |
 
 ---
 
@@ -112,7 +115,7 @@ Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabas
 | # | Question | Context |
 |---|---|---|
 | 1 | ~~Where is the backend source?~~ | **Resolved** — backend is Supabase; no custom server source. |
-| 2 | `.env` credentials filled in? | Template created at `react_webiosand/.env`. User must replace placeholder values with real Supabase project URL and anon key. |
+| 2 | `.env` credentials filled in? | Not present in this checkout. Create `react_webiosand/.env` locally with the real Supabase project URL and anon key. |
 | 3 | RLS policies applied in Supabase dashboard? | Written in `android_only/db/rls_policies.sql`. Must be run in the Supabase SQL editor before the app goes live. |
 | 4 | EAS Build or bare workflow? | `app.json` uses managed Expo config. Bare workflow needed for some native modules. Has `npx expo prebuild` been run? |
 | 5 | Do swaps and donations have an agreed MVP scope? | Schema supports both fully. In scope for initial launch or post-launch? |
@@ -121,6 +124,16 @@ Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabas
 | 8 | Target app stores? | Google Play + Apple App Store assumed. Timeline or account setup done? |
 
 ---
+
+## Current Documentation Refresh (2026-05-17)
+
+- Kept `react_webiosand/` as the active app folder after the frontend rename was paused for team discussion
+- Added root `.gitignore` coverage for generated/local files and the leftover untracked `frontend/` folder
+- Added and linked `docs/risk-and-best-practices-guide.md`
+- Added and linked `docs/ai-opportunities.md`
+- Updated setup, testing, architecture, security, roadmap, and handoff docs to match current repo state
+- Confirmed `npm.cmd test` passes from `react_webiosand/` with 16 tests passing
+- Confirmed `react_webiosand/.env` and `react_webiosand/node_modules` are not present in this checkout, so full Expo runtime setup is still pending
 
 ## Last Session (2026-05-16, session 1)
 
@@ -153,4 +166,4 @@ Schema (UUID users.id) and RLS policies finalized and confirmed correct. Supabas
 - Replaced `apiService.js` — all plants CRUD now uses `supabase.from('plants')` directly
 - Updated `PlantsScreen` and `AddEditPlantScreen` — response shape and field names aligned to schema snake_case
 - Wrote `android_only/db/rls_policies.sql` — RLS policies for all 23 tables (run in Supabase SQL editor)
-- **Remaining before running the app:** fill `.env` credentials → `npm install` → apply RLS SQL in Supabase dashboard
+- **Remaining before running the app:** fill `.env` credentials → `npm.cmd install` → apply RLS SQL in Supabase dashboard

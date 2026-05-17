@@ -182,9 +182,13 @@ Frontend missing:
 - Payments.
 - Admin/moderation UI.
 
-Project tooling missing:
+Project tooling currently present:
 
-- Automated tests.
+- Node unit tests for plant and listing form logic.
+- Node smoke tests for key app files, Supabase wiring, and schema/RLS files.
+
+Project tooling still missing:
+
 - CI.
 - Supabase migrations folder.
 - Seed data file.

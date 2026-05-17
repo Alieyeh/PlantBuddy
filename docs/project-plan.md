@@ -71,7 +71,7 @@ Status: partly done.
 - Confirm the Supabase schema has been applied correctly.
 - Confirm RLS policies have been applied.
 - Add a local `.env` with Supabase URL and anon key.
-- Run `npm install`.
+- Run `npm.cmd install` from PowerShell.
 - Verify login, register, plants, and listings on web.
 - Decide whether email confirmation should be enabled or disabled for local development.
 
