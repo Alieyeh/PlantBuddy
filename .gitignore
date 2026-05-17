@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+local.properties
+
+# Expo / React Native generated output
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+react_webiosand/.expo/
+react_webiosand/dist/
+react_webiosand/web-build/
+react_webiosand/ios/
+react_webiosand/android/
+
+# Android / Gradle generated output
+.gradle/
+build/
+app/build/
+**/build/
+.kotlin/
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Native signing/material files
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Logs and debug files
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+
+# Accidental nested repository/checkouts
+PlantBuddy/

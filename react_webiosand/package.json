@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "npm run test:unit && npm run test:smoke",
+    "test:unit": "node --test test/unit/plantForm.test.cjs test/unit/listingForm.test.cjs",
+    "test:smoke": "node --test test/smoke/projectStructure.test.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

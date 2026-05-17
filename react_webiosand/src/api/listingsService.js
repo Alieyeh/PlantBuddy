@@ -1,6 +1,15 @@
 import { supabase } from '../lib/supabase';
 
+/**
+ * Supabase-backed data access for sitting request listings. The database
+ * supports more listing types, but the current UI only exposes sitting.
+ */
 export const listingsService = {
+  /**
+   * Loads all open sitting requests for the browse feed.
+   *
+   * @returns {Promise<Array<object>>}
+   */
   async getOpenListings() {
     const { data, error } = await supabase
       .from('plant_listings')
@@ -30,6 +39,12 @@ export const listingsService = {
     return data;
   },
 
+  /**
+   * Loads listings created by a specific owner user id.
+   *
+   * @param {string} ownerUserId Supabase Auth UUID.
+   * @returns {Promise<Array<object>>}
+   */
   async getMyListings(ownerUserId) {
     const { data, error } = await supabase
       .from('plant_listings')
@@ -55,6 +70,19 @@ export const listingsService = {
     return data;
   },
 
+  /**
+   * Creates an open sitting request for one plant.
+   *
+   * @param {object} params
+   * @param {number | string} params.plantId
+   * @param {string} params.ownerUserId Supabase Auth UUID.
+   * @param {string} params.title
+   * @param {string | null} params.description
+   * @param {string} params.startDate YYYY-MM-DD.
+   * @param {string} params.endDate YYYY-MM-DD.
+   * @param {string | null} params.sittingNotes
+   * @returns {Promise<object>}
+   */
   async createSittingRequest({ plantId, ownerUserId, title, description, startDate, endDate, sittingNotes }) {
     const { data, error } = await supabase
       .from('plant_listings')
@@ -77,6 +105,12 @@ export const listingsService = {
     return data;
   },
 
+  /**
+   * Loads a single listing with its linked plant details.
+   *
+   * @param {number | string} id
+   * @returns {Promise<object>}
+   */
   async getListing(id) {
     const { data, error } = await supabase
       .from('plant_listings')

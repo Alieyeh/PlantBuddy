@@ -1,0 +1,163 @@
+# Database And Supabase
+
+## Backend Choice
+
+The current backend is Supabase. Supabase provides:
+
+- Auth
+- PostgreSQL
+- PostgREST auto-generated API
+- Row Level Security
+- Storage, planned
+- Realtime, planned
+
+There is no active Java/Tomcat backend in the current project direction.
+
+## Important Files
+
+- `android_only/db/sql_build_tables.sql` - schema, enum types, indexes, auth trigger.
+- `android_only/db/rls_policies.sql` - Row Level Security policies.
+- `react_webiosand/src/lib/supabase.js` - frontend Supabase client.
+
+## Schema Summary
+
+### Identity And Roles
+
+- `users`
+- `owner_profiles`
+- `sitter_profiles`
+- `store_owner_profiles`
+
+`users.id` is a UUID and references `auth.users(id)`. This is important because Supabase Auth uses UUID user IDs.
+
+Every new signup should get:
+
+- a `users` row
+- an `owner_profiles` row
+
+This is handled by the `handle_new_user()` trigger.
+
+### Plants
+
+- `plants`
+- `plant_photos`
+- `plant_care_tasks`
+
+Plants are owned through `current_owner_user_id`, which references `owner_profiles(user_id)`.
+
+### Listings And Matching
+
+- `plant_listings`
+- `listing_applications`
+- `swap_proposals`
+
+The schema supports four listing types:
+
+- `SITTING_REQUEST`
+- `DONATION`
+- `SWAP`
+- `SALE`
+
+Only `SITTING_REQUEST` is currently implemented in the frontend.
+
+### Contracts
+
+- `contracts`
+- `contract_plants`
+
+Contracts are designed to represent accepted sitting arrangements. Frontend screens for this do not exist yet.
+
+### Communication
+
+- `conversations`
+- `conversation_participants`
+- `messages`
+- `message_attachments`
+- `notifications`
+
+The schema exists, but there is no frontend messaging or notification implementation yet.
+
+### Payments And Trust
+
+- `payment_ledger`
+- `sitter_reviews`
+- `moderation_cases`
+- `audit_log`
+- `store_orders`
+
+These are mostly future-facing right now.
+
+## Setup Order
+
+In Supabase SQL editor:
+
+1. Run `android_only/db/sql_build_tables.sql`.
+2. Run `android_only/db/rls_policies.sql`.
+3. Register a test user through the app.
+4. Confirm the test user created rows in:
+   - `auth.users`
+   - `public.users`
+   - `public.owner_profiles`
+
+## Important Schema Warning
+
+Previous project notes mention a likely old Supabase schema with BIGINT user IDs. The current schema expects UUID user IDs.
+
+If the app shows errors like:
+
+```text
+operator does not exist: bigint = uuid
+```
+
+then the Supabase database is probably not using the current schema.
+
+Recommended fix:
+
+1. Back up anything valuable.
+2. Drop the old incompatible public schema/tables.
+3. Re-run `sql_build_tables.sql`.
+4. Re-run `rls_policies.sql`.
+
+## Direct Postgres Access
+
+The frontend app should not use the Postgres password directly.
+
+For the app, use:
+
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+
+For direct database tools, get the connection string from the Supabase dashboard:
+
+- Project
+- Connect
+
+Use the direct Postgres password only in trusted local tools or server-side migration environments. Do not commit it.
+
+## RLS Notes
+
+Because the frontend talks directly to Supabase, RLS is the main security boundary.
+
+That means all important authorization rules must be enforced in:
+
+- RLS policies
+- CHECK constraints
+- foreign keys
+- triggers
+- controlled RPC functions, if added later
+
+Do not rely only on frontend UI checks.
+
+## Missing Database Tooling
+
+Currently missing:
+
+- Supabase migrations folder.
+- Seed data file.
+- Automated schema reset command.
+- Local Supabase CLI setup.
+- Type generation for frontend queries.
+
+Recommended next improvement:
+
+Create a formal `supabase/` folder with migrations and seed data so the database state is reproducible outside the dashboard.

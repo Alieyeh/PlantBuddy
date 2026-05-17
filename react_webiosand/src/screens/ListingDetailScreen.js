@@ -4,14 +4,11 @@ import {
   ActivityIndicator, StyleSheet, Alert,
 } from 'react-native';
 import { listingsService } from '../api/listingsService';
+import { formatLongDate } from '../utils/listingForm';
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    weekday: 'short', month: 'long', day: 'numeric', year: 'numeric',
-  });
-};
-
+/**
+ * Small display helper for label/value rows in the listing detail page.
+ */
 const InfoRow = ({ label, value }) => {
   if (!value) return null;
   return (
@@ -22,6 +19,10 @@ const InfoRow = ({ label, value }) => {
   );
 };
 
+/**
+ * Detail page for one sitting request, including the linked plant's care notes.
+ * Applying is intentionally still a Stage 2 placeholder.
+ */
 export default function ListingDetailScreen({ route, navigation }) {
   const { listingId } = route.params;
   const [listing, setListing] = useState(null);
@@ -55,8 +56,8 @@ export default function ListingDetailScreen({ route, navigation }) {
 
       <Text style={styles.sectionHeader}>Sitting Period</Text>
       <View style={styles.section}>
-        <InfoRow label="From" value={formatDate(listing.sitting_start_date)} />
-        <InfoRow label="Until" value={formatDate(listing.sitting_end_date)} />
+        <InfoRow label="From" value={formatLongDate(listing.sitting_start_date)} />
+        <InfoRow label="Until" value={formatLongDate(listing.sitting_end_date)} />
       </View>
 
       <Text style={styles.sectionHeader}>About This Listing</Text>

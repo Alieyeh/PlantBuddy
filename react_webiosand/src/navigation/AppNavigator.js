@@ -21,6 +21,9 @@ const GREEN = '#2e7d32';
 const LIGHT_GREEN = '#4CAF50';
 const GREY = '#9e9e9e';
 
+/**
+ * Minimal tab icon renderer used by the current bottom navigation.
+ */
 function TabIcon({ label, focused }) {
   const icons = { 'My Plants': '🌿', Browse: '🔍' };
   return (
@@ -30,6 +33,9 @@ function TabIcon({ label, focused }) {
   );
 }
 
+/**
+ * Stack for owner plant management screens.
+ */
 function PlantsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerTintColor: GREEN }}>
@@ -48,6 +54,9 @@ function PlantsStack() {
   );
 }
 
+/**
+ * Stack for browsing open sitting requests.
+ */
 function BrowseStack() {
   return (
     <Stack.Navigator screenOptions={{ headerTintColor: GREEN }}>
@@ -61,6 +70,9 @@ function BrowseStack() {
   );
 }
 
+/**
+ * Main authenticated tab shell.
+ */
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -78,6 +90,10 @@ function MainTabs() {
   );
 }
 
+/**
+ * Root navigator. It waits for the persisted Supabase session before choosing
+ * the authenticated or unauthenticated route.
+ */
 export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
 

@@ -5,6 +5,9 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+/**
+ * Email/password sign-in screen backed by Supabase Auth.
+ */
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

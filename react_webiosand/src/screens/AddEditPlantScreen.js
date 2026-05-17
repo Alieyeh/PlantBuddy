@@ -4,13 +4,12 @@ import {
   ActivityIndicator, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { api } from '../api/apiService';
+import { buildPlantPayload, validatePlantForm } from '../utils/plantForm';
 
-const parseInteger = (val) => {
-  if (!val || val.trim() === '') return null;
-  const n = parseInt(val.trim(), 10);
-  return isNaN(n) ? null : n;
-};
-
+/**
+ * Screen for creating or editing the current user's plant profile. The UI keeps
+ * friendly camelCase state, then normalizes it into Supabase columns on save.
+ */
 export default function AddEditPlantScreen({ route, navigation }) {
   const existing = route.params?.plant;
   const isEdit = !!existing;
@@ -30,22 +29,26 @@ export default function AddEditPlantScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Error', 'Plant name is required');
+    const form = {
+      name,
+      species,
+      description,
+      locationNotes,
+      sizeDescription,
+      healthStatus,
+      lightRequirements,
+      humidityRequirements,
+      wateringFrequency,
+      specialInstructions,
+    };
+    const validation = validatePlantForm(form);
+
+    if (!validation.valid) {
+      Alert.alert(validation.title, validation.message);
       return;
     }
-    const plantData = {
-      name: name.trim(),
-      species: species.trim() || null,
-      description: description.trim() || null,
-      location_notes: locationNotes.trim() || null,
-      size_description: sizeDescription.trim() || null,
-      health_status: healthStatus.trim() || null,
-      light_requirements: lightRequirements.trim() || null,
-      humidity_requirements: humidityRequirements.trim() || null,
-      watering_frequency_days: parseInteger(wateringFrequency),
-      special_instructions: specialInstructions.trim() || null,
-    };
+
+    const plantData = buildPlantPayload(form);
 
     setLoading(true);
     try {

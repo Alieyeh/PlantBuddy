@@ -5,6 +5,10 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+/**
+ * Account creation screen. Username and display name are passed into Supabase
+ * Auth metadata so the database signup trigger can populate public profiles.
+ */
 export default function RegisterScreen({ navigation }) {
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');

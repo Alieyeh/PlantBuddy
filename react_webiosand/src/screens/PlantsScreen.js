@@ -7,6 +7,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { api } from '../api/apiService';
 import { SessionManager } from '../storage/SessionManager';
 
+/**
+ * Owner dashboard for viewing active plants and starting the sitting request
+ * flow from an individual plant card.
+ */
 export default function PlantsScreen({ navigation }) {
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);

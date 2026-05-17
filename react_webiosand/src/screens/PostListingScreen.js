@@ -5,9 +5,12 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { listingsService } from '../api/listingsService';
+import { buildSittingRequestPayload, validateSittingRequestForm } from '../utils/listingForm';
 
-const TODAY = new Date().toISOString().split('T')[0];
-
+/**
+ * Lets an owner publish one of their active plants as an open sitting request.
+ * The form currently supports the MVP sitting flow only.
+ */
 export default function PostListingScreen({ route, navigation }) {
   const preselectedPlantId = route.params?.plantId ?? null;
 
@@ -41,41 +44,26 @@ export default function PostListingScreen({ route, navigation }) {
     init();
   }, []);
 
-  const validateDate = (val) => /^\d{4}-\d{2}-\d{2}$/.test(val);
-
   const handlePost = async () => {
-    if (!selectedPlantId) {
-      Alert.alert('Required', 'Please select a plant.');
-      return;
-    }
-    if (!title.trim()) {
-      Alert.alert('Required', 'Please add a listing title.');
-      return;
-    }
-    if (!validateDate(startDate) || !validateDate(endDate)) {
-      Alert.alert('Invalid dates', 'Use YYYY-MM-DD format (e.g. 2026-06-01).');
-      return;
-    }
-    if (endDate < startDate) {
-      Alert.alert('Invalid dates', 'End date must be on or after start date.');
-      return;
-    }
-    if (startDate < TODAY) {
-      Alert.alert('Invalid dates', 'Start date cannot be in the past.');
+    const form = {
+      selectedPlantId,
+      ownerUserId,
+      title,
+      description,
+      startDate,
+      endDate,
+      sittingNotes,
+    };
+    const validation = validateSittingRequestForm(form);
+
+    if (!validation.valid) {
+      Alert.alert(validation.title, validation.message);
       return;
     }
 
     setLoading(true);
     try {
-      await listingsService.createSittingRequest({
-        plantId: selectedPlantId,
-        ownerUserId,
-        title: title.trim(),
-        description: description.trim() || null,
-        startDate,
-        endDate,
-        sittingNotes: sittingNotes.trim() || null,
-      });
+      await listingsService.createSittingRequest(buildSittingRequestPayload(form));
       Alert.alert('Posted!', 'Your sitting request is now live.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);

@@ -5,19 +5,12 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { listingsService } from '../api/listingsService';
+import { daysBetween, formatShortDate } from '../utils/listingForm';
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
-
-const daysBetween = (start, end) => {
-  if (!start || !end) return null;
-  const ms = new Date(end) - new Date(start);
-  return Math.round(ms / (1000 * 60 * 60 * 24));
-};
-
+/**
+ * Browse feed for open sitting requests. It currently lists only the sitting
+ * MVP, even though the database supports more listing types.
+ */
 export default function ListingsScreen({ navigation }) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +33,7 @@ export default function ListingsScreen({ navigation }) {
     const plant = item.plants;
     const days = daysBetween(item.sitting_start_date, item.sitting_end_date);
     const dateRange = item.sitting_start_date
-      ? `${formatDate(item.sitting_start_date)} – ${formatDate(item.sitting_end_date)}`
+      ? `${formatShortDate(item.sitting_start_date)} - ${formatShortDate(item.sitting_end_date)}`
       : null;
 
     return (

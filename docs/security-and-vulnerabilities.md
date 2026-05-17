@@ -1,0 +1,249 @@
+# Security And Vulnerabilities
+
+This is a current risk register based on the repo as it exists now. It is not a full security audit, but it identifies issues that should be addressed before real users or real data.
+
+## High Priority
+
+### Listing Creation Does Not Verify Plant Ownership
+
+File:
+
+- `android_only/db/rls_policies.sql`
+
+Current policy:
+
+```sql
+WITH CHECK (owner_user_id = auth.uid() OR store_owner_user_id = auth.uid())
+```
+
+Risk:
+
+An authenticated user may be able to create a listing using a `plant_id` they do not own, as long as they set `owner_user_id` to themselves. The policy checks the listing owner field, but not whether the selected plant belongs to that owner.
+
+Recommended fix:
+
+Require an `EXISTS` check against `plants`:
+
+```sql
+EXISTS (
+  SELECT 1 FROM plants p
+  WHERE p.id = plant_listings.plant_id
+    AND p.current_owner_user_id = auth.uid()
+)
+```
+
+### Listing Updates Do Not Verify Plant Ownership
+
+File:
+
+- `android_only/db/rls_policies.sql`
+
+Risk:
+
+A listing owner can update their own listing, but the policy does not appear to stop them from changing `plant_id` to another user's plant. This is closely related to the listing creation issue.
+
+Recommended fix:
+
+Use a stricter update `WITH CHECK` that verifies the final `plant_id` is still owned by the authenticated user.
+
+### Sensitive Profile Data Is Broadly Readable
+
+Files:
+
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/rls_policies.sql`
+
+Current policies allow authenticated users to select from:
+
+- `users`
+- `owner_profiles`
+- `sitter_profiles`
+- `store_owner_profiles`
+
+Risk:
+
+These tables contain sensitive or semi-sensitive fields:
+
+- email
+- phone number
+- address
+- emergency contact
+- business tax identifier
+- business contact details
+
+Recommended fix:
+
+Use restricted views for public profile display, or tighten RLS so users can only read full private profile rows for themselves. Public browse screens should query safe profile views.
+
+### Conversation Policies Are Too Permissive
+
+File:
+
+- `android_only/db/rls_policies.sql`
+
+Policies include broad checks such as:
+
+```sql
+WITH CHECK (true)
+```
+
+Risk:
+
+If messaging is implemented on top of these policies, users may be able to create conversations or participants in ways the app does not intend.
+
+Recommended fix:
+
+Before building messaging, define exact participant rules:
+
+- listing owner can message applicant
+- applicant can message listing owner
+- contract owner and sitter can message each other
+- participants cannot add unrelated users without authorization
+
+Use RLS or RPC functions to enforce those rules.
+
+## Medium Priority
+
+### Sitter Role Is Not Enforced For Applications
+
+Files:
+
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/rls_policies.sql`
+
+The RLS comment says sitter role is enforced by schema constraints, but `listing_applications.applicant_user_id` references `users(id)`, not `sitter_profiles(user_id)`.
+
+Risk:
+
+Any authenticated user can apply, even if they have not activated sitter mode.
+
+Recommended fix:
+
+Either:
+
+- change `applicant_user_id` to reference `sitter_profiles(user_id)`, or
+- add RLS `EXISTS` checks requiring a sitter profile, or
+- intentionally allow applications from any user and create sitter profile during application onboarding.
+
+### Active Plants Are Visible To All Authenticated Users
+
+File:
+
+- `android_only/db/rls_policies.sql`
+
+Risk:
+
+All active plants are visible to authenticated users, even when not attached to an open listing. This may expose private plant/profile details.
+
+Recommended fix:
+
+Only expose:
+
+- plants owned by the current user
+- plants attached to open listings
+- plants attached to active contracts involving the current user
+
+### Plant Photos Are Broadly Readable
+
+File:
+
+- `android_only/db/rls_policies.sql`
+
+Risk:
+
+`plant_photos_select_authenticated` uses `USING (true)`. Once image upload exists, all authenticated users may be able to read photo metadata for all plant photos.
+
+Recommended fix:
+
+Tie photo visibility to plant visibility.
+
+### Frontend Has No Guard For Missing Supabase Env Vars
+
+File:
+
+- `react_webiosand/src/lib/supabase.js`
+
+Risk:
+
+If `.env` is missing, the app may fail with unclear runtime errors.
+
+Recommended fix:
+
+Add a startup guard with a helpful error message when `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_ANON_KEY` is missing.
+
+### Manual Schema Setup Is Error-Prone
+
+Files:
+
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/rls_policies.sql`
+
+Risk:
+
+The schema is applied manually through the Supabase dashboard. This already appears to have caused a UUID/BIGINT mismatch in a previous session.
+
+Recommended fix:
+
+Move to formal Supabase migrations and document the reset process.
+
+## Low Priority / Hygiene
+
+### Generated And Local Files Are Present At Repo Root
+
+Folders/files:
+
+- `.gradle/`
+- `.idea/`
+- `app/build/`
+- `build/`
+- `local.properties`
+
+Risk:
+
+Noise, accidental local config commits, and confusion about source vs generated output.
+
+Recommended fix:
+
+Add root `.gitignore` coverage and clean generated output after confirming it is not needed.
+
+### No Automated Tests
+
+Risk:
+
+Auth, RLS behavior, and core flows can regress without warning.
+
+Recommended fix:
+
+Add focused tests around:
+
+- plant CRUD
+- listing creation
+- listing browse
+- application flow when implemented
+- RLS policy expectations
+
+### No Service Boundary For Multi-Step Business Operations
+
+Risk:
+
+Accepting an application will require several writes. Doing this directly from the client can create partial state if one write succeeds and another fails.
+
+Recommended fix:
+
+Use Supabase RPC functions for transactional operations such as:
+
+- accept application
+- create contract
+- complete contract
+- transfer ownership
+- post payment ledger rows
+
+## Secret Handling Rules
+
+- Safe in frontend: Supabase anon key.
+- Not safe in frontend: service role key.
+- Not safe in repo: Postgres password.
+- Not safe in repo: payment provider secrets.
+- Not safe in repo: private signing keys.
+
+The `.env` file is ignored inside `react_webiosand/`, which is good. Keep it that way.
