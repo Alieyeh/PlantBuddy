@@ -33,6 +33,9 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/src/screens/PostListingScreen.js',
     'react_webiosand/src/screens/ApplyScreen.js',
     'react_webiosand/src/screens/ApplicationsScreen.js',
+    'react_webiosand/src/screens/SwapProposalScreen.js',
+    'react_webiosand/src/screens/SwapProposalsScreen.js',
+    'react_webiosand/src/screens/HandoffReviewScreen.js',
   ].forEach((file) => assert.equal(exists(file), true, `${file} should exist`));
 });
 
@@ -60,6 +63,8 @@ test('database schema and RLS files include the current MVP tables', () => {
   const schema = read('android_only/db/sql_build_tables.sql');
   const rls = read('android_only/db/rls_policies.sql');
 
+  assert.ok(schema.includes("CREATE TYPE listing_type AS ENUM ('SITTING_REQUEST', 'GIFT', 'SWAP', 'SALE')"));
+
   [
     'CREATE TABLE IF NOT EXISTS users',
     'CREATE TABLE IF NOT EXISTS owner_profiles',
@@ -68,6 +73,8 @@ test('database schema and RLS files include the current MVP tables', () => {
     'CREATE TABLE IF NOT EXISTS plant_listings',
     'CREATE TABLE IF NOT EXISTS listing_applications',
     'CREATE TABLE IF NOT EXISTS contracts',
+    'CREATE TABLE IF NOT EXISTS listing_handoffs',
+    'CREATE TABLE IF NOT EXISTS listing_handoff_reviews',
   ].forEach((statement) => assert.match(schema, new RegExp(statement)));
 
   [
@@ -76,10 +83,11 @@ test('database schema and RLS files include the current MVP tables', () => {
     'ALTER TABLE plant_listings',
     'CREATE POLICY "plants_insert_own"',
     'CREATE POLICY "plant_listings_select_open"',
+    'CREATE POLICY "listing_handoffs_select"',
   ].forEach((statement) => assert.match(rls, new RegExp(statement)));
 });
 
-test('current application flow screens are wired into navigation and services', () => {
+test('current application and marketplace flows are wired into navigation and services', () => {
   const navigator = read('react_webiosand/src/navigation/AppNavigator.js');
   const detailScreen = read('react_webiosand/src/screens/ListingDetailScreen.js');
   const service = read('react_webiosand/src/api/listingsService.js');
@@ -87,9 +95,17 @@ test('current application flow screens are wired into navigation and services', 
   assert.match(navigator, /ProfileSetup/);
   assert.match(navigator, /Apply/);
   assert.match(navigator, /Applications/);
+  assert.match(navigator, /SwapProposal/);
+  assert.match(navigator, /SwapProposals/);
+  assert.match(navigator, /HandoffReview/);
   assert.match(detailScreen, /Apply to Sit/);
   assert.match(detailScreen, /navigation\.navigate\('Apply'/);
   assert.match(service, /applyToListing/);
   assert.match(service, /getApplicationsForListing/);
   assert.match(service, /updateApplicationStatus/);
+  assert.match(detailScreen, /Propose swap/);
+  assert.match(detailScreen, /Start purchase handoff/);
+  assert.match(service, /createSwapProposal/);
+  assert.match(service, /acceptSwapProposal/);
+  assert.match(service, /createListingHandoffReview/);
 });

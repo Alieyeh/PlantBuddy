@@ -14,6 +14,9 @@ import ListingDetailScreen from '../screens/ListingDetailScreen';
 import PostListingScreen from '../screens/PostListingScreen';
 import ApplyScreen from '../screens/ApplyScreen';
 import ApplicationsScreen from '../screens/ApplicationsScreen';
+import SwapProposalScreen from '../screens/SwapProposalScreen';
+import SwapProposalsScreen from '../screens/SwapProposalsScreen';
+import HandoffReviewScreen from '../screens/HandoffReviewScreen';
 
 import { SessionManager } from '../storage/SessionManager';
 import { C } from '../lib/theme';
@@ -50,12 +53,27 @@ function PlantsStack() {
       <Stack.Screen
         name="PostListing"
         component={PostListingScreen}
-        options={{ title: 'Post Sitting Request', headerBackTitle: 'Back' }}
+        options={{ title: 'Create Listing', headerBackTitle: 'Back' }}
       />
       <Stack.Screen
         name="Applications"
         component={ApplicationsScreen}
         options={{ title: 'Applicants', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="SwapProposal"
+        component={SwapProposalScreen}
+        options={{ title: 'Propose Swap', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="SwapProposals"
+        component={SwapProposalsScreen}
+        options={{ title: 'Swap Proposals', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="HandoffReview"
+        component={HandoffReviewScreen}
+        options={{ title: 'Leave Review', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );
@@ -82,6 +100,21 @@ function BrowseStack() {
         name="Apply"
         component={ApplyScreen}
         options={{ title: 'Apply to Sit', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="SwapProposal"
+        component={SwapProposalScreen}
+        options={{ title: 'Propose Swap', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="SwapProposals"
+        component={SwapProposalsScreen}
+        options={{ title: 'Swap Proposals', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="HandoffReview"
+        component={HandoffReviewScreen}
+        options={{ title: 'Leave Review', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );

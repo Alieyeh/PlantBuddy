@@ -2,14 +2,18 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const {
+  buildListingPayload,
   buildSittingRequestPayload,
   daysBetween,
   formatLongDate,
   formatShortDate,
   getTodayIsoDate,
   isIsoDate,
+  normalizeCurrencyCode,
   optionalText,
+  parseMoneyAmount,
   parseIsoDateAsLocal,
+  validateListingForm,
   validateSittingRequestForm,
 } = require('../../src/utils/listingForm');
 
@@ -46,6 +50,15 @@ test('optionalText trims optional listing copy', () => {
   assert.equal(optionalText('  Away for two weeks  '), 'Away for two weeks');
   assert.equal(optionalText('  '), null);
   assert.equal(optionalText(undefined), null);
+});
+
+test('money helpers normalize price and currency input', () => {
+  assert.equal(parseMoneyAmount('19.99'), 19.99);
+  assert.equal(parseMoneyAmount(' 12 '), 12);
+  assert.equal(parseMoneyAmount('-2'), null);
+  assert.equal(parseMoneyAmount('abc'), null);
+  assert.equal(normalizeCurrencyCode(' gbp '), 'GBP');
+  assert.equal(normalizeCurrencyCode(''), null);
 });
 
 test('validateSittingRequestForm catches invalid sitting request state', () => {
@@ -110,6 +123,78 @@ test('buildSittingRequestPayload trims optional text into service payload', () =
       startDate: '2026-06-01',
       endDate: '2026-06-14',
       sittingNotes: 'Water gently',
+    }
+  );
+});
+
+test('validateListingForm applies mode-specific rules for gift and sale', () => {
+  const validBase = {
+    selectedPlantId: 7,
+    title: 'Lovely plant',
+    listingType: 'GIFT',
+  };
+
+  assert.deepEqual(validateListingForm(validBase, '2026-05-01'), { valid: true });
+  assert.deepEqual(
+    validateListingForm({ ...validBase, listingType: 'SALE', salePrice: '0', currencyCode: 'GBP' }, '2026-05-01'),
+    {
+      valid: false,
+      title: 'Invalid price',
+      message: 'Please enter a sale price greater than 0.',
+    }
+  );
+  assert.deepEqual(
+    validateListingForm({ ...validBase, listingType: 'SALE', salePrice: '12.50', currencyCode: 'gb' }, '2026-05-01'),
+    {
+      valid: false,
+      title: 'Invalid currency',
+      message: 'Use a 3-letter currency code such as GBP.',
+    }
+  );
+  assert.deepEqual(
+    validateListingForm({ ...validBase, listingType: 'SALE', salePrice: '12.50', currencyCode: 'gbp' }, '2026-05-01'),
+    { valid: true }
+  );
+});
+
+test('buildListingPayload maps supported listing modes into insert payloads', () => {
+  assert.deepEqual(
+    buildListingPayload({
+      selectedPlantId: 8,
+      ownerUserId: 'owner-uuid',
+      listingType: 'GIFT',
+      title: ' Free to a good home ',
+      description: '  Healthy and established ',
+      giftNotes: '  Prefer pickup this week ',
+    }),
+    {
+      plantId: 8,
+      ownerUserId: 'owner-uuid',
+      listingType: 'GIFT',
+      title: 'Free to a good home',
+      description: 'Healthy and established',
+      giftNotes: 'Prefer pickup this week',
+    }
+  );
+
+  assert.deepEqual(
+    buildListingPayload({
+      selectedPlantId: 9,
+      ownerUserId: 'owner-uuid',
+      listingType: 'SALE',
+      title: ' Rare cutting ',
+      description: '  Rooted and healthy ',
+      salePrice: '14.50',
+      currencyCode: ' gbp ',
+    }),
+    {
+      plantId: 9,
+      ownerUserId: 'owner-uuid',
+      listingType: 'SALE',
+      title: 'Rare cutting',
+      description: 'Rooted and healthy',
+      salePrice: 14.5,
+      currencyCode: 'GBP',
     }
   );
 });

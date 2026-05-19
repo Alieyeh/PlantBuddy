@@ -1,12 +1,18 @@
 import { supabase } from '../lib/supabase';
 
+export const LISTING_TYPES = Object.freeze({
+  SITTING_REQUEST: 'SITTING_REQUEST',
+  GIFT: 'GIFT',
+  SWAP: 'SWAP',
+  SALE: 'SALE',
+});
+
 /**
- * Supabase-backed data access for sitting request listings. The database
- * supports more listing types, but the current UI only exposes sitting.
+ * Supabase-backed data access for marketplace and plant-sitting listings.
  */
 export const listingsService = {
   /**
-   * Loads all open sitting requests for the browse feed.
+   * Loads all open listings for the browse feed.
    *
    * @returns {Promise<Array<object>>}
    */
@@ -17,9 +23,15 @@ export const listingsService = {
         id,
         title,
         description,
+        listing_type,
+        owner_user_id,
         sitting_start_date,
         sitting_end_date,
         sitting_notes,
+        desired_swap_notes,
+        gift_notes,
+        sale_price,
+        currency_code,
         status,
         created_at,
         plants (
@@ -28,10 +40,10 @@ export const listingsService = {
           species,
           size_description,
           watering_frequency_days,
-          light_requirements
+          light_requirements,
+          humidity_requirements
         )
       `)
-      .eq('listing_type', 'SITTING_REQUEST')
       .eq('status', 'OPEN')
       .order('created_at', { ascending: false });
 
@@ -84,20 +96,65 @@ export const listingsService = {
    * @returns {Promise<object>}
    */
   async createSittingRequest({ plantId, ownerUserId, title, description, startDate, endDate, sittingNotes }) {
+    return this.createListing({
+      plantId,
+      ownerUserId,
+      listingType: LISTING_TYPES.SITTING_REQUEST,
+      title,
+      description,
+      startDate,
+      endDate,
+      sittingNotes,
+    });
+  },
+
+  /**
+   * Creates a listing for one plant in one of the currently supported owner modes.
+   *
+   * @param {object} params
+   * @returns {Promise<object>}
+   */
+  async createListing({
+    plantId,
+    ownerUserId,
+    listingType,
+    title,
+    description,
+    startDate,
+    endDate,
+    sittingNotes,
+    giftNotes,
+    salePrice,
+    currencyCode,
+  }) {
+    const payload = {
+      plant_id: plantId,
+      owner_user_id: ownerUserId,
+      listing_type: listingType,
+      status: 'OPEN',
+      title,
+      description: description ?? null,
+      published_at: new Date().toISOString(),
+    };
+
+    if (listingType === LISTING_TYPES.SITTING_REQUEST) {
+      payload.sitting_start_date = startDate;
+      payload.sitting_end_date = endDate;
+      payload.sitting_notes = sittingNotes ?? null;
+    }
+
+    if (listingType === LISTING_TYPES.GIFT) {
+      payload.gift_notes = giftNotes ?? null;
+    }
+
+    if (listingType === LISTING_TYPES.SALE) {
+      payload.sale_price = salePrice;
+      payload.currency_code = currencyCode;
+    }
+
     const { data, error } = await supabase
       .from('plant_listings')
-      .insert({
-        plant_id: plantId,
-        owner_user_id: ownerUserId,
-        listing_type: 'SITTING_REQUEST',
-        status: 'OPEN',
-        title,
-        description,
-        sitting_start_date: startDate,
-        sitting_end_date: endDate,
-        sitting_notes: sittingNotes,
-        published_at: new Date().toISOString(),
-      })
+      .insert(payload)
       .select()
       .single();
 
@@ -176,6 +233,246 @@ export const listingsService = {
     if (error) throw error;
   },
 
+  async createSwapProposal({ listingId, proposerOwnerUserId, offeredPlantId, message }) {
+    const { data, error } = await supabase
+      .from('swap_proposals')
+      .insert({
+        listing_id: listingId,
+        proposer_owner_user_id: proposerOwnerUserId,
+        offered_plant_id: offeredPlantId,
+        message_to_owner: message || null,
+        status: 'PENDING',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getSwapProposalsForListing(listingId) {
+    const { data, error } = await supabase
+      .from('swap_proposals')
+      .select(`
+        id,
+        listing_id,
+        proposer_owner_user_id,
+        message_to_owner,
+        status,
+        created_at,
+        responded_at,
+        offered_plant:plants!swap_proposals_offered_plant_id_fkey (
+          id,
+          name,
+          species,
+          health_status,
+          size_description
+        ),
+        proposer:owner_profiles!swap_proposals_proposer_owner_user_id_fkey (
+          user_id,
+          display_name
+        )
+      `)
+      .eq('listing_id', listingId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getMySwapProposalForListing(listingId, proposerOwnerUserId) {
+    const { data, error } = await supabase
+      .from('swap_proposals')
+      .select(`
+        id,
+        listing_id,
+        proposer_owner_user_id,
+        message_to_owner,
+        status,
+        created_at,
+        responded_at,
+        offered_plant:plants!swap_proposals_offered_plant_id_fkey (
+          id,
+          name,
+          species
+        )
+      `)
+      .eq('listing_id', listingId)
+      .eq('proposer_owner_user_id', proposerOwnerUserId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateSwapProposalStatus(proposalId, status) {
+    const { error } = await supabase
+      .from('swap_proposals')
+      .update({ status, responded_at: new Date().toISOString() })
+      .eq('id', proposalId);
+    if (error) throw error;
+  },
+
+  async startListingHandoff({ listing, recipientUserId, notes, swapProposalId }) {
+    const payload = {
+      listing_id: listing.id,
+      owner_user_id: listing.owner_user_id,
+      recipient_user_id: recipientUserId,
+      created_by_user_id: recipientUserId,
+      notes: notes || null,
+    };
+
+    if (listing.listing_type === LISTING_TYPES.SALE) {
+      payload.amount = listing.sale_price;
+      payload.currency_code = listing.currency_code;
+    }
+
+    if (listing.listing_type === LISTING_TYPES.SWAP) {
+      payload.swap_proposal_id = swapProposalId;
+    }
+
+    const { data, error } = await supabase
+      .from('listing_handoffs')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getListingHandoff(listingId) {
+    const { data, error } = await supabase
+      .from('listing_handoffs')
+      .select(`
+        id,
+        listing_id,
+        owner_user_id,
+        recipient_user_id,
+        swap_proposal_id,
+        amount,
+        currency_code,
+        status,
+        notes,
+        owner_confirmed_at,
+        recipient_confirmed_at,
+        completed_at,
+        cancelled_at,
+        created_at,
+        listing_handoff_reviews (
+          id,
+          reviewer_user_id,
+          reviewee_user_id,
+          rating,
+          review_text,
+          created_at
+        )
+      `)
+      .eq('listing_id', listingId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async confirmListingHandoff(handoff, currentUserId) {
+    const now = new Date().toISOString();
+    const patch = {};
+
+    if (currentUserId === handoff.owner_user_id) {
+      patch.owner_confirmed_at = handoff.owner_confirmed_at ?? now;
+      if (handoff.recipient_confirmed_at) {
+        patch.status = 'COMPLETED';
+        patch.completed_at = now;
+      } else {
+        patch.status = 'OWNER_CONFIRMED';
+      }
+    } else if (currentUserId === handoff.recipient_user_id) {
+      patch.recipient_confirmed_at = handoff.recipient_confirmed_at ?? now;
+      if (handoff.owner_confirmed_at) {
+        patch.status = 'COMPLETED';
+        patch.completed_at = now;
+      } else {
+        patch.status = 'RECIPIENT_CONFIRMED';
+      }
+    } else {
+      throw new Error('Only handoff participants can confirm completion.');
+    }
+
+    const { data, error } = await supabase
+      .from('listing_handoffs')
+      .update(patch)
+      .eq('id', handoff.id)
+      .select(`
+        id,
+        listing_id,
+        owner_user_id,
+        recipient_user_id,
+        swap_proposal_id,
+        amount,
+        currency_code,
+        status,
+        notes,
+        owner_confirmed_at,
+        recipient_confirmed_at,
+        completed_at,
+        cancelled_at,
+        created_at,
+        listing_handoff_reviews (
+          id,
+          reviewer_user_id,
+          reviewee_user_id,
+          rating,
+          review_text,
+          created_at
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createListingHandoffReview({ handoffId, reviewerUserId, revieweeUserId, rating, reviewText }) {
+    const { data, error } = await supabase
+      .from('listing_handoff_reviews')
+      .insert({
+        handoff_id: handoffId,
+        reviewer_user_id: reviewerUserId,
+        reviewee_user_id: revieweeUserId,
+        rating,
+        review_text: reviewText || null,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async acceptSwapProposal({ proposal, listingOwnerUserId, actingUserId }) {
+    await this.updateSwapProposalStatus(proposal.id, 'ACCEPTED');
+
+    try {
+      return await this.startListingHandoff({
+        listing: {
+          id: proposal.listing_id,
+          owner_user_id: listingOwnerUserId,
+          listing_type: LISTING_TYPES.SWAP,
+        },
+        recipientUserId: proposal.proposer_owner_user_id,
+        notes: proposal.message_to_owner,
+        swapProposalId: proposal.id,
+        actingUserId,
+      });
+    } catch (error) {
+      await supabase
+        .from('swap_proposals')
+        .update({ status: 'PENDING', responded_at: null })
+        .eq('id', proposal.id);
+      throw error;
+    }
+  },
+
   /**
    * Loads a single listing with its linked plant details.
    *
@@ -189,9 +486,15 @@ export const listingsService = {
         id,
         title,
         description,
+        owner_user_id,
+        store_owner_user_id,
         sitting_start_date,
         sitting_end_date,
         sitting_notes,
+        desired_swap_notes,
+        gift_notes,
+        sale_price,
+        currency_code,
         status,
         listing_type,
         created_at,
@@ -205,7 +508,8 @@ export const listingsService = {
           watering_frequency_days,
           light_requirements,
           humidity_requirements,
-          special_instructions
+          special_instructions,
+          location_notes
         )
       `)
       .eq('id', id)

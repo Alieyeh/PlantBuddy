@@ -4,26 +4,57 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, StyleSheet,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { listingsService } from '../api/listingsService';
+import { listingsService, LISTING_TYPES } from '../api/listingsService';
 import { C, T, S, shared } from '../lib/theme';
+import { buildListingPayload, validateListingForm } from '../utils/listingForm';
 
-const TODAY = new Date().toISOString().slice(0, 10);
-const validateDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+const LISTING_MODE_OPTIONS = [
+  { value: LISTING_TYPES.SITTING_REQUEST, label: 'Find sitter' },
+  { value: LISTING_TYPES.GIFT, label: 'Gift' },
+  { value: LISTING_TYPES.SALE, label: 'Sell' },
+];
+
+const LISTING_COPY = {
+  [LISTING_TYPES.SITTING_REQUEST]: {
+    title: 'Find a Sitter',
+    subtitle: 'Your sitting request will be visible to plant sitters immediately.',
+    cta: 'Post sitting request',
+    successTitle: 'Posted!',
+    successMessage: 'Your sitting request is now live.',
+  },
+  [LISTING_TYPES.GIFT]: {
+    title: 'Gift a Plant',
+    subtitle: 'Offer this plant to a good home in the community.',
+    cta: 'Post gift listing',
+    successTitle: 'Posted!',
+    successMessage: 'Your gift listing is now live.',
+  },
+  [LISTING_TYPES.SALE]: {
+    title: 'Sell a Plant',
+    subtitle: 'List your plant for a peer-to-peer sale.',
+    cta: 'Post sale listing',
+    successTitle: 'Posted!',
+    successMessage: 'Your sale listing is now live.',
+  },
+};
 
 /**
- * Lets an owner publish one of their active plants as an open sitting request.
- * The form currently supports the MVP sitting flow only.
+ * Lets an owner publish one of their active plants as a sitting, gift, or sale listing.
  */
 export default function PostListingScreen({ route, navigation }) {
   const preselectedPlantId = route.params?.plantId ?? null;
 
   const [myPlants, setMyPlants] = useState([]);
   const [selectedPlantId, setSelectedPlantId] = useState(preselectedPlantId);
+  const [listingType, setListingType] = useState(route.params?.listingType ?? LISTING_TYPES.SITTING_REQUEST);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sittingNotes, setSittingNotes] = useState('');
+  const [giftNotes, setGiftNotes] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [currencyCode, setCurrencyCode] = useState('GBP');
   const [loading, setLoading] = useState(false);
   const [loadingPlants, setLoadingPlants] = useState(true);
   const [ownerUserId, setOwnerUserId] = useState(null);
@@ -46,22 +77,36 @@ export default function PostListingScreen({ route, navigation }) {
   }, []);
 
   const handlePost = async () => {
-    if (!selectedPlantId) { Alert.alert('Required', 'Please select a plant.'); return; }
-    if (!title.trim()) { Alert.alert('Required', 'Please add a listing title.'); return; }
-    if (!validateDate(startDate) || !validateDate(endDate)) {
-      Alert.alert('Invalid dates', 'Use YYYY-MM-DD format (e.g. 2026-06-01).'); return;
+    const validation = validateListingForm({
+      listingType,
+      selectedPlantId,
+      title,
+      startDate,
+      endDate,
+      salePrice,
+      currencyCode,
+    });
+    if (!validation.valid) {
+      Alert.alert(validation.title, validation.message);
+      return;
     }
-    if (endDate < startDate) { Alert.alert('Invalid dates', 'End date must be on or after start date.'); return; }
-    if (startDate < TODAY) { Alert.alert('Invalid dates', 'Start date cannot be in the past.'); return; }
 
     setLoading(true);
     try {
-      await listingsService.createSittingRequest({
-        plantId: selectedPlantId, ownerUserId,
-        title: title.trim(), description: description.trim() || null,
-        startDate, endDate, sittingNotes: sittingNotes.trim() || null,
-      });
-      Alert.alert('Posted!', 'Your sitting request is now live.', [
+      await listingsService.createListing(buildListingPayload({
+        ownerUserId,
+        listingType,
+        selectedPlantId,
+        title,
+        description,
+        startDate,
+        endDate,
+        sittingNotes,
+        giftNotes,
+        salePrice,
+        currencyCode,
+      }));
+      Alert.alert(LISTING_COPY[listingType].successTitle, LISTING_COPY[listingType].successMessage, [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
@@ -72,6 +117,7 @@ export default function PostListingScreen({ route, navigation }) {
   };
 
   const selectedPlant = myPlants.find((p) => p.id === selectedPlantId);
+  const screenCopy = LISTING_COPY[listingType];
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -80,10 +126,26 @@ export default function PostListingScreen({ route, navigation }) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Find a Sitter</Text>
-        <Text style={styles.subtitle}>Your listing will be visible to all sitters immediately.</Text>
+        <Text style={styles.title}>{screenCopy.title}</Text>
+        <Text style={styles.subtitle}>{screenCopy.subtitle}</Text>
 
-        <Text style={styles.fieldLabel}>Which plant needs a sitter? *</Text>
+        <Text style={styles.fieldLabel}>Listing type *</Text>
+        <View style={styles.modeRow}>
+          {LISTING_MODE_OPTIONS.map((option) => {
+            const selected = option.value === listingType;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                style={[styles.modeChip, selected && styles.modeChipSelected]}
+                onPress={() => setListingType(option.value)}
+              >
+                <Text style={[styles.modeChipText, selected && styles.modeChipTextSelected]}>{option.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={styles.fieldLabel}>Which plant is this for? *</Text>
         {loadingPlants ? (
           <ActivityIndicator color={C.amber} style={{ marginVertical: S.md }} />
         ) : myPlants.length === 0 ? (
@@ -117,40 +179,48 @@ export default function PostListingScreen({ route, navigation }) {
           </ScrollView>
         )}
 
-        <View style={styles.card}>
-          <Text style={styles.cardSectionLabel}>Sitting period *</Text>
-          <View style={styles.dateRow}>
-            <View style={{ flex: 1, marginRight: S.sm }}>
-              <Text style={styles.fieldLabel}>Start (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="2026-06-01"
-                placeholderTextColor={C.stone}
-                value={startDate}
-                onChangeText={setStartDate}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>End (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="2026-06-14"
-                placeholderTextColor={C.stone}
-                value={endDate}
-                onChangeText={setEndDate}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-              />
+        {listingType === LISTING_TYPES.SITTING_REQUEST ? (
+          <View style={styles.card}>
+            <Text style={styles.cardSectionLabel}>Sitting period *</Text>
+            <View style={styles.dateRow}>
+              <View style={{ flex: 1, marginRight: S.sm }}>
+                <Text style={styles.fieldLabel}>Start (YYYY-MM-DD)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="2026-06-01"
+                  placeholderTextColor={C.stone}
+                  value={startDate}
+                  onChangeText={setStartDate}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={10}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>End (YYYY-MM-DD)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="2026-06-14"
+                  placeholderTextColor={C.stone}
+                  value={endDate}
+                  onChangeText={setEndDate}
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={10}
+                />
+              </View>
             </View>
           </View>
-        </View>
+        ) : null}
 
         <Text style={styles.fieldLabel}>Listing Title *</Text>
         <TextInput
           style={styles.input}
-          placeholder={selectedPlant ? `Sitter needed for ${selectedPlant.name}` : 'e.g. Sitter needed June 1–14'}
+          placeholder={
+            listingType === LISTING_TYPES.SITTING_REQUEST
+              ? (selectedPlant ? `Sitter needed for ${selectedPlant.name}` : 'e.g. Sitter needed June 1–14')
+              : listingType === LISTING_TYPES.GIFT
+                ? (selectedPlant ? `${selectedPlant.name} free to a good home` : 'e.g. Free to a good home')
+                : (selectedPlant ? `${selectedPlant.name} for sale` : 'e.g. Rooted cutting for sale')
+          }
           placeholderTextColor={C.stone}
           value={title}
           onChangeText={setTitle}
@@ -159,28 +229,83 @@ export default function PostListingScreen({ route, navigation }) {
         <Text style={styles.fieldLabel}>Description</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
-          placeholder="Tell sitters about your plant and what you're looking for..."
+          placeholder={
+            listingType === LISTING_TYPES.SITTING_REQUEST
+              ? 'Tell sitters about your plant and what you are looking for...'
+              : listingType === LISTING_TYPES.GIFT
+                ? 'Describe the plant and the kind of new home you want for it...'
+                : 'Describe the plant, condition, and anything included in the sale...'
+          }
           placeholderTextColor={C.stone}
           multiline
           value={description}
           onChangeText={setDescription}
         />
 
-        <Text style={styles.fieldLabel}>Care notes for sitter</Text>
-        <TextInput
-          style={[styles.input, styles.multiline]}
-          placeholder="Anything specific the sitter should know during this period..."
-          placeholderTextColor={C.stone}
-          multiline
-          value={sittingNotes}
-          onChangeText={setSittingNotes}
-        />
+        {listingType === LISTING_TYPES.SITTING_REQUEST ? (
+          <>
+            <Text style={styles.fieldLabel}>Care notes for sitter</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              placeholder="Anything specific the sitter should know during this period..."
+              placeholderTextColor={C.stone}
+              multiline
+              value={sittingNotes}
+              onChangeText={setSittingNotes}
+            />
+          </>
+        ) : null}
+
+        {listingType === LISTING_TYPES.GIFT ? (
+          <>
+            <Text style={styles.fieldLabel}>Gift notes</Text>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              placeholder="Pickup preference, urgency, or anything a recipient should know..."
+              placeholderTextColor={C.stone}
+              multiline
+              value={giftNotes}
+              onChangeText={setGiftNotes}
+            />
+          </>
+        ) : null}
+
+        {listingType === LISTING_TYPES.SALE ? (
+          <View style={styles.card}>
+            <Text style={styles.cardSectionLabel}>Sale details *</Text>
+            <View style={styles.dateRow}>
+              <View style={{ flex: 1, marginRight: S.sm }}>
+                <Text style={styles.fieldLabel}>Price</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="15.00"
+                  placeholderTextColor={C.stone}
+                  value={salePrice}
+                  onChangeText={setSalePrice}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={{ width: 90 }}>
+                <Text style={styles.fieldLabel}>Currency</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="GBP"
+                  placeholderTextColor={C.stone}
+                  value={currencyCode}
+                  onChangeText={setCurrencyCode}
+                  autoCapitalize="characters"
+                  maxLength={3}
+                />
+              </View>
+            </View>
+          </View>
+        ) : null}
 
         {loading ? (
           <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
         ) : (
           <TouchableOpacity style={styles.button} onPress={handlePost} activeOpacity={0.85}>
-            <Text style={styles.buttonText}>Post sitting request</Text>
+            <Text style={styles.buttonText}>{screenCopy.cta}</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -195,6 +320,15 @@ const styles = StyleSheet.create({
   fieldLabel: { ...T.label, marginBottom: S.xs, marginTop: S.md },
   input: { ...shared.input },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
+  modeRow: { flexDirection: 'row', marginBottom: S.sm },
+  modeChip: {
+    backgroundColor: C.white, borderWidth: 1.5, borderColor: C.sage,
+    borderRadius: S.chip, paddingHorizontal: S.md, paddingVertical: S.sm,
+    marginRight: S.sm,
+  },
+  modeChipSelected: { backgroundColor: C.mist, borderColor: C.leaf },
+  modeChipText: { ...T.label, color: C.slate },
+  modeChipTextSelected: { color: C.forest },
   plantPicker: { flexDirection: 'row', marginBottom: S.xs },
   plantChip: {
     backgroundColor: C.white, borderWidth: 1.5, borderColor: C.sage,

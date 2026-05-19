@@ -29,6 +29,7 @@ ALTER TABLE listing_applications    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE swap_proposals          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contracts               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contract_plants         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE listing_handoffs        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages                ENABLE ROW LEVEL SECURITY;
@@ -37,6 +38,7 @@ ALTER TABLE notifications           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_ledger          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sitter_availability     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sitter_reviews          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE listing_handoff_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_orders            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE moderation_cases        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log               ENABLE ROW LEVEL SECURITY;
@@ -254,6 +256,7 @@ CREATE POLICY "listing_applications_select"
     OR EXISTS (
       SELECT 1 FROM plant_listings pl
       WHERE pl.id = listing_applications.listing_id
+        AND pl.listing_type = 'SITTING_REQUEST'
         AND pl.owner_user_id = auth.uid()
     )
   );
@@ -262,7 +265,15 @@ CREATE POLICY "listing_applications_select"
 CREATE POLICY "listing_applications_insert"
   ON listing_applications FOR INSERT
   TO authenticated
-  WITH CHECK (applicant_user_id = auth.uid());
+  WITH CHECK (
+    applicant_user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM plant_listings pl
+      WHERE pl.id = listing_applications.listing_id
+        AND pl.listing_type = 'SITTING_REQUEST'
+        AND pl.status = 'OPEN'
+    )
+  );
 
 -- Applicant can update their own (withdraw); owner can update status (accept/decline)
 CREATE POLICY "listing_applications_update"
@@ -273,6 +284,16 @@ CREATE POLICY "listing_applications_update"
     OR EXISTS (
       SELECT 1 FROM plant_listings pl
       WHERE pl.id = listing_applications.listing_id
+        AND pl.listing_type = 'SITTING_REQUEST'
+        AND pl.owner_user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    applicant_user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM plant_listings pl
+      WHERE pl.id = listing_applications.listing_id
+        AND pl.listing_type = 'SITTING_REQUEST'
         AND pl.owner_user_id = auth.uid()
     )
   );
@@ -289,6 +310,7 @@ CREATE POLICY "swap_proposals_select"
     OR EXISTS (
       SELECT 1 FROM plant_listings pl
       WHERE pl.id = swap_proposals.listing_id
+        AND pl.listing_type = 'SWAP'
         AND pl.owner_user_id = auth.uid()
     )
   );
@@ -296,7 +318,15 @@ CREATE POLICY "swap_proposals_select"
 CREATE POLICY "swap_proposals_insert"
   ON swap_proposals FOR INSERT
   TO authenticated
-  WITH CHECK (proposer_owner_user_id = auth.uid());
+  WITH CHECK (
+    proposer_owner_user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM plant_listings pl
+      WHERE pl.id = swap_proposals.listing_id
+        AND pl.listing_type = 'SWAP'
+        AND pl.status = 'OPEN'
+    )
+  );
 
 CREATE POLICY "swap_proposals_update"
   ON swap_proposals FOR UPDATE
@@ -306,6 +336,16 @@ CREATE POLICY "swap_proposals_update"
     OR EXISTS (
       SELECT 1 FROM plant_listings pl
       WHERE pl.id = swap_proposals.listing_id
+        AND pl.listing_type = 'SWAP'
+        AND pl.owner_user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    proposer_owner_user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM plant_listings pl
+      WHERE pl.id = swap_proposals.listing_id
+        AND pl.listing_type = 'SWAP'
         AND pl.owner_user_id = auth.uid()
     )
   );
@@ -323,12 +363,19 @@ CREATE POLICY "contracts_select"
 CREATE POLICY "contracts_insert"
   ON contracts FOR INSERT
   TO authenticated
-  WITH CHECK (created_by_user_id = auth.uid());
+  WITH CHECK (
+    created_by_user_id = auth.uid()
+    AND (
+      owner_user_id = auth.uid()
+      OR sitter_user_id = auth.uid()
+    )
+  );
 
 CREATE POLICY "contracts_update"
   ON contracts FOR UPDATE
   TO authenticated
-  USING (owner_user_id = auth.uid() OR sitter_user_id = auth.uid());
+  USING (owner_user_id = auth.uid() OR sitter_user_id = auth.uid())
+  WITH CHECK (owner_user_id = auth.uid() OR sitter_user_id = auth.uid());
 
 -- =========================================================
 -- CONTRACT PLANTS
@@ -355,6 +402,29 @@ CREATE POLICY "contract_plants_insert"
         AND (c.owner_user_id = auth.uid() OR c.sitter_user_id = auth.uid())
     )
   );
+
+-- =========================================================
+-- LISTING HANDOFFS
+-- =========================================================
+
+CREATE POLICY "listing_handoffs_select"
+  ON listing_handoffs FOR SELECT
+  TO authenticated
+  USING (owner_user_id = auth.uid() OR recipient_user_id = auth.uid());
+
+CREATE POLICY "listing_handoffs_insert"
+  ON listing_handoffs FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    created_by_user_id = auth.uid()
+    AND (owner_user_id = auth.uid() OR recipient_user_id = auth.uid())
+  );
+
+CREATE POLICY "listing_handoffs_update"
+  ON listing_handoffs FOR UPDATE
+  TO authenticated
+  USING (owner_user_id = auth.uid() OR recipient_user_id = auth.uid())
+  WITH CHECK (owner_user_id = auth.uid() OR recipient_user_id = auth.uid());
 
 -- =========================================================
 -- CONVERSATIONS + MESSAGES
@@ -512,6 +582,38 @@ CREATE POLICY "sitter_reviews_update_own"
   TO authenticated
   USING (owner_user_id = auth.uid())
   WITH CHECK (owner_user_id = auth.uid());
+
+-- =========================================================
+-- LISTING HANDOFF REVIEWS
+-- =========================================================
+
+CREATE POLICY "listing_handoff_reviews_select_authenticated"
+  ON listing_handoff_reviews FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "listing_handoff_reviews_insert_own"
+  ON listing_handoff_reviews FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    reviewer_user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM listing_handoffs lh
+      WHERE lh.id = listing_handoff_reviews.handoff_id
+        AND lh.status = 'COMPLETED'
+        AND (
+          (lh.owner_user_id = auth.uid() AND listing_handoff_reviews.reviewee_user_id = lh.recipient_user_id)
+          OR
+          (lh.recipient_user_id = auth.uid() AND listing_handoff_reviews.reviewee_user_id = lh.owner_user_id)
+        )
+    )
+  );
+
+CREATE POLICY "listing_handoff_reviews_update_own"
+  ON listing_handoff_reviews FOR UPDATE
+  TO authenticated
+  USING (reviewer_user_id = auth.uid())
+  WITH CHECK (reviewer_user_id = auth.uid());
 
 -- =========================================================
 -- STORE ORDERS

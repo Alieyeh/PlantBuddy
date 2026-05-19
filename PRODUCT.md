@@ -1,522 +1,443 @@
-# PlantBuddy — Product Document
+# PlantBuddy - Product Document
 
-> *"Every plant deserves a caretaker. Every caretaker deserves a community."*
+> PlantBuddy is a trusted plant marketplace and care network where people can sell, gift, swap, and temporarily place plants with local sitters.
 
-This is the product vision and intended full scope. For the current implementation status, setup steps, risks, and handoff notes, use the `docs/` folder as the day-to-day source of truth.
-
----
-
-## The Problem Worth Solving
-
-You're going on a two-week trip. Your monstera is sitting in the corner, silently judging you. You can't bring it. You can't leave it. Your friends are either too busy, too far, or too afraid to admit they don't know what "indirect sunlight" means.
-
-On the other side of that problem is someone who *loves* plants, who has space, time, and a genuine desire to nurture something alive — but doesn't own anything yet, or wants more green in their life without the commitment of buying.
-
-**PlantBuddy bridges that gap.** It turns plant ownership into a community act. Owners lend. Sitters adopt temporarily. Plants get the care they need. People connect around something real.
+This document defines the product vision, core loops, and planned scope. Implementation status and technical notes live in the docs folder.
 
 ---
 
-## What PlantBuddy Does
+## 1. Product Vision
 
-PlantBuddy is a **full-stack, cross-platform application** available on Android, iOS, and the web. It lets plant owners publish their plants for short-term care, and lets plant sitters browse, apply, and formally commit to caring for those plants during a defined period — from any device, anywhere.
+Most plant apps do one thing well and stop there.
 
-The core loop is simple:
+- Plant shops help you buy new plants.
+- Resale marketplaces help you list almost anything, but give plants no special care context.
+- Care platforms are built for pets, not living collections of houseplants with specific routines.
 
-```
-Owner creates a plant profile
-  → Owner posts a sitting request (with dates)
-    → Sitter browses and applies
-      → Owner accepts, contract is formed
-        → Sitter cares for the plant
-          → Owner returns, contract closes
-            → Both parties leave reviews
-```
+PlantBuddy combines all three.
 
-One user can be both an owner and a sitter. You can lend your ficus on Monday and apply to care for someone's succulent collection on Tuesday. Roles are fluid. The platform grows with you.
+It is a marketplace for plant people who want to:
+
+- sell a plant,
+- give a plant away,
+- trade plants with another collector,
+- or find someone trustworthy to care for a plant while they travel.
+
+The product thesis is simple:
+
+**A plant is not just an object.**
+
+It has identity, condition, care needs, emotional value, and in many cases a story. The platform should treat it that way.
 
 ---
 
-## Core Concepts
+## 2. Core Promise
 
-### The Plant Profile
+PlantBuddy helps users do two things confidently:
 
-Every plant gets its own identity card — a profile that travels with it through every sitting request, swap, or donation. Owners build these profiles once and reuse them.
+1. Discover and move plants between people.
+2. Trust other people with living plants.
 
-A plant profile contains:
+That means PlantBuddy must be good at both:
 
-| Field | Purpose |
+- marketplace mechanics: listings, search, prices, offers, urgency, favorites,
+- and care mechanics: routines, dates, expectations, reviews, trust signals, handoff coordination.
+
+---
+
+## 3. Positioning
+
+### Category
+
+PlantBuddy is a peer-to-peer plant commerce and care platform.
+
+### Mental model
+
+If a resale marketplace and a care-booking platform had a plant-native child, it would look like PlantBuddy.
+
+### Who it is for
+
+- Houseplant collectors
+- Casual plant owners
+- People moving house or downsizing
+- People traveling and needing temporary care
+- Plant hobbyists who want extra income as sitters
+- Community-minded users who like gifting or swapping instead of discarding
+
+---
+
+## 4. Problems Worth Solving
+
+### Problem A: Plant resale is poorly structured
+
+General marketplaces treat plants like random household goods. Listings often lack species names, care information, condition notes, and pickup expectations.
+
+### Problem B: Rehoming a plant feels risky
+
+When someone gifts away a beloved plant, they often care more about the next home than the transaction value. Current platforms do not support that emotional decision well.
+
+### Problem C: Travel creates plant-care stress
+
+People leave for weekends, holidays, work trips, or emergencies and need someone who actually understands plant care, not just someone who can pour water occasionally.
+
+### Problem D: Trust is thin in current options
+
+Plant exchange often happens informally through DMs, local groups, or mixed-purpose marketplaces with weak identity, poor reviews, and no structured handoff flow.
+
+---
+
+## 5. Product Concept
+
+PlantBuddy gives each plant an identity profile, then lets the owner publish that plant in one of several modes.
+
+### A plant profile includes
+
+- Name
+- Species / variety
+- Description
+- Condition
+- Size
+- Location notes
+- Light requirements
+- Watering cadence
+- Humidity notes
+- Special instructions
+- Photos
+- Optional story or personality notes
+
+### From that profile, the owner can publish:
+
+| Mode | What it means |
 |---|---|
-| Name | What you call it (yes, "Gerald" is valid) |
-| Species | Helps sitters know what they're signing up for |
-| Description | Personality, quirks, history |
-| Age | Whether it's a seedling or a decade-old specimen |
-| Size | So the sitter knows it'll fit in their apartment |
-| Health Status | Honest notes on current condition |
-| Watering Frequency | Days between waterings |
-| Light Requirements | Indirect? Direct? Shade-lover? |
-| Humidity Requirements | Tropical diva or desert stoic? |
-| Special Instructions | "Don't move it. Seriously. It hates moving." |
-| Location Notes | Where it lives best at home |
-| Photos | The plant's portfolio |
-| Care Tasks | Specific scheduled tasks (misting, fertilizing, rotating) |
+| Sell | Permanent transfer for money |
+| Gift | Permanent transfer for free |
+| Swap | Exchange for another plant |
+| Need sitter | Temporary care arrangement |
 
-A well-built plant profile is a gift to the sitter. It eliminates guesswork and sets both parties up for a successful arrangement.
+This single-inventory, multi-intent model is the heart of the product.
 
 ---
 
-### The Four Listing Types
+## 6. Primary User Roles
 
-Once a plant profile exists, an owner can publish it in four modes:
+Users can activate multiple roles on one account.
 
-#### 1. Sitting Request
-> *"I'm traveling June 1–14. Can someone care for my pothos?"*
-
-The flagship interaction. Owner specifies a date range. Sitters browse and apply. A formal contract is negotiated and signed by both parties. The most structured, trust-building mode.
-
-#### 2. Donation
-> *"I'm moving to a studio and can't take all of them. Free to a good home."*
-
-The owner gives the plant away permanently. Sitters express interest. The owner selects a recipient. Ownership transfers.
-
-#### 3. Swap
-> *"I have three snake plants. Anyone want to trade for something tropical?"*
-
-Owner-to-owner plant exchange. The proposing owner offers one of their plants in exchange for the listed plant. Both parties agree before anything moves.
-
-#### 4. Sale *(Store Owners only)*
-> *"Rare variegated monstera, $85, ships in terracotta pot."*
-
-Approved plant stores can list plants for purchase. Buyers browse and order through the platform. Requires admin approval to unlock.
-
----
-
-### Dual Roles — One Account
-
-A single account can hold three role profiles simultaneously:
-
-| Role | What it unlocks |
+| Role | Capabilities |
 |---|---|
-| **Owner** | Create plant profiles, post sitting requests, post donations, propose swaps |
-| **Sitter** | Apply to sitting requests, receive donations, set availability and daily rate |
-| **Store Owner** | List plants for sale (requires platform approval) |
+| Owner | Create plant profiles and publish listings |
+| Buyer / Adopter | Save, message, request, and acquire plants |
+| Swapper | Propose exchange deals |
+| Sitter | Offer temporary plant care services |
 
-Roles are additive. Activating sitter mode doesn't remove owner capabilities. There is no penalty for wearing both hats — the platform is designed for plant people who do it all.
-
----
-
-### The Contract
-
-When a sitting request matches with a sitter application, the platform formalizes the arrangement into a **contract**. This is not just a handshake — it's a structured agreement that:
-
-- Names the owner and sitter explicitly
-- Specifies the exact date range of care
-- Lists which plants are covered
-- Records the agreed payment (if any)
-- Tracks dual acceptance (both parties must sign off)
-- Provides a dispute pathway if something goes wrong
-
-Contract states flow through:
-
-```
-DRAFT → PENDING_OWNER → PENDING_SITTER → ACTIVE → COMPLETED
-                                       ↘ CANCELLED / DISPUTED
-```
-
-No plant moves without a contract. No payment is released without completion. The contract is the trust layer.
+Roles are additive, not exclusive. A user may sell one plant, adopt another, and sit for someone else's collection in the same month.
 
 ---
 
-## User Flows
+## 7. Core Loops
 
-### Flow A: Lending Your Plant
+### Loop A: Sell a plant
 
-```
-1. Create account → activate Owner profile
-2. Build a plant profile for your monstera (photos, care tasks, instructions)
-3. Post a Sitting Request: "June 1–14, $0 or negotiable"
-4. Receive sitter applications in your inbox
-5. Review applicant profiles and ratings
-6. Accept an application → contract is auto-generated
-7. Negotiate final dates and price via in-app messaging
-8. Both parties confirm the contract
-9. Hand off the plant (in-person or delivery)
-10. Sitter completes the sit → contract closes
-11. Leave a review for your sitter
+```text
+Create plant profile
+  -> Publish as Sell
+    -> Buyers discover listing
+      -> Message or make offer
+        -> Agree pickup / delivery
+          -> Complete transfer
+            -> Leave review
 ```
 
-### Flow B: Adopting a Plant to Care For
+### Loop B: Gift a plant
 
-```
-1. Create account → activate Sitter profile
-2. Set your availability calendar and daily rate
-3. Browse open sitting requests, filtered by date/location
-4. View plant profiles — species, care needs, photos
-5. Apply with a message and proposed dates/price
-6. Owner accepts → review and sign the contract
-7. Receive care instructions and pick up the plant
-8. Log care tasks as you complete them
-9. Return the plant at contract end
-10. Receive payment → get reviewed
+```text
+Create plant profile
+  -> Publish as Gift
+    -> Interested adopters respond
+      -> Owner chooses best home
+        -> Coordinate handoff
+          -> Mark rehomed
+            -> Leave review
 ```
 
-### Flow C: The Power User (Both Roles)
+### Loop C: Swap plants
 
-One account. Multiple plants owned. Multiple sitting arrangements active. It's common — plant people are enthusiastic. The app handles this gracefully: your dashboard shows owned plants, active sitter contracts, and pending applications all in one view.
-
----
-
-## Architecture
-
-PlantBuddy is built around a managed Supabase backend serving the active Expo frontend, with the older native Android code retained as a reference build:
-
-```
-┌──────────────────────────────────────────────────────┐
-│                    Client Layer                       │
-│                                                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
-│  │  Android    │  │    iOS      │  │    Web      │  │
-│  │ (Java/MVVM) │  │  (Expo /    │  │  (Expo /    │  │
-│  │             │  │React Native)│  │React Native)│  │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │
-└─────────┼────────────────┼────────────────┼──────────┘
-          │                │                │
-          └────────────────▼────────────────┘
-                  supabase-js SDK
-               ┌──────────────────────┐
-               │       Supabase       │
-               │  Auth  │  PostgREST  │
-               │  Storage │ Realtime  │
-               └──────────┬───────────┘
-                          │
-               ┌──────────▼───────────┐
-               │  PostgreSQL (hosted) │
-               │  Normalized schema   │
-               │  Row Level Security  │
-               │  CHECK constraints   │
-               └──────────────────────┘
+```text
+Create plant profile
+  -> Publish as Swap
+    -> Another owner proposes exchange
+      -> Both compare profiles and conditions
+        -> Agree swap
+          -> Complete handoff
+            -> Review each other
 ```
 
-The cross-platform frontend (`react_webiosand/`) is built with **Expo and React Native**, producing a single codebase that deploys to Android, iOS, and web. The backend is **Supabase** — a managed platform providing auth, a PostgREST auto-API over PostgreSQL, realtime subscriptions, and file storage, with no server to operate. The native Android build (`android_only/`) is a standalone Java reference implementation.
+### Loop D: Find a sitter
 
-### Why This Stack
-
-- **Expo / React Native** — one codebase, three platforms; no divergent UI implementations to maintain
-- **Supabase** — eliminates backend boilerplate; auth, API, realtime, and storage are all managed; Row Level Security replaces application-layer RBAC
-- **Native Android (Java)** — reference implementation demonstrating the full MVVM pattern with Retrofit and LiveData
-- **PostgreSQL** — relational integrity matters when contracts and payments are involved; the existing schema applies directly to Supabase's hosted Postgres
-
----
-
-## Database Design
-
-The schema is normalized and integrity-enforced. Key design decisions:
-
-**Role profiles are satellite tables**, not columns on `users`. A user who is both owner and sitter has two profile rows. This keeps role-specific data clean and prevents null pollution.
-
-**Plants are owned, not embedded**. `plants` is its own table. Ownership transfers via `current_owner_user_id`. A plant's history persists across owners.
-
-**Listings are polymorphic by type, not by table**. One `plant_listings` table covers all four modes. PostgreSQL `CHECK` constraints enforce that sale listings have a price and a store owner, that sitting listings have date ranges, and that non-sale listings have an owner profile. Business rules live in the database, not just the application.
-
-**Contracts require dual acceptance**. `owner_accepted_at` and `sitter_accepted_at` are tracked independently. A contract cannot reach `ACTIVE` status unless both timestamps are present. This is enforced at the application layer with the schema reflecting the invariant.
-
-**The payment ledger is append-only**. Every financial event — sitter payment, store purchase, refund, payout — is a ledger row. No amounts are mutated. The balance is always derivable from history.
-
-### Entity Relationship Summary
-
-```
-users ──┬── owner_profiles ──── plants ──── plant_listings ──┬── listing_applications ── contracts ── contract_plants
-        ├── sitter_profiles                                   ├── swap_proposals
-        └── store_owner_profiles                              └── store_orders
-
-contracts ── payment_ledger
-conversations ── messages ── message_attachments
-users ── notifications
-users ── sitter_reviews
-users ── moderation_cases
-users ── audit_log
+```text
+Create plant profile
+  -> Publish as Need sitter
+    -> Sitters browse and apply
+      -> Owner reviews sitter trust signals
+        -> Confirm booking details
+          -> Handoff plant or arrange home visits
+            -> Sitter sends updates
+              -> Booking completes
+                -> Both leave reviews
 ```
 
 ---
 
-## Feature Set
+## 8. User Experience Pillars
 
-### Plant Management
-- Create unlimited plant profiles per user
-- Upload multiple photos per plant (sorted gallery)
-- Define recurring care tasks with frequency and instructions
-- Archive plants without deleting history
+### 1. Listings first
 
-### Listing & Discovery
-- Post sitting requests with date windows
-- Browse open listings with status filtering
-- View full plant profiles before applying
-- Propose plant swaps to other owners
-- Donate plants to interested sitters
+The product should feel alive with fresh activity. Users should always see plants, people, and opportunities quickly.
 
-### Applications & Matching
-- Apply to sitting requests with a personalized message
-- Propose custom dates and price
-- Owner reviews all applications and selects one
-- Declined and withdrawn applications are tracked
+### 2. Plant-native context
 
-### Contracts
-- Auto-generated from accepted applications
-- Dual-signature confirmation flow
-- Covers multiple plants per arrangement
-- Dispute pathway for escalations
+Every listing should answer plant-specific questions fast:
 
-### Messaging
-- Threaded conversations per listing, contract, or order
-- Supports text, images, and file attachments
-- Read receipts and delivery tracking
-- System messages for key contract events
+- What is it?
+- How healthy is it?
+- What does it need?
+- How hard is it to care for?
 
-### Payments
-- Ledger-style payment tracking (immutable history)
-- Supports sitter payments, store purchases, and refunds
-- Currency-aware (multi-currency schema ready)
-- Payout account reference per store owner
+### 3. Trust everywhere
 
-### Availability
-- Sitters set available date ranges
-- Status: Available / Unavailable / Booked / Tentative
-- Travel radius and "can travel" flag
+Trust cannot be bolted on. Reviews, verification, response rate, care history, and clear steps must appear before risk-heavy actions.
 
-### Reviews & Reputation
-- Post-contract reviews (owner reviews sitter)
-- Star ratings (1–5) plus written review
-- Sitter rating average computed and stored on profile
-- Rating count tracked for credibility weighting
+### 4. One inventory, many outcomes
 
-### Notifications
-- Application received / accepted / declined
-- Swap proposal received / accepted / declined
-- Contract created and accepted
-- New message
-- Order created
-- Payment posted
-- System alerts
-
-### Security
-- Supabase Auth manages password hashing, JWT issuance, and token refresh
-- Row Level Security (RLS) policies enforce data access at the database layer
-- Anon key is safe to ship in the client; service role key never leaves the server
-- Audit log table tracks significant actions
-- Moderation case system for user reports
+Users should not rebuild the same plant from scratch for every flow. A plant profile is reusable infrastructure.
 
 ---
 
-## Technology Stack
+## 9. Marketplace Mechanics
 
-### Cross-Platform Frontend (Android + iOS + Web)
-| Component | Technology |
+To work as a discovery engine, PlantBuddy needs the strongest parts of marketplace behavior.
+
+### Browse features
+
+- Dense listing feed
+- Search by species, nickname, location, and care need
+- Filters for mode, price, rarity, light, watering, pet safety, distance, and size
+- Saved searches and favorites
+- Freshness indicators for new listings
+
+### Listing mechanics
+
+- Publish and unpublish quickly
+- Relist from archived inventory
+- Mark reserved or completed
+- Offer price for sale listings
+- Offer a swap proposal for swap listings
+- Request or apply for care on sitter listings
+
+### Merchandising behavior
+
+- Curated collections such as `Low light`, `Pet safe`, `Collector cuts`, `Free this week`, and `Needs a sitter soon`
+- Seasonal and local discovery moments
+- Editorial plant guidance built into listing details and collections
+
+---
+
+## 10. Trust and Safety Model
+
+PlantBuddy needs a stronger trust layer than a generic classified app.
+
+### Trust signals
+
+- Verified identity badge
+- Review score and review count
+- Response speed and response rate
+- Completed sales, swaps, gifts, and sits
+- Repeat interactions
+- Plant specialty tags such as `aroids`, `succulents`, `propagation`, `rare tropicals`
+
+### Trust features
+
+- Structured booking or handoff flow
+- Meet-and-greet support for sitter arrangements
+- Clear cancellation rules for sitter bookings
+- In-app messages attached to listings and bookings
+- Report and moderation tools
+
+### Why this matters
+
+The platform only works if users believe:
+
+- the plant will be described honestly,
+- the other person will show up,
+- the sitter understands the care routine,
+- and bad behavior will leave a visible reputation trail.
+
+---
+
+## 11. Sitter Network Model
+
+The sitter side of the product is what makes PlantBuddy defensible and emotionally useful.
+
+### Sitter profile should include
+
+- Display name and location
+- Bio
+- Experience level
+- Preferred plant types
+- Travel radius
+- Availability calendar
+- Optional day rate or flat booking rate
+- Reviews from completed bookings
+
+### Care service formats
+
+PlantBuddy should support two sitter models over time:
+
+| Service | Description |
 |---|---|
-| Framework | Expo (React Native) |
-| Language | JavaScript / TypeScript |
-| Platforms | Android, iOS, Web (single codebase) |
-| Networking | `@supabase/supabase-js` |
+| Plant boarding | Plant stays with the sitter temporarily |
+| Home visits | Sitter visits the owner's home to care for plants in place |
 
-### Native Android (Reference Build)
-| Component | Technology |
-|---|---|
-| Language | Java |
-| Architecture | MVVM |
-| Networking | Retrofit |
-| State | ViewModel + LiveData |
-| IDE | Android Studio |
-
-### Backend
-| Component | Technology |
-|---|---|
-| Platform | Supabase (managed) |
-| Auth | Supabase Auth (JWT, magic link, OAuth) |
-| API | PostgREST (auto-generated from schema) |
-| Realtime | Supabase Realtime (websocket subscriptions) |
-| File Storage | Supabase Storage |
-| Access Control | Row Level Security (RLS) policies |
-
-### Database
-| Component | Technology |
-|---|---|
-| Engine | PostgreSQL 15 (hosted by Supabase) |
-| Schema enforcement | CHECK constraints, RLS policies |
-| Case-insensitive text | `citext` extension |
-| Performance | Indexed by FK, type, and status columns |
-| Soft deletes | `deleted_at`, `archived_at` timestamps |
+The initial MVP can focus on plant boarding because it maps cleanly to the current data model and UI flow.
 
 ---
 
-## Repository Structure
+## 12. MVP Recommendation
 
-```
-plantbuddy/
-│
-├── android_only/                  Native Android build (Java + MVVM)
-│   ├── app/
-│   │   └── src/main/java/com/plantbuddy/
-│   │       ├── model/             Domain models (User, Plant, etc.)
-│   │       ├── network/           Retrofit client, API service, interceptors
-│   │       │   └── dto/           Request/response DTOs
-│   │       ├── repository/        Data access layer
-│   │       ├── storage/           Session / token management
-│   │       ├── ui/                Activities and Adapters
-│   │       └── viewmodel/         ViewModels + Factory
-│   │
-│   ├── db/
-│   │   ├── sql_build_tables.sql   Full PostgreSQL schema
-│   │   └── db_schema_mermaid.png  Visual ERD
-│   │
-│   └── docs/
-│       ├── ER.jpg                 Entity-Relationship diagram
-│       ├── Tables.jpg             Table reference
-│       └── UML.jpg                UML class diagram
-│
-└── react_webiosand/               Cross-platform frontend (Expo / React Native)
-    ├── index.js                   App entry point
-    ├── app.json                   Expo config (Android + iOS + Web targets)
-    └── assets/                    Icons, splash screen, favicon
-```
+The full concept is broad, so the MVP should focus on the strongest wedge.
 
----
+### MVP phase 1
 
-## Local Development Setup
+- Authentication
+- Plant profiles
+- Sell / Gift / Need sitter listing modes
+- Listing discovery feed
+- Basic messaging or application flow
+- Owner review of responses
+- Basic profile and review system
 
-### Prerequisites
+### MVP phase 2
 
-| Tool | Version |
-|---|---|
-| Node.js | 18+ |
-| Expo CLI | via `npx expo` |
-| Android Studio | Latest stable (for Android emulator) |
-| Xcode | Latest stable (for iOS simulator, macOS only) |
+- Swap proposals
+- Saved searches
+- Favorites
+- Better sitter availability and pricing
+- Completed handoff and booking states
 
-### 1. Supabase Project
+### MVP phase 3
 
-1. Create a project at https://app.supabase.com
-2. Run the schema in the SQL editor: `android_only/db/sql_build_tables.sql`
-3. Run the RLS policies in the SQL editor: `android_only/db/rls_policies.sql`
-4. Copy your project URL and anon key from **Settings → API**
-
-### 2. Environment Variables
-
-Create `react_webiosand/.env`:
-```
-EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### 3. Cross-Platform Frontend (Android, iOS, Web)
-
-Install dependencies:
-```bash
-cd react_webiosand
-npm.cmd install
-```
-
-Run on your target platform:
-```bash
-npx expo start          # interactive launcher
-npx expo start --android
-npx expo start --ios
-npx expo start --web
-```
-
-### 4. Native Android App (Reference Build)
-
-Open `android_only/` in Android Studio. Update `BuildConfig.BASE_URL` to your Supabase project REST URL if connecting this build to Supabase. Run on emulator or connected device.
+- Payment handling
+- Home-visit sitter flow
+- Verified identity flow
+- Stronger moderation tools
+- Insurance / guarantee style protection if commercially viable
 
 ---
 
-## Current Data Access Reference
+## 13. Why This Product Can Win
 
-The active Expo app does not use a custom REST backend. It talks directly to Supabase Auth and Supabase PostgREST through `@supabase/supabase-js`.
+PlantBuddy is stronger than a generic resale app because it understands the thing being exchanged.
 
-The endpoint-style list below is a conceptual product API surface for future planning, not a set of implemented custom server routes.
+It is stronger than a plant store because it supports peer-to-peer movement, not just retail purchase.
 
-### Authentication
-```
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
-```
+It is stronger than an informal care arrangement because it turns trust into product infrastructure.
 
-### Plants
-```
-GET    /api/plants
-POST   /api/plants
-PUT    /api/plants/{id}
-DELETE /api/plants/{id}
-```
-
-### Listings
-```
-GET  /api/listings
-POST /api/listings
-```
-
-### Applications
-```
-POST /api/listings/{id}/applications
-PUT  /api/applications/{id}
-```
-
-### Contracts
-```
-GET  /api/contracts
-POST /api/contracts
-PUT  /api/contracts/{id}
-```
-
-### Messaging
-```
-GET  /api/conversations
-POST /api/messages
-```
+Its edge is not just inventory. Its edge is structured trust around living items.
 
 ---
 
-## What's Next
+## 14. Representative User Stories
 
-The current build is a partially implemented portfolio project. Planned evolution:
+### The downsizer
 
-| Priority | Feature |
-|---|---|
-| High | Tighten high-priority RLS policies before real user data |
-| High | Harden sitter/application eligibility rules |
-| High | Transactional accept flow that creates contracts |
-| High | Contract detail and dual-confirmation screens |
-| Medium | Plant photos with Supabase Storage |
-| Medium | Messaging and notifications |
-| Medium | Reviews and sitter reputation scoring |
-| Medium | Location-based listing discovery |
-| Medium | AI-assisted plant profile, care instruction, search, and matching features |
-| Medium | Expanded automated test suite beyond current unit/smoke tests |
-| Medium | CI/CD |
-| Low | Push notifications (FCM) |
-| Low | Payment provider integration (Stripe) |
-| Low | Admin dashboard for store owner approval |
-| Low | Rate limiting and HTTPS enforcement |
+`I am moving to a smaller flat and need to rehome six plants without throwing them away.`
 
----
+### The collector
 
-## Why This Project Exists
+`I want to trade one duplicate cutting for something unusual nearby.`
 
-PlantBuddy started as a question: *what does trust look like between strangers who share a living thing?*
+### The traveler
 
-The answer turned out to be: structure, transparency, and a good contract. The app is designed so that every interaction — from browsing a listing to completing a sitting arrangement — is documented, agreed upon, and reviewable. Plants are not just decorative objects. They're alive, they have needs, and handing one off to a stranger requires genuine trust infrastructure.
+`I am away for twelve days and need someone competent to care for my calathea and monstera.`
 
-This project is a portfolio demonstration of full-stack, cross-platform development: Supabase as a managed backend serving an Expo cross-platform frontend (Android, iOS, web) from a single codebase, alongside a native Android reference build in Java. Every layer makes deliberate choices. The database enforces business rules via CHECK constraints and Row Level Security. The Expo frontend targets all three platforms without duplicating UI code. The native Android app demonstrates the full MVVM pattern with Retrofit and LiveData.
+### The side-income sitter
 
-The goal was to build something that could actually work — not just something that compiles.
+`I already have a healthy indoor setup and can earn money helping local owners with their plants.`
+
+### The beginner
+
+`I want an easy first plant and a platform that teaches me what I am taking home.`
 
 ---
 
-## Author
+## 15. Product Principles
 
-Built as a full-stack portfolio project exploring:
-- Cross-platform frontend development with Expo and React Native (Android, iOS, web)
-- Native Android development with Java and MVVM
-- Backend-as-a-service architecture with Supabase (Auth, PostgREST, Realtime, Storage)
-- Relational database engineering with PostgreSQL
-- Row Level Security as the access control layer
-- Multi-sided platform design (owners, sitters, store owners)
+- Treat every plant as an identity, not a SKU.
+- Favor structured listings over free-form chaos.
+- Build trust before growth hacks.
+- Let the same plant move through multiple lifecycle states.
+- Keep the experience emotionally warm and operationally clear.
+
+---
+
+## 16. Product Surface Areas
+
+### User-facing surfaces
+
+- Explore feed
+- Listing detail
+- Add / edit plant
+- Publish listing flow
+- Sitter application flow
+- Inbox and coordination
+- Profile and reputation
+
+### System surfaces
+
+- Authentication
+- Roles and permissions
+- Reviews
+- Moderation
+- Notifications
+- Search and filtering
+- Storage for plant photos
+
+---
+
+## 17. Commercial Model Options
+
+PlantBuddy can evolve into one or more revenue streams:
+
+- Service fee on sitter bookings
+- Promoted listings for sellers
+- Verified or pro sitter subscription
+- Plant shop or nursery partnerships
+- Premium analytics for high-volume sellers or stores
+
+These should remain secondary to trust. Monetization that weakens reliability will damage the core loop.
+
+---
+
+## 18. How This Maps To The Current Build
+
+The current codebase already points toward a strong first wedge:
+
+- user authentication,
+- plant profiles,
+- listing flows,
+- and the sitter application concept.
+
+That means the current implementation should be treated as the foundation for `Need sitter`, then expanded outward into `Sell`, `Gift`, and `Swap` using the same plant profile backbone.
+
+This is the right order because it builds the hardest trust layer first.
+
+---
+
+## 19. Long-Term Vision
+
+In its strongest form, PlantBuddy becomes the default place to move plants between people responsibly.
+
+Not just buy them.
+Not just sell them.
+Not just browse them.
+
+Move them, care for them, and trust other people with them.

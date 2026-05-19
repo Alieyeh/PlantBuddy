@@ -54,7 +54,7 @@ Plants are owned through `current_owner_user_id`, which references `owner_profil
 The schema supports four listing types:
 
 - `SITTING_REQUEST`
-- `DONATION`
+- `GIFT`
 - `SWAP`
 - `SALE`
 
@@ -66,6 +66,13 @@ Only `SITTING_REQUEST` listings are currently implemented in the frontend. The f
 - `contract_plants`
 
 Contracts are designed to represent accepted sitting arrangements. Frontend screens and transactional contract creation do not exist yet.
+
+### Handoffs
+
+- `listing_handoffs`
+- `listing_handoff_reviews`
+
+Peer-to-peer sale, gift, and swap flows use listing handoffs to track who the plant is moving to, who confirmed the handoff, and when the exchange completed.
 
 ### Communication
 

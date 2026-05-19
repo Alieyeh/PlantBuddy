@@ -6,15 +6,15 @@
 ![Architecture](https://img.shields.io/badge/architecture-MVVM-lightgrey)
 ![License](https://img.shields.io/badge/license-Portfolio-blue)
 
-PlantBuddy is a **full‑stack Android application** that connects plant
-owners, plant sitters, and approved plant stores.
+PlantBuddy is a **full-stack Android application** that connects plant
+owners, plant sitters, and plant buyers or adopters.
 
 The application allows users to:
 
 • Find trusted plant sitters\
 • Swap plants with other plant enthusiasts\
-• Donate plants to sitters\
-• Purchase plants from approved stores
+• Gift plants to good homes\
+• Sell plants peer-to-peer or through approved stores
 
 The project demonstrates **mobile development, backend API design, and
 relational database engineering**.
@@ -50,13 +50,14 @@ Users can have multiple roles:
   -----------------------------------------------------------------------
   Role               Capabilities
   ------------------ ----------------------------------------------------
-  Owner              Manage plants, request sitters, donate plants, swap
-                     plants
+    Owner              Manage plants, request sitters, gift plants, swap
+                                         plants, and create sale listings
 
-  Sitter             Apply to care for plants, receive donations, manage
+    Sitter             Apply to care for plants, receive gifted plants, manage
                      availability
 
-  Store Owner        Sell plants through the platform (requires approval)
+    Store Owner        Sell plants through the platform with approved store
+                                         workflows
   -----------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -68,9 +69,9 @@ PlantBuddy supports four interaction types:
   Listing Type      Description
   ----------------- ----------------------------------------
   Sitting Request   Owner requests plant care for a period
-  Donation          Owner donates a plant to a sitter
+    Gift              Owner gives a plant to a new home
   Swap              Owners exchange plants
-  Sale              Store owners sell plants
+    Sale              Owners or approved stores sell plants
 
 ------------------------------------------------------------------------
 
@@ -224,17 +225,20 @@ LISTING_APPLICATIONS }o--|| CONTRACTS : accepted_into
 
 CONTRACTS ||--o{ CONTRACT_PLANTS : contains
 
-PLANT_LISTINGS ||--o{ STORE_ORDERS : creates
+PLANT_LISTINGS ||--o| LISTING_HANDOFFS : completes
+PLANT_LISTINGS ||--o{ STORE_ORDERS : creates_store_sale
 ```
 
 Business rules are enforced using **PostgreSQL trigger functions**.
 
 Examples:
 
-• Only store owners can create sale listings\
+• Owners can create peer sale listings; approved stores can also create store-backed sale listings\
 • Swap proposals must use plants owned by the proposer\
-• Applications require a sitter profile\
-• Contracts originate only from sitting listings
+• Applications apply only to sitting listings\
+• Swap proposals apply only to swap listings\
+• Contracts originate only from sitting listings\
+• Sale, gift, and swap completions use listing handoffs for consistent status tracking
 
 ------------------------------------------------------------------------
 

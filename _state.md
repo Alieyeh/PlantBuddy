@@ -1,14 +1,14 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-17 (design system + session 5 + docs refresh)_
+_Last updated: 2026-05-19 (marketplace alignment + swap/handoff flows + tracker refresh)_
 
 ---
 
 ## Current Phase
 
-**Phase 1 — Core Sitting Flow (Stage 2 complete)**
+**Phase 2 — Marketplace + Care Foundation (listing modes and exchange flows live in app)**
 
-Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen shown post-register, full apply/accept/decline flow live. Design system implemented (theme.js + Fraunces + Bricolage Grotesque fonts). Supabase dashboard still needs the schema+RLS applied (drop old tables first). Next: Stage 3 — contract generation from accepted application.
+The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app, owners can review sitting applicants, users can propose swaps, owners can accept or decline swap proposals, participants can confirm listing handoffs, and participants can leave handoff reviews. The next highest-value step is to move exchange finalization into a server-side Supabase function so ownership transfer and listing closure become atomic and authoritative.
 
 ---
 
@@ -18,9 +18,14 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - [x] Full schema designed and committed (`android_only/db/sql_build_tables.sql`)
 - [x] `users.id` is UUID FK → `auth.users(id)` — matches Supabase Auth `auth.uid()` (session 4 fix)
 - [x] `handle_new_user()` trigger auto-creates `public.users` row on Supabase Auth signup
+- [x] `handle_new_user()` also creates `owner_profiles` row on signup
 - [x] All enums, constraints, and indexes defined
-- [x] Covers: users, roles, plants, listings, applications, contracts, messaging, payments, notifications, reviews, moderation, audit log
-- [ ] **PENDING: drop old schema + re-run `sql_build_tables.sql` in Supabase dashboard** (old tables have BIGINT user ids — causes `bigint = uuid` operator error)
+- [x] Covers: users, roles, plants, listings, applications, swaps, handoffs, contracts, messaging, payments, notifications, reviews, moderation, audit log
+- [x] Added marketplace alignment migration: `android_only/db/2026_05_19_marketplace_alignment.sql`
+- [x] Added `listing_handoffs` and `listing_handoff_reviews`
+- [x] Listing type vocabulary aligned to `GIFT` instead of `DONATION`
+- [x] Listing validation rules tightened by listing type
+- [ ] Live Supabase state should be treated as migrated because the user reported running the 2026-05-19 migration; re-check only if behavior contradicts that
 - [ ] Seed data file (`002_seed_dev.sql`) not committed
 
 ### Backend — Supabase
@@ -28,9 +33,9 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - [x] Auth handled by Supabase Auth (JWT issued and refreshed automatically)
 - [x] Plants table; PostgREST auto-exposes CRUD
 - [x] **RLS policies written for all 23 tables** (`android_only/db/rls_policies.sql`) — `refresh_tokens` section removed (session 4 fix)
-- [x] `plant_listings`, `listing_applications`, `contracts` secured by RLS and accessible via PostgREST
+- [x] `plant_listings`, `listing_applications`, `swap_proposals`, `listing_handoffs`, `listing_handoff_reviews`, and `contracts` secured by RLS and accessible via PostgREST
 - [ ] `react_webiosand/.env` is not present in this checkout; create it locally with Supabase URL + anon key
-- [ ] **PENDING: run `rls_policies.sql` in Supabase dashboard** (after re-running schema above)
+- [ ] Missing hard server-side finalization path for completed exchanges (ownership transfer + listing closure should move into SQL/RPC)
 
 ### Expo Frontend (`react_webiosand/`) — Android + iOS + Web
 - [x] Session management (AsyncStorage)
@@ -40,10 +45,10 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - [x] Add/edit plant screen
 - [x] Auth-gated navigation
 - [x] **Tab navigation** — My Plants tab + Browse tab (Stage 1)
-- [x] **ListingsScreen** — feed of open SITTING_REQUEST listings (Stage 1)
-- [x] **ListingDetailScreen** — full plant + listing info; "Apply to Sit" navigates to `ApplyScreen`
+- [x] **ListingsScreen** — feed of all open marketplace and sitting listings
+- [x] **ListingDetailScreen** — supports sitting, gift, sale, and swap actions
 - [x] **PostListingScreen** — create sitting request, plant picker, date validation (Stage 1)
-- [x] **listingsService.js** — Supabase queries for listings CRUD (Stage 1)
+- [x] **listingsService.js** — Supabase queries for listings, applications, swaps, handoffs, and handoff reviews
 - [x] **supabase.js** — Supabase client with AsyncStorage session persistence (Stage 1)
 - [x] **LoginScreen** — migrated to `supabase.auth.signInWithPassword` (session 3)
 - [x] **RegisterScreen** — migrated to `supabase.auth.signUp` with username/display_name in metadata (session 3)
@@ -62,6 +67,12 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 - [x] **Stage 2c: listingsService** — `applyToListing`, `getApplicationsForListing`, `getMyApplications`, `updateApplicationStatus`
 - [x] **Stage 2c: PlantsScreen** — plant cards show "Applicants" button when an open listing exists; "Find sitter" when none
 - [x] **Design system** — `theme.js` (C/T/S/shared tokens), Fraunces + Bricolage Grotesque fonts, all 10 screens restyled
+- [x] Marketplace listing creation for `GIFT` and peer `SALE`
+- [x] `SwapProposalScreen` — user can offer one of their plants on a swap listing
+- [x] `SwapProposalsScreen` — owner can review and accept/decline incoming swap proposals
+- [x] Listing handoff start / confirm flow implemented in listing detail
+- [x] `HandoffReviewScreen` — participants can leave a review after a completed handoff
+- [ ] Dedicated exchanges inbox / dashboard
 - [ ] Contract screens (Stage 3)
 - [ ] Messaging (Stage 4)
 - [ ] Notifications
@@ -97,20 +108,17 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 
 ---
 
-## Build Order (Agreed)
+## Build Order (Updated)
 
-1. **Listings** — done for sitting requests
-2. **Basic sitter profile setup** — done through `ProfileSetupScreen`; availability still missing
-3. **Browse + Apply** — done for sitting requests
-4. **Owner listing applications** — done for per-listing accept/decline
-5. **Contracts** — next: auto-generate from accepted application; dual-confirm screen
-6. **Messaging** — chat attached to a listing or contract
-7. **Reviews** — post-contract review flow (owner reviews sitter)
-8. **Push notifications** — FCM integration (Android/iOS); web fallback
-9. **Image uploads** — cloud storage (S3/GCS); replace URL stubs
-10. **Payments** — Stripe integration; ledger posting
-11. **Donation + Swap listing types** — same UI pattern as sitting request, minor variations
-12. **Store owner + Sale listings** — admin approval, store profile, purchase flow
+1. **Marketplace alignment** — completed across docs, schema, RLS, migration, and Expo app for sitting / gift / sale / swap
+2. **Exchange finalization** — move handoff completion, ownership transfer, and listing closure into server-side SQL/RPC
+3. **Exchanges inbox** — active proposals, accepted swaps, pending handoffs, completed exchanges
+4. **Browse filters and sorting** — listing type, price, recency, sitting window
+5. **Contracts** — if sitting contracts remain in scope as a distinct lifecycle beyond handoffs
+6. **Messaging** — conversation flow attached to listings or exchanges
+7. **Push notifications** — proposal accepted, handoff awaiting confirmation, review reminders
+8. **Image uploads** — richer plant/listing media
+9. **Payments** — only after server-side exchange finalization is authoritative
 
 ---
 
@@ -120,26 +128,34 @@ Stages 2a/2b/2c done: owner_profiles auto-created on signup, ProfileSetupScreen 
 |---|---|---|
 | 1 | ~~Where is the backend source?~~ | **Resolved** — backend is Supabase; no custom server source. |
 | 2 | `.env` credentials filled in? | Not present in this checkout. Create `react_webiosand/.env` locally with the real Supabase project URL and anon key. |
-| 3 | RLS policies applied in Supabase dashboard? | Written in `android_only/db/rls_policies.sql`. Must be run in the Supabase SQL editor before the app goes live. |
+| 3 | Was the 2026-05-19 marketplace migration applied cleanly in the live Supabase project? | The user reported running `android_only/db/2026_05_19_marketplace_alignment.sql`. Re-verify only if live behavior disagrees with repo expectations. |
 | 4 | EAS Build or bare workflow? | `app.json` uses managed Expo config. Bare workflow needed for some native modules. Has `npx expo prebuild` been run? |
-| 5 | Do swaps and donations have an agreed MVP scope? | Schema supports both fully. In scope for initial launch or post-launch? |
+| 5 | Do swaps and gifts stay in MVP, or do they remain soft-launched behind limited UX polish? | Backend and core app flows now support both, but inbox/filtering/finalization work is still pending. |
 | 6 | Is the sitter rating algorithm defined? | Schema stores `rating_average` and `rating_count` on `sitter_profiles`. Trigger or application code on review submission? |
 | 7 | What does "negotiated payment" mean for sitting requests? | Schema supports `agreed_price` on contract and `proposed_price` on application. In-app messaging or structured counter-offer UI? |
 | 8 | Target app stores? | Google Play + Apple App Store assumed. Timeline or account setup done? |
 
 ---
 
-## Current Documentation Refresh (2026-05-17)
+## Current Documentation Refresh (2026-05-19)
 
-- Kept `react_webiosand/` as the active app folder after the frontend rename was paused for team discussion
-- Added root `.gitignore` coverage for generated/local files and the leftover untracked `frontend/` folder
-- Added and linked `docs/risk-and-best-practices-guide.md`
-- Added and linked `docs/ai-opportunities.md`
-- Updated setup, testing, architecture, security, roadmap, and handoff docs to match current repo state
-- Updated docs after the Stage 2b/2c PR so `ProfileSetupScreen`, `ApplyScreen`, `ApplicationsScreen`, and the design system are reflected as current implementation
-- Updated smoke tests to verify the application-flow screens are wired instead of expecting the old placeholder
-- Confirmed `npm.cmd test` passes from `react_webiosand/` with 16 tests passing
-- Confirmed `react_webiosand/.env` and `react_webiosand/node_modules` are not present in this checkout, so full Expo runtime setup is still pending
+- Added `work_tracker.md` as the fast handoff document for future engineers / AI sessions
+- Refreshed state to reflect marketplace, swap, and handoff work completed on 2026-05-19
+- Confirmed `npm test` passes from `react_webiosand/` with 19 tests passing
+- Current tests include 14 unit tests and 5 smoke tests
+
+## Last Session (2026-05-19)
+
+- Reframed the product around a plant marketplace + care network and rewrote `PRODUCT.md` and `design.md`
+- Updated database source files to support `GIFT`, peer `SALE`, stricter listing rules, `listing_handoffs`, and `listing_handoff_reviews`
+- Added migration `android_only/db/2026_05_19_marketplace_alignment.sql`
+- Updated frontend listing creation flow to support sitting, gift, and sale modes
+- Extended `listingsService.js` with marketplace, swap, handoff, and review operations
+- Updated `ListingsScreen` to show all open listing types
+- Updated `ListingDetailScreen` to drive sitting, swap, gift, and sale actions from one place
+- Added `SwapProposalScreen`, `SwapProposalsScreen`, and `HandoffReviewScreen`
+- Wired new marketplace routes into `AppNavigator.js`
+- Validated current repo state with `npm test` passing from `react_webiosand/`
 
 ## Last Session (2026-05-16, session 1)
 

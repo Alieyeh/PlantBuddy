@@ -8,6 +8,7 @@ import { api } from '../api/apiService';
 import { SessionManager } from '../storage/SessionManager';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
+import { LISTING_TYPES } from '../api/listingsService';
 
 function InitialsAvatar({ name, onPress }) {
   const initials = (name ?? '?').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
@@ -19,8 +20,7 @@ function InitialsAvatar({ name, onPress }) {
 }
 
 /**
- * Owner dashboard for viewing active plants and starting the sitting request
- * flow from an individual plant card.
+ * Owner dashboard for viewing active plants and creating listings from an individual plant card.
  */
 export default function PlantsScreen({ navigation }) {
   const [plants, setPlants] = useState([]);
@@ -46,7 +46,7 @@ export default function PlantsScreen({ navigation }) {
 
           const { data: listings } = await supabase
             .from('plant_listings')
-            .select('id, title, plant_id, status')
+            .select('id, title, plant_id, status, listing_type')
             .eq('owner_user_id', user.id)
             .eq('status', 'OPEN');
           const map = {};
@@ -85,23 +85,31 @@ export default function PlantsScreen({ navigation }) {
           </View>
           <View style={styles.cardActions}>
             {activeListing ? (
-              <TouchableOpacity
-                style={[styles.actionChip, styles.applicantsChip]}
-                onPress={() => navigation.navigate('Applications', {
-                  listingId: activeListing.id,
-                  listingTitle: activeListing.title,
-                })}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={styles.applicantsChipText}>Applicants</Text>
-              </TouchableOpacity>
+              activeListing.listing_type === LISTING_TYPES.SITTING_REQUEST ? (
+                <TouchableOpacity
+                  style={[styles.actionChip, styles.applicantsChip]}
+                  onPress={() => navigation.navigate('Applications', {
+                    listingId: activeListing.id,
+                    listingTitle: activeListing.title,
+                  })}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.applicantsChipText}>Applicants</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.actionChip, styles.liveChip]}>
+                  <Text style={styles.liveChipText}>
+                    {activeListing.listing_type === LISTING_TYPES.GIFT ? 'Gift live' : 'Sale live'}
+                  </Text>
+                </View>
+              )
             ) : (
               <TouchableOpacity
                 style={[styles.actionChip, styles.sitterChip]}
                 onPress={() => navigation.navigate('PostListing', { plantId: item.id })}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={styles.sitterChipText}>Find sitter</Text>
+                <Text style={styles.sitterChipText}>List plant</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -188,6 +196,8 @@ const styles = StyleSheet.create({
   sitterChipText: { ...T.badge, color: C.clay },
   applicantsChip: { backgroundColor: C.mist, borderColor: C.sage },
   applicantsChipText: { ...T.badge, color: C.forest },
+  liveChip: { backgroundColor: C.parchment, borderColor: C.sage },
+  liveChipText: { ...T.badge, color: C.moss },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: S.xl },
   emptyInner: { alignItems: 'center' },
   emptyIcon: { fontSize: 64, marginBottom: S.md },

@@ -173,7 +173,7 @@ Supabase hosts a managed PostgreSQL instance. The existing schema (`android_only
 
 | Enum | Values |
 |---|---|
-| `listing_type` | `SITTING_REQUEST`, `DONATION`, `SWAP`, `SALE` |
+| `listing_type` | `SITTING_REQUEST`, `GIFT`, `SWAP`, `SALE` |
 | `listing_status` | `DRAFT`, `OPEN`, `PAUSED`, `MATCHED`, `COMPLETED`, `CANCELLED`, `ARCHIVED` |
 | `contract_status` | `DRAFT`, `PENDING_OWNER`, `PENDING_SITTER`, `ACTIVE`, `COMPLETED`, `CANCELLED`, `DISPUTED` |
 | `application_status` | `PENDING`, `ACCEPTED`, `DECLINED`, `WITHDRAWN`, `EXPIRED` |
