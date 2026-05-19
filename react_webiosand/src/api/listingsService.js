@@ -374,34 +374,9 @@ export const listingsService = {
     return data;
   },
 
-  async confirmListingHandoff(handoff, currentUserId) {
-    const now = new Date().toISOString();
-    const patch = {};
-
-    if (currentUserId === handoff.owner_user_id) {
-      patch.owner_confirmed_at = handoff.owner_confirmed_at ?? now;
-      if (handoff.recipient_confirmed_at) {
-        patch.status = 'COMPLETED';
-        patch.completed_at = now;
-      } else {
-        patch.status = 'OWNER_CONFIRMED';
-      }
-    } else if (currentUserId === handoff.recipient_user_id) {
-      patch.recipient_confirmed_at = handoff.recipient_confirmed_at ?? now;
-      if (handoff.owner_confirmed_at) {
-        patch.status = 'COMPLETED';
-        patch.completed_at = now;
-      } else {
-        patch.status = 'RECIPIENT_CONFIRMED';
-      }
-    } else {
-      throw new Error('Only handoff participants can confirm completion.');
-    }
-
+  async getListingHandoffById(handoffId) {
     const { data, error } = await supabase
       .from('listing_handoffs')
-      .update(patch)
-      .eq('id', handoff.id)
       .select(`
         id,
         listing_id,
@@ -426,10 +401,20 @@ export const listingsService = {
           created_at
         )
       `)
+      .eq('id', handoffId)
       .single();
 
     if (error) throw error;
     return data;
+  },
+
+  async confirmListingHandoff(handoffId) {
+    const { data, error } = await supabase.rpc('confirm_listing_handoff', {
+      p_handoff_id: handoffId,
+    });
+
+    if (error) throw error;
+    return this.getListingHandoffById(data.id);
   },
 
   async createListingHandoffReview({ handoffId, reviewerUserId, revieweeUserId, rating, reviewText }) {
@@ -471,6 +456,153 @@ export const listingsService = {
         .eq('id', proposal.id);
       throw error;
     }
+  },
+
+  async getIncomingSwapProposals(ownerUserId) {
+    const { data, error } = await supabase
+      .from('swap_proposals')
+      .select(`
+        id,
+        listing_id,
+        proposer_owner_user_id,
+        message_to_owner,
+        status,
+        created_at,
+        responded_at,
+        listing:plant_listings!inner (
+          id,
+          title,
+          listing_type,
+          owner_user_id,
+          plants (
+            id,
+            name,
+            species
+          )
+        ),
+        offered_plant:plants!swap_proposals_offered_plant_id_fkey (
+          id,
+          name,
+          species
+        ),
+        proposer:owner_profiles!swap_proposals_proposer_owner_user_id_fkey (
+          user_id,
+          display_name
+        )
+      `)
+      .eq('listing.owner_user_id', ownerUserId)
+      .in('status', ['PENDING', 'ACCEPTED'])
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getOutgoingSwapProposals(proposerOwnerUserId) {
+    const { data, error } = await supabase
+      .from('swap_proposals')
+      .select(`
+        id,
+        listing_id,
+        proposer_owner_user_id,
+        message_to_owner,
+        status,
+        created_at,
+        responded_at,
+        listing:plant_listings (
+          id,
+          title,
+          listing_type,
+          owner_user_id,
+          plants (
+            id,
+            name,
+            species
+          )
+        ),
+        offered_plant:plants!swap_proposals_offered_plant_id_fkey (
+          id,
+          name,
+          species
+        )
+      `)
+      .eq('proposer_owner_user_id', proposerOwnerUserId)
+      .in('status', ['PENDING', 'ACCEPTED'])
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getMyHandoffs(userId) {
+    const { data, error } = await supabase
+      .from('listing_handoffs')
+      .select(`
+        id,
+        listing_id,
+        owner_user_id,
+        recipient_user_id,
+        swap_proposal_id,
+        amount,
+        currency_code,
+        status,
+        notes,
+        owner_confirmed_at,
+        recipient_confirmed_at,
+        completed_at,
+        cancelled_at,
+        created_at,
+        updated_at,
+        listing:plant_listings (
+          id,
+          title,
+          listing_type,
+          plants (
+            id,
+            name,
+            species
+          )
+        ),
+        listing_handoff_reviews (
+          id,
+          reviewer_user_id,
+          reviewee_user_id,
+          rating,
+          created_at
+        )
+      `)
+      .or(`owner_user_id.eq.${userId},recipient_user_id.eq.${userId}`)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getExchangeInbox(userId) {
+    const [incomingSwapProposals, outgoingSwapProposals, handoffs] = await Promise.all([
+      this.getIncomingSwapProposals(userId),
+      this.getOutgoingSwapProposals(userId),
+      this.getMyHandoffs(userId),
+    ]);
+
+    const activeProposals = [
+      ...incomingSwapProposals.map((proposal) => ({ ...proposal, direction: 'INCOMING' })),
+      ...outgoingSwapProposals.map((proposal) => ({ ...proposal, direction: 'OUTGOING' })),
+    ].sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
+
+    const pendingHandoffs = handoffs
+      .filter((handoff) => handoff.status !== 'COMPLETED' && handoff.status !== 'CANCELLED')
+      .sort((left, right) => new Date(right.updated_at) - new Date(left.updated_at));
+
+    const completedExchanges = handoffs
+      .filter((handoff) => handoff.status === 'COMPLETED')
+      .sort((left, right) => new Date(right.completed_at ?? right.updated_at) - new Date(left.completed_at ?? left.updated_at));
+
+    return {
+      activeProposals,
+      pendingHandoffs,
+      completedExchanges,
+    };
   },
 
   /**

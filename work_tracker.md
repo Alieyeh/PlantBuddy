@@ -96,16 +96,36 @@ Completed:
 - owner can review incoming swap proposals
 - owner can accept or decline a swap proposal
 - accepting a swap proposal starts a listing handoff record
-- participants can confirm handoff completion from the listing detail screen
+- participants now confirm handoff completion through a backend RPC instead of a raw client-side row update
 - participants can leave a handoff review after completion
+- users now have an `Exchanges` inbox tab for active proposals, pending handoffs, and completed exchanges
 
 Files:
 
 - `react_webiosand/src/screens/SwapProposalScreen.js`
 - `react_webiosand/src/screens/SwapProposalsScreen.js`
 - `react_webiosand/src/screens/HandoffReviewScreen.js`
+- `react_webiosand/src/screens/ExchangesScreen.js`
 - `react_webiosand/src/api/listingsService.js`
 - `react_webiosand/src/navigation/AppNavigator.js`
+
+### Backend handoff finalization
+
+Completed:
+
+- added `confirm_listing_handoff` RPC in SQL source and migration
+- handoff confirmation now performs participant confirmation and finalization in one backend operation
+- completed `SALE` and `GIFT` handoffs transfer plant ownership to the recipient
+- completed `SWAP` handoffs transfer both plants to their new owners
+- completed handoffs close the listing and settle swap proposal state server-side
+- listing visibility was widened so handoff participants can still access completed exchange listings
+
+Files:
+
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/rls_policies.sql`
+- `android_only/db/2026_05_19_marketplace_alignment.sql`
+- `react_webiosand/src/api/listingsService.js`
 
 ### Documentation and product direction
 
@@ -155,6 +175,11 @@ If someone resumes this project later, start here in this order:
 
 Those seven files explain the current product model, database contract, and active app behavior fastest.
 
+If the next task is specifically about exchange finalization, also read:
+
+8. `react_webiosand/src/screens/ExchangesScreen.js`
+9. `android_only/db/sql_build_tables.sql`
+
 ---
 
 ## 5. Current Reality By Layer
@@ -170,16 +195,16 @@ Implemented and usable now:
 - listing detail with type-specific actions
 - sitting application flow and owner applicant review
 - swap proposal create/review/accept-decline flow
-- handoff confirmation flow
+- exchanges inbox for proposals, pending handoffs, and completed exchanges
+- RPC-backed handoff confirmation flow
 - handoff review submission flow
 
 Still thin or missing:
 
-- no dedicated "my exchanges" inbox yet
 - no richer browse filters yet
 - no push notifications for proposal / handoff updates
 - no image upload flow for listings or plants beyond existing structure
-- no explicit post-completion lifecycle UI beyond detail-screen actions
+- no dedicated notification or badge counts for exchange state changes yet
 
 ### Database / Supabase
 
@@ -190,16 +215,11 @@ Implemented in schema and migration source:
 - swap proposal rules
 - handoff and handoff review tables
 - RLS policies for the new tables and flows
+- `confirm_listing_handoff` RPC for atomic exchange confirmation and finalization
 
 Important limitation:
 
-The current app tracks handoffs and confirmations, but there is not yet a hardened server-side finalization path that atomically:
-
-- transfers plant ownership
-- closes the related listing
-- marks any related records as complete in one authoritative operation
-
-That should be implemented as a database function / RPC or trigger-backed workflow rather than relying on client orchestration.
+The repo now contains the server-side finalization path, but the live Supabase project must have the updated migration applied before the frontend can rely on it safely. Until that SQL is run remotely, the app code and the deployed database may be out of sync.
 
 ### Tests
 
@@ -222,40 +242,36 @@ Missing:
 
 These are the best next actions in priority order.
 
-### 1. Harden handoff finalization in the database
+### 1. Apply the updated migration to live Supabase
 
 Why this matters:
-The current UI lets users start and confirm a handoff, but final business state should not depend on the client.
+The repo now expects `confirm_listing_handoff` to exist in the database.
 
 Recommended outcome:
 
-- add a Supabase RPC or SQL function that finalizes a completed handoff
-- update plant ownership where appropriate
-- close the related listing
-- mark any related swap proposal / order / contract state consistently
-- enforce participant authorization in SQL
+- run the updated `android_only/db/2026_05_19_marketplace_alignment.sql` in the Supabase SQL editor
+- verify the `confirm_listing_handoff` function exists and executes as `authenticated`
+- confirm completed exchanges update plant ownership and listing status remotely
 
 Likely files:
 
-- `android_only/db/sql_build_tables.sql`
-- `android_only/db/rls_policies.sql`
-- a new migration file under `android_only/db/`
-- `react_webiosand/src/api/listingsService.js`
+- `android_only/db/2026_05_19_marketplace_alignment.sql`
+- live Supabase project
 
-### 2. Build a dedicated exchanges inbox
+### 2. Strengthen the exchanges inbox
 
 Why this matters:
-Users need a reliable place to return to swap proposals, active handoffs, and completed exchanges.
+The inbox now exists, but it is still a first-pass operational surface.
 
 Recommended outcome:
 
-- one screen for active proposals, accepted swaps, pending handoffs, and completed exchanges
-- entry point from tabs or profile
-- clear states for action needed vs waiting on other party
+- add action-needed badges or counts
+- add proposal timestamps and richer participant identity cues
+- add pull-to-refresh and better empty/loading states by section
 
 Likely files:
 
-- new screen under `react_webiosand/src/screens/`
+- `react_webiosand/src/screens/ExchangesScreen.js`
 - `react_webiosand/src/navigation/AppNavigator.js`
 - `react_webiosand/src/api/listingsService.js`
 
@@ -298,9 +314,9 @@ Older docs in the repo described a sitting-only app. This tracker should now be 
 
 The migration was reported as run, but this repository does not automatically verify the remote project state. If a future error appears, check the live tables, triggers, and policies first.
 
-### Ownership transfer is the main unfinished integrity gap
+### Live database rollout is now the main integrity gap
 
-This is the biggest remaining engineering risk because it affects correctness, trust, and downstream user state.
+The source code is ahead of the deployed backend until the new SQL is applied remotely.
 
 ---
 
@@ -310,10 +326,10 @@ If a new engineer or AI takes over, use this checklist.
 
 1. Read `work_tracker.md` fully.
 2. Confirm `npm test` still passes in `react_webiosand/`.
-3. Read `react_webiosand/src/api/listingsService.js` to understand the current service contract.
-4. Read `react_webiosand/src/screens/ListingDetailScreen.js` because it is now the central decision point for handoff and swap actions.
-5. Decide whether the next task is product-facing UI work or backend integrity work.
-6. If backend integrity work, start with a Supabase RPC for handoff finalization.
+3. Confirm the live Supabase project has the updated 2026-05-19 migration, including `confirm_listing_handoff`.
+4. Read `react_webiosand/src/api/listingsService.js` to understand the current service contract.
+5. Read `react_webiosand/src/screens/ExchangesScreen.js` and `react_webiosand/src/screens/ListingDetailScreen.js` because they are now the main exchange surfaces.
+6. Decide whether the next task is backend rollout, inbox polish, or browse/filtering.
 
 ---
 
@@ -321,4 +337,4 @@ If a new engineer or AI takes over, use this checklist.
 
 Current state in one paragraph:
 
-PlantBuddy now has a coherent marketplace + care foundation across docs, schema, RLS, migration scripts, and the Expo app. Users can create and browse sitting, gift, sale, and swap listings; propose and review swaps; start and confirm handoffs; and leave handoff reviews. The code is currently test-clean. The most important unfinished work is server-side finalization of completed exchanges so ownership transfer and listing closure become authoritative and atomic.
+PlantBuddy now has a coherent marketplace + care foundation across docs, schema, RLS, migration scripts, and the Expo app. Users can create and browse sitting, gift, sale, and swap listings; propose and review swaps; use an Exchanges inbox; start and confirm handoffs; and leave handoff reviews. The code is currently test-clean. The most important immediate task is applying the updated migration to live Supabase so the new `confirm_listing_handoff` RPC-backed finalization path is available remotely.

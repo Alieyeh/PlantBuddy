@@ -31,6 +31,7 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/src/screens/ListingsScreen.js',
     'react_webiosand/src/screens/ListingDetailScreen.js',
     'react_webiosand/src/screens/PostListingScreen.js',
+    'react_webiosand/src/screens/ExchangesScreen.js',
     'react_webiosand/src/screens/ApplyScreen.js',
     'react_webiosand/src/screens/ApplicationsScreen.js',
     'react_webiosand/src/screens/SwapProposalScreen.js',
@@ -95,6 +96,7 @@ test('current application and marketplace flows are wired into navigation and se
   assert.match(navigator, /ProfileSetup/);
   assert.match(navigator, /Apply/);
   assert.match(navigator, /Applications/);
+  assert.match(navigator, /Exchanges/);
   assert.match(navigator, /SwapProposal/);
   assert.match(navigator, /SwapProposals/);
   assert.match(navigator, /HandoffReview/);

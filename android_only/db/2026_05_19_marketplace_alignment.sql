@@ -358,6 +358,144 @@ CREATE TRIGGER trg_validate_listing_handoff
     BEFORE INSERT OR UPDATE ON public.listing_handoffs
     FOR EACH ROW EXECUTE FUNCTION public.validate_listing_handoff();
 
+CREATE OR REPLACE FUNCTION public.confirm_listing_handoff(p_handoff_id BIGINT)
+RETURNS public.listing_handoffs
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_actor UUID := auth.uid();
+    v_now TIMESTAMPTZ := NOW();
+    v_handoff public.listing_handoffs%ROWTYPE;
+    v_listing public.plant_listings%ROWTYPE;
+    v_swap_offered_plant_id BIGINT;
+BEGIN
+    IF v_actor IS NULL THEN
+        RAISE EXCEPTION 'Authentication required';
+    END IF;
+
+    SELECT *
+    INTO v_handoff
+    FROM public.listing_handoffs
+    WHERE id = p_handoff_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Handoff % does not exist', p_handoff_id;
+    END IF;
+
+    IF v_actor <> v_handoff.owner_user_id AND v_actor <> v_handoff.recipient_user_id THEN
+        RAISE EXCEPTION 'Only handoff participants can confirm completion';
+    END IF;
+
+    IF v_handoff.status = 'CANCELLED' THEN
+        RAISE EXCEPTION 'Cancelled handoffs cannot be confirmed';
+    END IF;
+
+    IF v_handoff.status = 'COMPLETED' THEN
+        RETURN v_handoff;
+    END IF;
+
+    IF v_actor = v_handoff.owner_user_id THEN
+        UPDATE public.listing_handoffs
+        SET owner_confirmed_at = COALESCE(owner_confirmed_at, v_now),
+            status = CASE
+                WHEN recipient_confirmed_at IS NOT NULL THEN 'COMPLETED'::handoff_status
+                ELSE 'OWNER_CONFIRMED'::handoff_status
+            END,
+            completed_at = CASE
+                WHEN recipient_confirmed_at IS NOT NULL THEN COALESCE(completed_at, v_now)
+                ELSE completed_at
+            END,
+            updated_at = v_now
+        WHERE id = p_handoff_id;
+    ELSE
+        UPDATE public.listing_handoffs
+        SET recipient_confirmed_at = COALESCE(recipient_confirmed_at, v_now),
+            status = CASE
+                WHEN owner_confirmed_at IS NOT NULL THEN 'COMPLETED'::handoff_status
+                ELSE 'RECIPIENT_CONFIRMED'::handoff_status
+            END,
+            completed_at = CASE
+                WHEN owner_confirmed_at IS NOT NULL THEN COALESCE(completed_at, v_now)
+                ELSE completed_at
+            END,
+            updated_at = v_now
+        WHERE id = p_handoff_id;
+    END IF;
+
+    SELECT *
+    INTO v_handoff
+    FROM public.listing_handoffs
+    WHERE id = p_handoff_id;
+
+    IF v_handoff.status = 'COMPLETED' THEN
+        SELECT *
+        INTO v_listing
+        FROM public.plant_listings
+        WHERE id = v_handoff.listing_id
+        FOR UPDATE;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Listing % does not exist', v_handoff.listing_id;
+        END IF;
+
+        UPDATE public.plant_listings
+        SET status = 'COMPLETED',
+            updated_at = v_now
+        WHERE id = v_listing.id
+          AND status <> 'COMPLETED';
+
+        IF v_listing.listing_type IN ('SALE', 'GIFT') THEN
+            UPDATE public.plants
+            SET current_owner_user_id = v_handoff.recipient_user_id,
+                updated_at = v_now
+            WHERE id = v_listing.plant_id;
+        ELSIF v_listing.listing_type = 'SWAP' THEN
+            SELECT offered_plant_id
+            INTO v_swap_offered_plant_id
+            FROM public.swap_proposals
+            WHERE id = v_handoff.swap_proposal_id
+            FOR UPDATE;
+
+            IF v_swap_offered_plant_id IS NULL THEN
+                RAISE EXCEPTION 'Swap handoff % is missing its accepted proposal plant', p_handoff_id;
+            END IF;
+
+            UPDATE public.plants
+            SET current_owner_user_id = v_handoff.recipient_user_id,
+                updated_at = v_now
+            WHERE id = v_listing.plant_id;
+
+            UPDATE public.plants
+            SET current_owner_user_id = v_handoff.owner_user_id,
+                updated_at = v_now
+            WHERE id = v_swap_offered_plant_id;
+
+            UPDATE public.swap_proposals
+            SET status = CASE
+                    WHEN id = v_handoff.swap_proposal_id THEN 'COMPLETED'::swap_status
+                    ELSE 'DECLINED'::swap_status
+                END,
+                responded_at = COALESCE(responded_at, v_now),
+                updated_at = v_now
+            WHERE listing_id = v_handoff.listing_id
+              AND status IN ('PENDING', 'ACCEPTED');
+        END IF;
+    END IF;
+
+    SELECT *
+    INTO v_handoff
+    FROM public.listing_handoffs
+    WHERE id = p_handoff_id;
+
+    RETURN v_handoff;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.confirm_listing_handoff(BIGINT) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.validate_store_order()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
@@ -526,6 +664,21 @@ CREATE POLICY "listing_handoffs_select"
   ON public.listing_handoffs FOR SELECT
   TO authenticated
   USING (owner_user_id = auth.uid() OR recipient_user_id = auth.uid());
+
+DROP POLICY IF EXISTS "plant_listings_select_open" ON public.plant_listings;
+CREATE POLICY "plant_listings_select_open"
+    ON public.plant_listings FOR SELECT
+    TO authenticated
+    USING (
+        status = 'OPEN'
+        OR owner_user_id = auth.uid()
+        OR store_owner_user_id = auth.uid()
+        OR EXISTS (
+            SELECT 1 FROM public.listing_handoffs lh
+            WHERE lh.listing_id = plant_listings.id
+                AND (lh.owner_user_id = auth.uid() OR lh.recipient_user_id = auth.uid())
+        )
+    );
 
 DROP POLICY IF EXISTS "listing_handoffs_insert" ON public.listing_handoffs;
 CREATE POLICY "listing_handoffs_insert"

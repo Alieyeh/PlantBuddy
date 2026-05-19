@@ -10,6 +10,7 @@ import ProfileSetupScreen from '../screens/ProfileSetupScreen';
 import PlantsScreen from '../screens/PlantsScreen';
 import AddEditPlantScreen from '../screens/AddEditPlantScreen';
 import ListingsScreen from '../screens/ListingsScreen';
+import ExchangesScreen from '../screens/ExchangesScreen';
 import ListingDetailScreen from '../screens/ListingDetailScreen';
 import PostListingScreen from '../screens/PostListingScreen';
 import ApplyScreen from '../screens/ApplyScreen';
@@ -25,7 +26,7 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabIcon({ label, focused }) {
-  const icons = { 'My Plants': '🌿', Browse: '🔍', Profile: '👤' };
+  const icons = { 'My Plants': '🌿', Browse: '🔍', Exchanges: '🤝', Profile: '👤' };
   return (
     <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
       {icons[label] ?? '●'}
@@ -94,7 +95,7 @@ function BrowseStack() {
       <Stack.Screen
         name="ListingDetail"
         component={ListingDetailScreen}
-        options={{ title: 'Sitting Request', headerBackTitle: 'Browse' }}
+        options={{ title: 'Listing', headerBackTitle: 'Browse' }}
       />
       <Stack.Screen
         name="Apply"
@@ -115,6 +116,39 @@ function BrowseStack() {
         name="HandoffReview"
         component={HandoffReviewScreen}
         options={{ title: 'Leave Review', headerBackTitle: 'Back' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function ExchangesStack() {
+  return (
+    <Stack.Navigator screenOptions={{
+      headerTintColor: C.forest,
+      headerStyle: { backgroundColor: C.white },
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: C.cream },
+    }}>
+      <Stack.Screen name="ExchangesHome" component={ExchangesScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="ListingDetail"
+        component={ListingDetailScreen}
+        options={{ title: 'Listing', headerBackTitle: 'Exchanges' }}
+      />
+      <Stack.Screen
+        name="SwapProposals"
+        component={SwapProposalsScreen}
+        options={{ title: 'Swap Proposals', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="HandoffReview"
+        component={HandoffReviewScreen}
+        options={{ title: 'Leave Review', headerBackTitle: 'Back' }}
+      />
+      <Stack.Screen
+        name="Apply"
+        component={ApplyScreen}
+        options={{ title: 'Apply to Sit', headerBackTitle: 'Back' }}
       />
     </Stack.Navigator>
   );
@@ -144,6 +178,7 @@ function MainTabs() {
     >
       <Tab.Screen name="My Plants" component={PlantsStack} />
       <Tab.Screen name="Browse" component={BrowseStack} />
+      <Tab.Screen name="Exchanges" component={ExchangesStack} />
     </Tab.Navigator>
   );
 }

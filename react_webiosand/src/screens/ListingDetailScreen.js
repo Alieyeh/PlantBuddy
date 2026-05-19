@@ -138,7 +138,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     if (!handoff) return;
     setActionLoading(true);
     try {
-      const updated = await listingsService.confirmListingHandoff(handoff, currentUserId);
+      const updated = await listingsService.confirmListingHandoff(handoff.id);
       setHandoff(updated);
       Alert.alert(
         updated.status === 'COMPLETED' ? 'Handoff completed' : 'Confirmation saved',

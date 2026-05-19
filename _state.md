@@ -1,14 +1,14 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-19 (marketplace alignment + swap/handoff flows + tracker refresh)_
+_Last updated: 2026-05-19 (exchange finalization RPC + inbox refresh)_
 
 ---
 
 ## Current Phase
 
-**Phase 2 — Marketplace + Care Foundation (listing modes and exchange flows live in app)**
+**Phase 2 — Marketplace + Care Foundation (listing modes, exchange RPC, and inbox live in app)**
 
-The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app, owners can review sitting applicants, users can propose swaps, owners can accept or decline swap proposals, participants can confirm listing handoffs, and participants can leave handoff reviews. The next highest-value step is to move exchange finalization into a server-side Supabase function so ownership transfer and listing closure become atomic and authoritative.
+The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app, owners can review sitting applicants, users can propose swaps, owners can accept or decline swap proposals, participants can confirm listing handoffs through a backend RPC, participants can leave handoff reviews, and users now have an `Exchanges` inbox. The next highest-value step is applying the updated migration to the live Supabase project so the deployed backend matches the repo.
 
 ---
 
@@ -25,6 +25,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] Added `listing_handoffs` and `listing_handoff_reviews`
 - [x] Listing type vocabulary aligned to `GIFT` instead of `DONATION`
 - [x] Listing validation rules tightened by listing type
+- [x] Added `confirm_listing_handoff` RPC for atomic handoff confirmation and ownership transfer
 - [ ] Live Supabase state should be treated as migrated because the user reported running the 2026-05-19 migration; re-check only if behavior contradicts that
 - [ ] Seed data file (`002_seed_dev.sql`) not committed
 
@@ -35,7 +36,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] **RLS policies written for all 23 tables** (`android_only/db/rls_policies.sql`) — `refresh_tokens` section removed (session 4 fix)
 - [x] `plant_listings`, `listing_applications`, `swap_proposals`, `listing_handoffs`, `listing_handoff_reviews`, and `contracts` secured by RLS and accessible via PostgREST
 - [ ] `react_webiosand/.env` is not present in this checkout; create it locally with Supabase URL + anon key
-- [ ] Missing hard server-side finalization path for completed exchanges (ownership transfer + listing closure should move into SQL/RPC)
+- [ ] Live Supabase still needs the updated migration applied so `confirm_listing_handoff` exists remotely
 
 ### Expo Frontend (`react_webiosand/`) — Android + iOS + Web
 - [x] Session management (AsyncStorage)
@@ -72,7 +73,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] `SwapProposalsScreen` — owner can review and accept/decline incoming swap proposals
 - [x] Listing handoff start / confirm flow implemented in listing detail
 - [x] `HandoffReviewScreen` — participants can leave a review after a completed handoff
-- [ ] Dedicated exchanges inbox / dashboard
+- [x] `ExchangesScreen` — tab inbox for active proposals, pending handoffs, and completed exchanges
 - [ ] Contract screens (Stage 3)
 - [ ] Messaging (Stage 4)
 - [ ] Notifications
@@ -111,8 +112,8 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 ## Build Order (Updated)
 
 1. **Marketplace alignment** — completed across docs, schema, RLS, migration, and Expo app for sitting / gift / sale / swap
-2. **Exchange finalization** — move handoff completion, ownership transfer, and listing closure into server-side SQL/RPC
-3. **Exchanges inbox** — active proposals, accepted swaps, pending handoffs, completed exchanges
+2. **Live Supabase rollout** — apply the updated 2026-05-19 migration so the repo and remote DB match
+3. **Exchanges inbox polish** — action-needed indicators, richer participant context, better section states
 4. **Browse filters and sorting** — listing type, price, recency, sitting window
 5. **Contracts** — if sitting contracts remain in scope as a distinct lifecycle beyond handoffs
 6. **Messaging** — conversation flow attached to listings or exchanges
@@ -128,9 +129,9 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 |---|---|---|
 | 1 | ~~Where is the backend source?~~ | **Resolved** — backend is Supabase; no custom server source. |
 | 2 | `.env` credentials filled in? | Not present in this checkout. Create `react_webiosand/.env` locally with the real Supabase project URL and anon key. |
-| 3 | Was the 2026-05-19 marketplace migration applied cleanly in the live Supabase project? | The user reported running `android_only/db/2026_05_19_marketplace_alignment.sql`. Re-verify only if live behavior disagrees with repo expectations. |
+| 3 | Was the updated 2026-05-19 migration re-applied after the `confirm_listing_handoff` RPC was added? | The repo now expects that function to exist remotely. Re-run the updated SQL in Supabase before relying on exchange confirmation in production. |
 | 4 | EAS Build or bare workflow? | `app.json` uses managed Expo config. Bare workflow needed for some native modules. Has `npx expo prebuild` been run? |
-| 5 | Do swaps and gifts stay in MVP, or do they remain soft-launched behind limited UX polish? | Backend and core app flows now support both, but inbox/filtering/finalization work is still pending. |
+| 5 | Do swaps and gifts stay in MVP, or do they remain soft-launched behind limited UX polish? | Backend and core app flows now support both, and the inbox exists; filters, notifications, and rollout hardening are still pending. |
 | 6 | Is the sitter rating algorithm defined? | Schema stores `rating_average` and `rating_count` on `sitter_profiles`. Trigger or application code on review submission? |
 | 7 | What does "negotiated payment" mean for sitting requests? | Schema supports `agreed_price` on contract and `proposed_price` on application. In-app messaging or structured counter-offer UI? |
 | 8 | Target app stores? | Google Play + Apple App Store assumed. Timeline or account setup done? |
@@ -140,7 +141,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 ## Current Documentation Refresh (2026-05-19)
 
 - Added `work_tracker.md` as the fast handoff document for future engineers / AI sessions
-- Refreshed state to reflect marketplace, swap, and handoff work completed on 2026-05-19
+- Refreshed state to reflect marketplace, swap, handoff RPC, and inbox work completed on 2026-05-19
 - Confirmed `npm test` passes from `react_webiosand/` with 19 tests passing
 - Current tests include 14 unit tests and 5 smoke tests
 
@@ -155,6 +156,9 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - Updated `ListingDetailScreen` to drive sitting, swap, gift, and sale actions from one place
 - Added `SwapProposalScreen`, `SwapProposalsScreen`, and `HandoffReviewScreen`
 - Wired new marketplace routes into `AppNavigator.js`
+- Added `confirm_listing_handoff` RPC to schema source and migration for atomic exchange finalization
+- Added `ExchangesScreen` and wired it into the tab navigator
+- Updated `listingsService.js` and `ListingDetailScreen` to use RPC-backed handoff confirmation
 - Validated current repo state with `npm test` passing from `react_webiosand/`
 
 ## Last Session (2026-05-16, session 1)

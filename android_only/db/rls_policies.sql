@@ -228,6 +228,11 @@ CREATE POLICY "plant_listings_select_open"
     status = 'OPEN'
     OR owner_user_id = auth.uid()
     OR store_owner_user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM listing_handoffs lh
+      WHERE lh.listing_id = plant_listings.id
+        AND (lh.owner_user_id = auth.uid() OR lh.recipient_user_id = auth.uid())
+    )
   );
 
 -- Owners can create listings for their own plants
