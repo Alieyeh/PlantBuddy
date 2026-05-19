@@ -29,7 +29,6 @@ const sectionStyles = StyleSheet.create({
   label: { ...T.caption, color: C.moss, paddingHorizontal: S.sm, textTransform: 'uppercase', letterSpacing: 0.8 },
 });
 
->>>>>>> Stashed changes
 export default function AddEditPlantScreen({ route, navigation }) {
   const existing = route.params?.plant;
   const isEdit = !!existing;
