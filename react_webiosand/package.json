@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "npm run test:unit && npm run test:integration && npm run test:smoke",
-    "test:unit": "node --test test/unit/plantForm.test.cjs test/unit/listingForm.test.cjs test/unit/exchangeInbox.test.cjs test/unit/environment.test.cjs test/unit/listingsDomain.test.cjs",
+    "test:unit": "node --test test/unit/plantForm.test.cjs test/unit/listingForm.test.cjs test/unit/exchangeInbox.test.cjs test/unit/environment.test.cjs test/unit/listingsDomain.test.cjs test/unit/browseListings.test.cjs",
     "test:integration": "node --test test/integration/exchangeInboxComposition.test.cjs",
     "test:smoke": "node --test test/smoke/projectStructure.test.cjs"
   },

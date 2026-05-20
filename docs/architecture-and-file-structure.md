@@ -42,15 +42,25 @@ There is no active custom backend server in this repo.
 3. It queries `plants` where `current_owner_user_id = user.id`.
 4. Add/edit/delete operations write directly to `plants`.
 
-### Sitting Listings
+### Marketplace Listings
 
 1. Owner taps `Find sitter` from a plant card.
-2. `PostListingScreen` inserts a `SITTING_REQUEST` into `plant_listings`.
-3. `ListingsScreen` queries open sitting requests.
-4. `ListingDetailScreen` fetches a single listing and joined plant details.
-5. `ApplyScreen` inserts into `listing_applications`.
-6. `ApplicationsScreen` loads applications for an owner's listing and can update application status to `ACCEPTED` or `DECLINED`.
-7. Contract creation after accepting an application is not implemented yet.
+2. `PostListingScreen` inserts `SITTING_REQUEST`, `GIFT`, or `SALE` rows into `plant_listings`.
+3. `ListingsScreen` queries open listings across sitting, gift, sale, and swap modes.
+4. `src/utils/browseListings.js` applies the current client-side search, listing-type filters, and sort order.
+5. `ListingDetailScreen` fetches a single listing and joined plant details.
+6. Sitting listings use `ApplyScreen` and `ApplicationsScreen` for applicant review.
+7. Swap listings use `SwapProposalScreen` and `SwapProposalsScreen`.
+8. Gift, sale, and accepted swap flows can create `listing_handoffs`.
+9. `confirm_listing_handoff` finalizes handoffs through a Supabase RPC.
+10. Contract creation after accepting a sitting application is not implemented yet.
+
+### Configuration And Domain Helpers
+
+1. `src/config/environment.js` validates the required public Supabase environment variables.
+2. `src/lib/supabase.js` creates the Supabase client only when those variables are present.
+3. `App.js` shows a controlled configuration message when the public Supabase URL or anon key is missing.
+4. `src/domain/listings.js` centralizes listing types, status values, and listing insert payload construction.
 
 ### Design System
 
@@ -83,6 +93,10 @@ C:\PlantBuddy
 |       |-- api\
 |       |   |-- apiService.js
 |       |   |-- listingsService.js
+|       |-- config\
+|       |   |-- environment.js
+|       |-- domain\
+|       |   |-- listings.js
 |       |-- lib\
 |       |   |-- supabase.js
 |       |   |-- theme.js
@@ -99,9 +113,15 @@ C:\PlantBuddy
 |       |   |-- PostListingScreen.js
 |       |   |-- ApplyScreen.js
 |       |   |-- ApplicationsScreen.js
+|       |   |-- ExchangesScreen.js
+|       |   |-- SwapProposalScreen.js
+|       |   |-- SwapProposalsScreen.js
+|       |   |-- HandoffReviewScreen.js
 |       |-- storage\
 |       |   |-- SessionManager.js
 |       |-- utils\
+|       |   |-- browseListings.js
+|       |   |-- exchangeInbox.js
 |       |   |-- plantForm.js
 |       |   |-- listingForm.js
 |   |-- test\
@@ -146,13 +166,15 @@ Key files:
 - `package.json` - scripts and dependencies.
 - `app.json` - Expo configuration.
 - `src/lib/supabase.js` - Supabase client.
+- `src/config/environment.js` - public Supabase environment validation and configuration errors.
+- `src/domain/listings.js` - listing/status constants and listing insert payload builder.
 - `src/lib/theme.js` - shared design tokens and reusable style fragments.
 - `src/navigation/AppNavigator.js` - app navigation.
 - `src/api/apiService.js` - plant CRUD.
-- `src/api/listingsService.js` - listing queries, creation, application submission, and application status updates.
+- `src/api/listingsService.js` - listing queries, creation, application submission, swaps, handoffs, and reviews.
 - `src/screens/*` - UI screens.
-- `src/utils/*` - shared form validation/payload helpers used by screens and tests.
-- `test/` - Node unit and smoke tests.
+- `src/utils/*` - shared form validation, browse filtering/sorting, inbox shaping, and payload helpers used by screens and tests.
+- `test/` - Node unit, integration, and smoke tests.
 
 ### `android_only/`
 

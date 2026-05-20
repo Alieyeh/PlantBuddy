@@ -1,6 +1,6 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-19 (exchange finalization RPC + inbox refresh)_
+_Last updated: 2026-05-20 (browse filters and sorting)_
 
 ---
 
@@ -8,7 +8,7 @@ _Last updated: 2026-05-19 (exchange finalization RPC + inbox refresh)_
 
 **Phase 2 — Marketplace + Care Foundation (listing modes, exchange RPC, and inbox live in app)**
 
-The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app, owners can review sitting applicants, users can propose swaps, owners can accept or decline swap proposals, participants can confirm listing handoffs through a backend RPC, participants can leave handoff reviews, and users now have an `Exchanges` inbox. The next highest-value step is applying the updated migration to the live Supabase project so the deployed backend matches the repo.
+The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. The next highest-value step is applying or confirming the updated migration in the live Supabase project so the deployed backend matches the repo.
 
 ---
 
@@ -47,6 +47,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] Auth-gated navigation
 - [x] **Tab navigation** — My Plants tab + Browse tab (Stage 1)
 - [x] **ListingsScreen** — feed of all open marketplace and sitting listings
+- [x] **ListingsScreen browse controls** — text search, listing-type filters, newest/sitting-date/price sorting
 - [x] **ListingDetailScreen** — supports sitting, gift, sale, and swap actions
 - [x] **PostListingScreen** — create sitting request, plant picker, date validation (Stage 1)
 - [x] **listingsService.js** — Supabase queries for listings, applications, swaps, handoffs, and handoff reviews
@@ -59,8 +60,8 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] **AddEditPlantScreen** — field names updated to match schema snake_case columns (session 3)
 - [ ] `.env` credentials are not present in this checkout; create `react_webiosand/.env` locally with `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - [ ] `npm.cmd install` still needed in this checkout; `react_webiosand/node_modules` is not present
-- [x] Node unit tests added for plant and listing form helpers
-- [x] Node smoke tests added for app structure, Supabase env wiring, and schema/RLS files
+- [x] Node unit tests added for plant form, listing form, config, listing domain, browse, and exchange inbox helpers
+- [x] Node smoke tests added for app structure, Supabase env wiring, browse wiring, exchange wiring, and schema/RLS files
 - [x] **Stage 2a: owner_profiles auto-creation** — `handle_new_user()` trigger also inserts into `owner_profiles`; every signup gets owner mode immediately
 - [x] **Stage 2b: ProfileSetupScreen** — post-register prompt; display name + sitter opt-in; writes sitter_profiles if toggled on; skippable
 - [x] **Stage 2c: ApplyScreen** — sitter applies to a listing with message + proposed dates; duplicate guard on 23505
@@ -114,7 +115,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 1. **Marketplace alignment** — completed across docs, schema, RLS, migration, and Expo app for sitting / gift / sale / swap
 2. **Live Supabase rollout** — apply the updated 2026-05-19 migration so the repo and remote DB match
 3. **Exchanges inbox polish** — action-needed indicators, richer participant context, better section states
-4. **Browse filters and sorting** — listing type, price, recency, sitting window
+4. **Richer discovery** — saved searches, favorites, plant-care filters, server-side search if listing volume grows
 5. **Contracts** — if sitting contracts remain in scope as a distinct lifecycle beyond handoffs
 6. **Messaging** — conversation flow attached to listings or exchanges
 7. **Push notifications** — proposal accepted, handoff awaiting confirmation, review reminders
@@ -131,7 +132,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 | 2 | `.env` credentials filled in? | Not present in this checkout. Create `react_webiosand/.env` locally with the real Supabase project URL and anon key. |
 | 3 | Was the updated 2026-05-19 migration re-applied after the `confirm_listing_handoff` RPC was added? | The repo now expects that function to exist remotely. Re-run the updated SQL in Supabase before relying on exchange confirmation in production. |
 | 4 | EAS Build or bare workflow? | `app.json` uses managed Expo config. Bare workflow needed for some native modules. Has `npx expo prebuild` been run? |
-| 5 | Do swaps and gifts stay in MVP, or do they remain soft-launched behind limited UX polish? | Backend and core app flows now support both, and the inbox exists; filters, notifications, and rollout hardening are still pending. |
+| 5 | Do swaps and gifts stay in MVP, or do they remain soft-launched behind limited UX polish? | Backend and core app flows now support both, and the inbox plus basic browse filters exist; notifications, trust hardening, and rollout polish are still pending. |
 | 6 | Is the sitter rating algorithm defined? | Schema stores `rating_average` and `rating_count` on `sitter_profiles`. Trigger or application code on review submission? |
 | 7 | What does "negotiated payment" mean for sitting requests? | Schema supports `agreed_price` on contract and `proposed_price` on application. In-app messaging or structured counter-offer UI? |
 | 8 | Target app stores? | Google Play + Apple App Store assumed. Timeline or account setup done? |
@@ -143,7 +144,15 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - Added `work_tracker.md` as the fast handoff document for future engineers / AI sessions
 - Refreshed state to reflect marketplace, swap, handoff RPC, and inbox work completed on 2026-05-19
 - Confirmed `npm test` passes from `react_webiosand/` with 19 tests passing
-- Current tests include 14 unit tests and 5 smoke tests
+- At that point, tests included 14 unit tests and 5 smoke tests. This has since expanded; see the 2026-05-20 refresh below.
+
+## Current Documentation Refresh (2026-05-20)
+
+- Added Browse search, listing-type filters, and sort options to `ListingsScreen`
+- Added `src/utils/browseListings.js` for testable client-side search/filter/sort logic
+- Added unit tests for Browse filtering and sorting
+- Updated smoke tests to verify Browse wiring
+- Confirmed `npm.cmd test` passes from `react_webiosand/` with 42 total tests passing: 34 unit, 1 integration, and 7 smoke
 
 ## Last Session (2026-05-19)
 

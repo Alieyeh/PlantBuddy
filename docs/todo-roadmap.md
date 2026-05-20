@@ -9,6 +9,7 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 - Confirm Supabase schema has been recreated with UUID user IDs.
 - Run `rls_policies.sql` after schema creation.
 - Smoke-test register, profile setup, login, add plant, post listing, browse listing, apply, and owner accept/decline.
+- Include Browse search, listing-type filters, and sort options in the manual smoke test.
 - Decide whether Supabase email confirmation should be on or off for local development.
 
 ## Priority 1 - Security And Data Integrity
@@ -83,10 +84,10 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 
 ## Priority 9 - Marketplace Expansion
 
-- Donation listing flow.
-- Swap proposal flow.
+- Saved searches and favorites.
+- Server-side browse filtering/search once the listing dataset grows.
+- Richer plant-care filters such as light, watering frequency, size, and distance.
 - Store owner profile and approval flow.
-- Sale listings.
 - Store orders.
 - Payments.
 

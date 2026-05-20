@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-PlantBuddy is currently a partially implemented Expo / React Native app backed by Supabase. The product goal is a plant-sitting marketplace, with future support for donations, swaps, and plant sales.
+PlantBuddy is currently a partially implemented Expo / React Native app backed by Supabase. The product direction is now a plant marketplace and care network covering sitting requests, gifts, swaps, and peer sales.
 
-The active app already supports login/register, post-register profile setup, plant profile management, creating sitting requests, browsing open sitting requests, applying to sit, and owner accept/decline decisions. The next major missing piece is contract generation from an accepted application.
+The active app already supports login/register, post-register profile setup, plant profile management, listing creation for sitting/gift/sale, browse search/filter/sort, sitting applications, owner accept/decline decisions, swap proposals, exchange inbox, handoff confirmation, and handoff reviews. The next major missing piece is a transactional sitting application accept flow that creates contracts.
 
 ## What To Work On First
 
@@ -65,10 +65,14 @@ If Supabase still has old BIGINT user IDs, the current app/schema will break. Th
 - My Plants
 - Add/Edit Plant
 - Post Sitting Request
-- Browse Listings
+- Browse Listings with search, listing-type filters, and sort options
 - Listing Detail
 - Apply
 - Applications
+- Exchanges
+- Swap Proposal
+- Swap Proposals
+- Handoff Review
 
 ## Current Database Breadth
 
@@ -94,7 +98,6 @@ This is useful, but it also means the frontend is far behind the schema.
 
 A strong next PR would be:
 
-- Add Supabase env guard.
 - Fix plant-listing ownership RLS.
 - Add RLS/database checks for application eligibility.
 - Add RPC for accepting an application and creating a contract.
@@ -115,6 +118,6 @@ This would make the project safer and move directly toward a complete sitting co
 
 ## Practical Advice
 
-Build vertically from the current sitting flow. Avoid implementing donation, swap, sale, payments, or messaging until the sitting MVP works end to end.
+Build vertically from the current marketplace/care foundation. Swap, gift, and sale skeletons exist now, but payments, messaging, and store-owner commerce should still wait until trust, authorization, and contract flows are stronger.
 
 Because this is a direct-to-Supabase client app, database policies are not optional. Every feature should be designed with its RLS rules at the same time as its screen.

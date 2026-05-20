@@ -25,6 +25,7 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/src/storage/SessionManager.js',
     'react_webiosand/src/api/apiService.js',
     'react_webiosand/src/api/listingsService.js',
+    'react_webiosand/src/utils/browseListings.js',
     'react_webiosand/src/utils/exchangeInbox.js',
     'react_webiosand/src/screens/LoginScreen.js',
     'react_webiosand/src/screens/RegisterScreen.js',
@@ -134,4 +135,17 @@ test('exchanges inbox has refresh, summary, and shared utility wiring', () => {
   assert.match(exchangesScreen, /refreshControl/);
   assert.match(exchangesScreen, /getExchangeInboxCounts/);
   assert.match(service, /buildExchangeInbox/);
+});
+
+test('browse listings screen has search, filters, sorting, and shared utility wiring', () => {
+  const listingsScreen = read('react_webiosand/src/screens/ListingsScreen.js');
+  const browseUtils = read('react_webiosand/src/utils/browseListings.js');
+
+  assert.match(listingsScreen, /TextInput/);
+  assert.match(listingsScreen, /TYPE_FILTER_OPTIONS/);
+  assert.match(listingsScreen, /SORT_OPTIONS/);
+  assert.match(listingsScreen, /filterAndSortListings/);
+  assert.match(listingsScreen, /open listings/);
+  assert.match(browseUtils, /BROWSE_TYPE_FILTERS/);
+  assert.match(browseUtils, /BROWSE_SORT_OPTIONS/);
 });

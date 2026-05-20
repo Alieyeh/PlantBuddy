@@ -14,9 +14,9 @@ npm.cmd test
 
 Available scripts:
 
-- `npm.cmd run test:unit` - tests extracted plant, listing, and exchange inbox utilities.
+- `npm.cmd run test:unit` - tests extracted plant, listing, browse, config, domain, and exchange inbox utilities.
 - `npm.cmd run test:integration` - tests exchange inbox composition from raw proposal/handoff rows.
-- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, exchange inbox wiring, Supabase wiring, design dependencies, and key schema/RLS files.
+- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, browse filter/sort wiring, exchange inbox wiring, Supabase wiring, design dependencies, and key schema/RLS files.
 - `npm.cmd test` - runs unit, integration, and smoke tests.
 
 Manual testing is still required for actual Supabase login/register/database flows.
@@ -47,6 +47,8 @@ Run this after dependency install, `.env` setup, and Supabase schema/RLS setup.
 - Tap `Find sitter`.
 - Create a sitting request with valid dates.
 - Confirm the listing appears in Browse.
+- Search for the plant/species and confirm the listing remains visible.
+- Try listing-type filters and sort options in Browse.
 - Open the listing detail screen.
 - Tap `Apply to Sit`.
 - Submit an application with a message and proposed dates.
@@ -74,6 +76,7 @@ Continue expanding tests for pure logic:
 - date range formatting
 - plant form payload construction
 - listing form payload construction
+- browse listing search, filtering, and sorting
 - exchange inbox counts, action-needed state, and date/participant helpers
 
 Suggested tools:

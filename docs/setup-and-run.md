@@ -144,6 +144,8 @@ npm.cmd install
 
 Create `react_webiosand/.env` and restart Expo. Expo reads `EXPO_PUBLIC_*` variables at bundling time.
 
+The app now shows a clear "Supabase config missing" screen when these values are absent, rather than opening as a blank page.
+
 ### `bigint = uuid` Error
 
 This means the Supabase database probably still has an older schema using BIGINT user IDs. The current schema expects UUID user IDs that match Supabase Auth.

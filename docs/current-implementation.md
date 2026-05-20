@@ -70,18 +70,34 @@ Files:
 - `react_webiosand/src/screens/ApplyScreen.js`
 - `react_webiosand/src/screens/ApplicationsScreen.js`
 - `react_webiosand/src/api/listingsService.js`
+- `react_webiosand/src/domain/listings.js`
+- `react_webiosand/src/utils/browseListings.js`
+- `react_webiosand/src/utils/listingForm.js`
 
 Current behavior:
 
-- Owners can create a `SITTING_REQUEST` listing for one of their plants.
+- Owners can create `SITTING_REQUEST`, `GIFT`, and `SALE` listings for one of their plants.
 - The listing is inserted into `plant_listings` with status `OPEN`.
-- Users can browse open sitting requests.
+- Users can browse all open listing modes: `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP`.
+- Browse supports text search across listing and plant fields.
+- Browse supports listing-type filters for all, sitting, gifts, sales, and swaps.
+- Browse supports sorting by newest, soonest sitting date, price low-to-high, and price high-to-low.
 - Users can view listing detail, including plant care information.
 - `Apply to Sit` opens `ApplyScreen`.
 - Users can submit an application with a message and proposed dates.
 - Duplicate applications are handled from Postgres error code `23505`.
 - Owners can open `ApplicationsScreen` from plant cards that already have an open listing.
 - Owners can view applicants and mark applications as `ACCEPTED` or `DECLINED`.
+- Users can propose swaps for swap listings.
+- Owners can review incoming swap proposals.
+- Gift, sale, and accepted swap flows can start listing handoffs.
+- Handoff participants can confirm handoff completion and leave reviews.
+
+Architecture notes:
+
+- `src/domain/listings.js` centralizes listing types, statuses, handoff statuses, and listing insert payload construction.
+- `src/utils/browseListings.js` contains the pure browse search/filter/sort logic used by `ListingsScreen` and covered by unit tests.
+- `src/config/environment.js` validates required public Supabase environment variables before the app tries to use the Supabase client.
 
 Current application-flow limitations:
 
@@ -210,16 +226,17 @@ Frontend missing:
 - Notifications UI.
 - Reviews.
 - Image upload.
-- Donation listings.
-- Swap listings.
-- Store owner and sale listings.
+- Store-owner listing and approval flows.
 - Payments.
 - Admin/moderation UI.
+- Saved searches and favorites.
+- Server-side or database-backed browse search for larger datasets.
 
 Project tooling currently present:
 
-- Node unit tests for plant and listing form logic.
-- Node smoke tests for key app files, Supabase wiring, and schema/RLS files.
+- Node unit tests for plant forms, listing forms, listing domain helpers, Supabase environment validation, browse filters/sorting, and exchange inbox helpers.
+- Node integration test for exchange inbox composition.
+- Node smoke tests for key app files, browse wiring, exchange inbox wiring, Supabase wiring, and schema/RLS files.
 
 Project tooling still missing:
 
@@ -233,7 +250,6 @@ Project tooling still missing:
 
 At the time this documentation was written:
 
-- `react_webiosand/node_modules` was not installed.
-- `react_webiosand/.env` was not present in this checkout.
+- `react_webiosand/.env` may not be present in a fresh checkout. If it is missing, the app now shows a clear Supabase configuration screen instead of failing as a blank page.
 - Root `app/`, `build/`, `.gradle/`, and `.idea/` look like generated or IDE/build output.
 - Root `PlantBuddy/` contains only a nested `.git` folder and appears accidental or unused.

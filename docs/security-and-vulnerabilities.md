@@ -188,19 +188,25 @@ Recommended fix:
 
 Tie photo visibility to plant visibility.
 
-### Frontend Has No Guard For Missing Supabase Env Vars
+### Frontend Supabase Env Vars Are Guarded
 
 File:
 
 - `react_webiosand/src/lib/supabase.js`
+- `react_webiosand/src/config/environment.js`
+- `react_webiosand/App.js`
 
-Risk:
+Status:
 
-If `.env` is missing, the app may fail with unclear runtime errors.
+Mitigated in the current app.
 
-Recommended fix:
+Current behavior:
 
-Add a startup guard with a helpful error message when `EXPO_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_ANON_KEY` is missing.
+`src/config/environment.js` validates `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and `App.js` shows a clear Supabase configuration message when either value is missing.
+
+Remaining best practice:
+
+Keep the frontend limited to public Expo variables and never add a service role key, database password, or other server secret to `.env`.
 
 ### Manual Schema Setup Is Error-Prone
 
@@ -241,7 +247,7 @@ Keep root `.gitignore` coverage in place and clean generated output after confir
 
 Risk:
 
-The current Node unit and smoke tests cover helper logic and static project structure, but not real auth, RLS behavior, or end-to-end app flows.
+The current Node unit, integration, and smoke tests cover helper logic, browse filtering/sorting, config validation, exchange inbox shaping, and static project structure, but not real auth, RLS behavior, or end-to-end app flows.
 
 Recommended fix:
 

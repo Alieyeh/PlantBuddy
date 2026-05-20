@@ -2,7 +2,7 @@
 
 ## Product Summary
 
-PlantBuddy is intended to be a plant care marketplace: a pet-sitting style app for plants. A user can own plants, create plant profiles, request sitters, browse plants that need care, and eventually support donation, swapping, and selling.
+PlantBuddy is intended to be a plant care marketplace: a pet-sitting style app for plants that has expanded into a plant marketplace and care network. A user can own plants, create plant profiles, request sitters, browse plants that need care, and participate in gift, swap, and peer-sale flows.
 
 The project started as an Android application, but the active direction is now a cross-platform Expo / React Native app for Android, iOS, and web, backed by Supabase.
 
@@ -25,7 +25,7 @@ The first complete product loop should be:
 1. User registers and logs in.
 2. User creates a plant profile.
 3. Owner posts a sitting request for that plant.
-4. Sitter browses open sitting requests.
+4. Sitter browses open listings and can narrow to sitting requests.
 5. Sitter applies to care for the plant.
 6. Owner reviews applications and accepts one.
 7. Contract is created.
@@ -35,7 +35,7 @@ The first complete product loop should be:
 
 ## MVP Scope
 
-The recommended MVP is the sitting flow only. Donation, swap, store sale, payments, and advanced messaging should wait until sitting works end to end.
+The original recommended MVP was the sitting flow first. The current implementation has already expanded into sitting, gift, sale, and swap foundations, so the practical MVP should now stabilize those existing flows while still deferring payments, store-owner commerce, and advanced messaging.
 
 ### MVP Should Include
 
@@ -43,7 +43,7 @@ The recommended MVP is the sitting flow only. Donation, swap, store sale, paymen
 - Owner profile creation during signup.
 - Plant profile CRUD.
 - Sitting request creation.
-- Browse open sitting requests.
+- Browse open listings with search, listing-type filters, and sort options.
 - Sitter profile activation.
 - Application submission.
 - Owner application inbox.
@@ -54,8 +54,6 @@ The recommended MVP is the sitting flow only. Donation, swap, store sale, paymen
 ### MVP Can Defer
 
 - Payment processing.
-- Donation listings.
-- Swap listings.
 - Store owner sale listings.
 - Image uploads.
 - Push notifications.
@@ -82,8 +80,8 @@ Status: mostly implemented in Expo.
 - Plant list.
 - Add/edit plant.
 - Soft-delete plant.
-- Create sitting request.
-- Browse open sitting requests.
+- Create sitting, gift, and sale listings.
+- Browse open listings with search, listing-type filters, and sort options.
 - View listing details.
 
 ### Phase 2 - Sitter Application Flow
@@ -129,12 +127,10 @@ Status: schema exists, frontend missing.
 
 ### Phase 6 - Expanded Marketplace
 
-Status: schema exists, frontend missing.
+Status: core peer marketplace flows are partly implemented; store-owner commerce and payments are still missing.
 
-- Donations.
-- Swaps.
+- Richer browse filters, saved searches, and favorites.
 - Store owner approval.
-- Sale listings.
 - Payments.
 - Image storage.
 

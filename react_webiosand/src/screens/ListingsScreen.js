@@ -1,10 +1,22 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity,
-  ActivityIndicator, StyleSheet, Alert,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { listingsService, LISTING_TYPES } from '../api/listingsService';
+import {
+  BROWSE_SORT_OPTIONS,
+  BROWSE_TYPE_FILTERS,
+  filterAndSortListings,
+} from '../utils/browseListings';
 import { C, T, S } from '../lib/theme';
 
 const formatDate = (dateStr) => {
@@ -32,9 +44,39 @@ const TYPE_META = {
   [LISTING_TYPES.SWAP]: { label: 'Swap', bg: C.parchment, text: C.moss, border: C.sage },
 };
 
+const TYPE_FILTER_OPTIONS = [
+  { value: BROWSE_TYPE_FILTERS.ALL, label: 'All' },
+  { value: BROWSE_TYPE_FILTERS.SITTING_REQUEST, label: 'Sitting' },
+  { value: BROWSE_TYPE_FILTERS.GIFT, label: 'Gifts' },
+  { value: BROWSE_TYPE_FILTERS.SALE, label: 'Sales' },
+  { value: BROWSE_TYPE_FILTERS.SWAP, label: 'Swaps' },
+];
+
+const SORT_OPTIONS = [
+  { value: BROWSE_SORT_OPTIONS.NEWEST, label: 'Newest' },
+  { value: BROWSE_SORT_OPTIONS.SOONEST_SITTING, label: 'Soonest sit' },
+  { value: BROWSE_SORT_OPTIONS.PRICE_LOW, label: 'Price low' },
+  { value: BROWSE_SORT_OPTIONS.PRICE_HIGH, label: 'Price high' },
+];
+
+function FilterButton({ label, active, onPress }) {
+  return (
+    <TouchableOpacity
+      style={[styles.filterButton, active && styles.filterButtonActive]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <Text style={[styles.filterButtonText, active && styles.filterButtonTextActive]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 export default function ListingsScreen({ navigation }) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [listingTypeFilter, setListingTypeFilter] = useState(BROWSE_TYPE_FILTERS.ALL);
+  const [sortBy, setSortBy] = useState(BROWSE_SORT_OPTIONS.NEWEST);
 
   const fetchListings = useCallback(() => {
     async function load() {
@@ -53,6 +95,14 @@ export default function ListingsScreen({ navigation }) {
   }, []);
 
   useFocusEffect(fetchListings);
+
+  const visibleListings = useMemo(() => filterAndSortListings(listings, {
+    listingType: listingTypeFilter,
+    searchTerm,
+    sortBy,
+  }), [listingTypeFilter, listings, searchTerm, sortBy]);
+
+  const hasActiveFilters = searchTerm.trim().length > 0 || listingTypeFilter !== BROWSE_TYPE_FILTERS.ALL;
 
   const renderListing = ({ item }) => {
     const plant = item.plants;
@@ -89,7 +139,6 @@ export default function ListingsScreen({ navigation }) {
 
         {item.listing_type === LISTING_TYPES.SITTING_REQUEST && dateRange && (
           <View style={styles.dateRow}>
-            <Text style={styles.dateIcon}>📅</Text>
             <Text style={styles.dateText}>{dateRange}</Text>
             {days != null ? <Text style={styles.dateHint}>{days} days</Text> : null}
           </View>
@@ -97,56 +146,100 @@ export default function ListingsScreen({ navigation }) {
 
         {item.listing_type === LISTING_TYPES.SALE && (
           <View style={styles.dateRow}>
-            <Text style={styles.dateIcon}>💷</Text>
             <Text style={styles.dateText}>Peer sale listing</Text>
           </View>
         )}
 
         {item.listing_type === LISTING_TYPES.GIFT && (
           <View style={styles.dateRow}>
-            <Text style={styles.dateIcon}>🎁</Text>
             <Text style={styles.dateText}>Community rehome</Text>
           </View>
         )}
 
         {item.listing_type === LISTING_TYPES.SWAP && (
           <View style={styles.dateRow}>
-            <Text style={styles.dateIcon}>🔄</Text>
             <Text style={styles.dateText}>Trade with another owner</Text>
           </View>
         )}
 
         <View style={styles.chips}>
-          {plant?.light_requirements ? <MetaChip label={`☀️ ${plant.light_requirements}`} /> : null}
-          {plant?.watering_frequency_days ? <MetaChip label={`💧 Every ${plant.watering_frequency_days}d`} /> : null}
+          {plant?.light_requirements ? <MetaChip label={`Light: ${plant.light_requirements}`} /> : null}
+          {plant?.watering_frequency_days ? <MetaChip label={`Water: every ${plant.watering_frequency_days}d`} /> : null}
           {item.listing_type === LISTING_TYPES.SALE ? <MetaChip label={`${item.currency_code ?? 'GBP'} ${Number(item.sale_price ?? 0).toFixed(2)}`} /> : null}
         </View>
       </TouchableOpacity>
     );
   };
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyInner}>
+      <Text style={styles.emptyTitle}>{hasActiveFilters ? 'No matching listings' : 'No listings right now'}</Text>
+      <Text style={styles.emptyBody}>
+        {hasActiveFilters
+          ? 'Try a different search, listing type, or sort option.'
+          : 'Check back soon, or post your own plant to get started.'}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Browse Plants</Text>
         <Text style={styles.subtitle}>Sale, gift, swap, and sitter listings</Text>
+
+        <TextInput
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholder="Search by plant, species, care need, or listing"
+          placeholderTextColor={C.stone}
+          style={styles.searchInput}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+
+        <View style={styles.controlBlock}>
+          <Text style={styles.controlLabel}>Type</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+            {TYPE_FILTER_OPTIONS.map((option) => (
+              <FilterButton
+                key={option.value}
+                label={option.label}
+                active={listingTypeFilter === option.value}
+                onPress={() => setListingTypeFilter(option.value)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.controlBlock}>
+          <Text style={styles.controlLabel}>Sort</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+            {SORT_OPTIONS.map((option) => (
+              <FilterButton
+                key={option.value}
+                label={option.label}
+                active={sortBy === option.value}
+                onPress={() => setSortBy(option.value)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <Text style={styles.resultCount}>
+          {visibleListings.length} of {listings.length} open listings
+        </Text>
       </View>
 
       {loading ? (
         <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
       ) : (
         <FlatList
-          data={listings}
+          data={visibleListings}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderListing}
-          contentContainerStyle={listings.length === 0 ? styles.emptyContainer : styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyInner}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyTitle}>No listings right now</Text>
-              <Text style={styles.emptyBody}>Check back soon, or post your own plant to get started.</Text>
-            </View>
-          }
+          contentContainerStyle={visibleListings.length === 0 ? styles.emptyContainer : styles.listContent}
+          ListEmptyComponent={renderEmptyState}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -157,18 +250,54 @@ export default function ListingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.cream },
   header: {
-    paddingHorizontal: S.base, paddingTop: 52, paddingBottom: S.base,
+    paddingHorizontal: S.base,
+    paddingTop: 52,
+    paddingBottom: S.base,
     backgroundColor: C.white,
-    borderBottomWidth: 1, borderBottomColor: C.mist,
+    borderBottomWidth: 1,
+    borderBottomColor: C.mist,
   },
   title: { ...T.h1 },
   subtitle: { ...T.caption, color: C.stone, marginTop: 2 },
+  searchInput: {
+    backgroundColor: C.cream,
+    borderWidth: 1,
+    borderColor: C.sage,
+    borderRadius: S.input,
+    color: C.ink,
+    fontSize: 14,
+    marginTop: S.md,
+    minHeight: 44,
+    paddingHorizontal: S.md,
+  },
+  controlBlock: { marginTop: S.md },
+  controlLabel: { ...T.label, color: C.moss, marginBottom: S.xs },
+  filterRow: { gap: S.sm, paddingRight: S.base },
+  filterButton: {
+    borderWidth: 1,
+    borderColor: C.sage,
+    borderRadius: S.chip,
+    backgroundColor: C.white,
+    paddingHorizontal: S.md,
+    paddingVertical: 7,
+    minHeight: 34,
+    justifyContent: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: C.forest,
+    borderColor: C.forest,
+  },
+  filterButtonText: { ...T.caption, color: C.moss, fontWeight: '700' },
+  filterButtonTextActive: { color: C.white },
+  resultCount: { ...T.caption, color: C.stone, marginTop: S.sm },
   loader: { flex: 1 },
   listContent: { paddingTop: S.sm, paddingBottom: S.xxxl },
   card: {
     backgroundColor: C.white,
-    marginHorizontal: S.base, marginTop: S.md,
-    borderRadius: S.card, padding: S.base,
+    marginHorizontal: S.base,
+    marginTop: S.md,
+    borderRadius: S.card,
+    padding: S.base,
     ...S.cardShadow,
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: S.xs },
@@ -184,19 +313,20 @@ const styles = StyleSheet.create({
   typeBadgeText: { ...T.badge },
   listingTitle: { ...T.body, color: C.slate, marginBottom: S.sm },
   dateRow: { flexDirection: 'row', alignItems: 'center', marginBottom: S.sm },
-  dateIcon: { fontSize: 13, marginRight: S.xs },
   dateText: { ...T.caption, color: C.slate, fontWeight: '600' },
   dateHint: { ...T.caption, color: C.stone, marginLeft: S.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: S.xs },
   chip: {
-    backgroundColor: C.mist, borderRadius: S.chip,
-    paddingHorizontal: S.md, paddingVertical: 4,
-    borderWidth: 1, borderColor: C.sage,
+    backgroundColor: C.mist,
+    borderRadius: S.chip,
+    paddingHorizontal: S.md,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: C.sage,
   },
   chipText: { ...T.caption, color: C.moss, fontWeight: '600' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: S.xl },
   emptyInner: { alignItems: 'center' },
-  emptyIcon: { fontSize: 56, marginBottom: S.md },
   emptyTitle: { ...T.h2, textAlign: 'center', marginBottom: S.sm },
   emptyBody: { ...T.body, color: C.stone, textAlign: 'center', lineHeight: 22 },
 });

@@ -76,6 +76,9 @@ The browse and detail experience now supports marketplace flows in-app.
 Completed:
 
 - browse feed shows all open listing types, not only sitting requests
+- browse feed has text search across listing and plant fields
+- browse feed has listing-type filters for sitting, gifts, sales, and swaps
+- browse feed has sort options for newest, soonest sitting date, price low-to-high, and price high-to-low
 - listing cards show type-aware summary and badges
 - listing detail screen now branches by listing type
 - non-owners can start gift or sale handoff flow from detail
@@ -87,6 +90,7 @@ Files:
 
 - `react_webiosand/src/screens/ListingsScreen.js`
 - `react_webiosand/src/screens/ListingDetailScreen.js`
+- `react_webiosand/src/utils/browseListings.js`
 
 ### Swap proposal and handoff review flows
 
@@ -151,11 +155,11 @@ Command:
 npm test
 ```
 
-Latest result after inbox polish:
+Latest result after browse filters and sorting:
 
-- unit tests passed: 20/20
+- unit tests passed: 34/34
 - integration tests passed: 1/1
-- smoke tests passed: 6/6
+- smoke tests passed: 7/7
 - no editor errors were reported in the newly changed marketplace screens and navigation files
 
 This means the current tracked implementation is at least syntax-clean and test-clean for the existing test suite.
@@ -192,7 +196,7 @@ Implemented and usable now:
 - auth flow
 - plant CRUD
 - listing creation for sitting, gift, and sale
-- browse feed for all open listing types
+- browse feed for all open listing types with search, type filters, and sorting
 - listing detail with type-specific actions
 - sitting application flow and owner applicant review
 - swap proposal create/review/accept-decline flow
@@ -202,7 +206,8 @@ Implemented and usable now:
 
 Still thin or missing:
 
-- no richer browse filters yet
+- no saved searches or favorites yet
+- browse filtering is currently client-side and should move closer to the database if the dataset grows
 - no push notifications for proposal / handoff updates
 - no image upload flow for listings or plants beyond existing structure
 - no dedicated notification or badge counts for exchange state changes yet
@@ -228,9 +233,9 @@ Current automated coverage is still lightweight.
 
 Present:
 
-- unit tests for plant form, listing form, and exchange inbox helpers
+- unit tests for plant form, listing form, listing domain, Supabase config, browse filters/sorting, and exchange inbox helpers
 - integration test for composing exchange inbox rows into proposals, pending handoffs, and completed exchanges
-- smoke tests for key files, marketplace flow wiring, exchange inbox wiring, and schema/RLS files
+- smoke tests for key files, marketplace flow wiring, browse wiring, exchange inbox wiring, and schema/RLS files
 
 Missing:
 
@@ -278,21 +283,23 @@ Likely files:
 - `react_webiosand/src/navigation/AppNavigator.js`
 - `react_webiosand/src/api/listingsService.js`
 
-### 3. Add browse filters and sort options
+### 3. Add saved searches, favorites, and richer browse filters
 
 Why this matters:
-The feed now mixes four listing types, so filtering becomes necessary quickly.
+The feed now mixes four listing types and basic filtering exists. The next discovery step is making useful searches reusable and adding plant-care-specific filters.
 
 Recommended outcome:
 
-- filter by listing type
-- sort by newest / price / soonest sitting dates
-- optional plant-care filters later
+- saved searches
+- favorite listings
+- optional plant-care filters such as light, watering cadence, size, and distance
+- move filtering/search server-side if listing volume grows
 
 Likely files:
 
 - `react_webiosand/src/screens/ListingsScreen.js`
 - `react_webiosand/src/api/listingsService.js`
+- `react_webiosand/src/utils/browseListings.js`
 
 ### 4. Add automated coverage for the new flows
 
@@ -333,7 +340,7 @@ If a new engineer or AI takes over, use this checklist.
 3. Confirm the live Supabase project has the updated 2026-05-19 migration, including `confirm_listing_handoff`.
 4. Read `react_webiosand/src/api/listingsService.js` to understand the current service contract.
 5. Read `react_webiosand/src/screens/ExchangesScreen.js` and `react_webiosand/src/screens/ListingDetailScreen.js` because they are now the main exchange surfaces.
-6. Decide whether the next task is backend rollout, inbox polish, or browse/filtering.
+6. Decide whether the next task is backend rollout, inbox polish, richer discovery, or contract flow.
 
 ---
 
@@ -341,4 +348,4 @@ If a new engineer or AI takes over, use this checklist.
 
 Current state in one paragraph:
 
-PlantBuddy now has a coherent marketplace + care foundation across docs, schema, RLS, migration scripts, and the Expo app. Users can create and browse sitting, gift, sale, and swap listings; propose and review swaps; use an Exchanges inbox; start and confirm handoffs; and leave handoff reviews. The code is currently test-clean. The most important immediate task is applying the updated migration to live Supabase so the new `confirm_listing_handoff` RPC-backed finalization path is available remotely.
+PlantBuddy now has a coherent marketplace + care foundation across docs, schema, RLS, migration scripts, and the Expo app. Users can create and browse sitting, gift, sale, and swap listings with search, filters, and sorting; propose and review swaps; use an Exchanges inbox; start and confirm handoffs; and leave handoff reviews. The code is currently test-clean. The most important immediate task is applying or confirming the updated migration in live Supabase so the new `confirm_listing_handoff` RPC-backed finalization path is available remotely.
