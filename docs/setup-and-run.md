@@ -161,6 +161,8 @@ Fix:
 
 Check whether Supabase email confirmation is enabled. If it is enabled, confirm the account email before logging in.
 
+Supabase stores password hashes in its protected Auth schema, not in the public PlantBuddy tables. The app should never query or store user passwords directly.
+
 ### RLS Permission Errors
 
 Likely causes:

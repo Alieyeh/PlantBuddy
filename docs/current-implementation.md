@@ -25,9 +25,11 @@ Files:
 Current behavior:
 
 - Register uses `supabase.auth.signUp`.
-- After registration, users are sent to `ProfileSetupScreen`.
+- If Supabase email confirmation is enabled, registration tells the user to confirm their email and returns them to Login instead of sending them into authenticated setup without a session.
+- If registration returns an authenticated session, users are sent to `ProfileSetupScreen`.
 - Profile setup updates `owner_profiles.display_name` and can create/update a `sitter_profiles` row when the user opts into plant sitting.
 - Login uses `supabase.auth.signInWithPassword`.
+- Login now checks that Supabase returned a session before resetting navigation to the authenticated app.
 - Session is persisted through Supabase Auth using AsyncStorage.
 - Navigation starts on either Login or Main depending on current session.
 

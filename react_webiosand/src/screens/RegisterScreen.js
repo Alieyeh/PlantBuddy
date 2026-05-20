@@ -34,7 +34,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { username: username.trim().toLowerCase(), display_name: displayName.trim() } },
@@ -43,6 +43,14 @@ export default function RegisterScreen({ navigation }) {
 
     if (error) {
       Alert.alert('Registration failed', error.message);
+      return;
+    }
+    if (!data?.session) {
+      Alert.alert(
+        'Confirm your email',
+        'We created your account. Check your inbox, confirm your email address, then come back and log in.',
+        [{ text: 'OK', onPress: () => navigation.replace('Login') }]
+      );
       return;
     }
     navigation.replace('ProfileSetup');

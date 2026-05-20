@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
+import { MACHINE_TEXTBOX_PROPS } from '../utils/textInputProps';
 
 /**
  * Email/password sign-in screen backed by Supabase Auth.
@@ -21,13 +22,20 @@ export default function LoginScreen({ navigation }) {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
       Alert.alert('Login failed', error.message);
       return;
     }
-    navigation.replace('Main');
+    if (!data?.session) {
+      Alert.alert(
+        'Check your email',
+        'Your account exists, but Supabase did not return a session. If email confirmation is enabled, confirm your email and then log in again.'
+      );
+      return;
+    }
+    navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
   };
 
   return (
@@ -50,6 +58,7 @@ export default function LoginScreen({ navigation }) {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            {...MACHINE_TEXTBOX_PROPS}
           />
           <Text style={styles.fieldLabel}>Password</Text>
           <TextInput
@@ -59,6 +68,7 @@ export default function LoginScreen({ navigation }) {
             secureTextEntry
             value={password}
             onChangeText={setPassword}
+            {...MACHINE_TEXTBOX_PROPS}
           />
 
           {loading ? (

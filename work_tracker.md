@@ -112,6 +112,20 @@ Files:
 - `react_webiosand/src/screens/RegisterScreen.js`
 - `react_webiosand/src/screens/ListingsScreen.js`
 
+### Auth flow clarification
+
+Completed:
+
+- login now checks that Supabase returned a real session before resetting into the app
+- registration now handles Supabase email-confirmation mode by telling users to confirm their email and returning them to Login when no session is returned
+- machine-readable login/register fields explicitly disable spelling behavior
+
+Files:
+
+- `react_webiosand/src/screens/LoginScreen.js`
+- `react_webiosand/src/screens/RegisterScreen.js`
+- `react_webiosand/test/smoke/projectStructure.test.cjs`
+
 ### Swap proposal and handoff review flows
 
 Completed:

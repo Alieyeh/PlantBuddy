@@ -185,3 +185,15 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(detailScreen, /PlantIllustration/);
 });
+
+test('auth screens handle confirmed-email Supabase sessions explicitly', () => {
+  const loginScreen = read('react_webiosand/src/screens/LoginScreen.js');
+  const registerScreen = read('react_webiosand/src/screens/RegisterScreen.js');
+
+  assert.match(loginScreen, /data\?\.session/);
+  assert.match(loginScreen, /navigation\.reset/);
+  assert.match(loginScreen, /Check your email/);
+  assert.match(registerScreen, /data\?\.session/);
+  assert.match(registerScreen, /Confirm your email/);
+  assert.match(registerScreen, /navigation\.replace\('Login'\)/);
+});

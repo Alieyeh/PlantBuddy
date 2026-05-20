@@ -14,6 +14,8 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 
 ## Priority 1 - Security And Data Integrity
 
+- Improve the existing Supabase email verification UX so users clearly know when they must confirm their email before logging in.
+- Add resend-confirmation, post-confirmation guidance, and clearer login/register messages for unconfirmed accounts.
 - Apply `android_only/db/2026_05_20_security_rls_hardening.sql` to live Supabase if it has not already been run.
 - Verify hardened RLS for `plant_listings` so users can only create/update listings for active plants they own.
 - Verify sitter-profile enforcement and self-application prevention for `listing_applications`.
