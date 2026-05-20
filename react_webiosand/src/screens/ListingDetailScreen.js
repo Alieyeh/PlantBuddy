@@ -30,11 +30,36 @@ function InfoRow({ label, value }) {
   );
 }
 
-function CareChip({ icon, label }) {
+function PlantIllustration() {
+  return (
+    <View style={styles.plantIllustration} accessible accessibilityLabel="Decorative plant illustration">
+      <View style={styles.leafCluster}>
+        <View style={[styles.leafShape, styles.leafLeft]} />
+        <View style={[styles.leafShape, styles.leafCenter]} />
+        <View style={[styles.leafShape, styles.leafRight]} />
+        <View style={[styles.leafShape, styles.leafSmall]} />
+      </View>
+      <View style={styles.stem} />
+      <View style={styles.potRim} />
+      <View style={styles.potBody} />
+    </View>
+  );
+}
+
+function DetailStat({ label, value }) {
+  if (!value) return null;
+  return (
+    <View style={styles.detailStat}>
+      <Text style={styles.detailStatLabel}>{label}</Text>
+      <Text style={styles.detailStatValue}>{value}</Text>
+    </View>
+  );
+}
+
+function CareChip({ label }) {
   if (!label) return null;
   return (
     <View style={styles.careChip}>
-      <Text style={styles.careChipIcon}>{icon}</Text>
       <Text style={styles.careChipText}>{label}</Text>
     </View>
   );
@@ -101,6 +126,12 @@ export default function ListingDetailScreen({ route, navigation }) {
       : listing.listing_type === LISTING_TYPES.SWAP
         ? 'Swap listing'
         : 'Sitting request';
+  const headlineDetail = plant?.health_status || plant?.size_description || 'Plant profile';
+  const careSummary = [
+    plant?.watering_frequency_days ? `Water every ${plant.watering_frequency_days} days` : null,
+    plant?.light_requirements,
+    plant?.humidity_requirements,
+  ].filter(Boolean);
 
   const handleStartHandoff = () => {
     const noun = listing.listing_type === LISTING_TYPES.SALE ? 'purchase' : 'handoff';
@@ -243,27 +274,27 @@ export default function ListingDetailScreen({ route, navigation }) {
         {/* Hero card */}
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.heroCopy}>
+              <Text style={styles.modeText}>{modeLabel}</Text>
               <Text style={styles.plantName}>{plant?.name}</Text>
               {plant?.species ? <Text style={styles.species}>{plant.species}</Text> : null}
-              <Text style={styles.modeText}>{modeLabel}</Text>
+              <Text style={styles.heroHint}>{headlineDetail}</Text>
             </View>
-            {listing.listing_type === LISTING_TYPES.SITTING_REQUEST && days != null && (
-              <View style={styles.daysBadge}>
-                <Text style={styles.daysText}>{days} days</Text>
-              </View>
-            )}
-            {listing.listing_type === LISTING_TYPES.SALE && (
-              <View style={styles.daysBadge}>
-                <Text style={styles.daysText}>{listing.currency_code} {Number(listing.sale_price ?? 0).toFixed(2)}</Text>
-              </View>
-            )}
+            <PlantIllustration />
           </View>
 
+          <View style={styles.detailStats}>
+            <DetailStat label="Mode" value={modeLabel} />
+            {listing.listing_type === LISTING_TYPES.SITTING_REQUEST && days != null ? <DetailStat label="Duration" value={`${days} days`} /> : null}
+            {listing.listing_type === LISTING_TYPES.SALE ? <DetailStat label="Price" value={`${listing.currency_code} ${Number(listing.sale_price ?? 0).toFixed(2)}`} /> : null}
+            {plant?.watering_frequency_days ? <DetailStat label="Water" value={`Every ${plant.watering_frequency_days}d`} /> : null}
+          </View>
+
+          {careSummary.length > 0 ? <Text style={styles.careIntro}>Care snapshot</Text> : null}
           <View style={styles.careChips}>
-            <CareChip icon="💧" label={plant?.watering_frequency_days ? `Every ${plant.watering_frequency_days} days` : null} />
-            <CareChip icon="☀️" label={plant?.light_requirements} />
-            <CareChip icon="🌫️" label={plant?.humidity_requirements} />
+            <CareChip label={plant?.watering_frequency_days ? `Water: every ${plant.watering_frequency_days} days` : null} />
+            <CareChip label={plant?.light_requirements ? `Light: ${plant.light_requirements}` : null} />
+            <CareChip label={plant?.humidity_requirements ? `Humidity: ${plant.humidity_requirements}` : null} />
           </View>
         </View>
 
@@ -352,20 +383,84 @@ const styles = StyleSheet.create({
   content: { padding: S.base, paddingBottom: S.sm },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.cream },
   heroCard: {
-    backgroundColor: C.white, borderRadius: S.card,
-    padding: S.base, marginBottom: S.md,
+    backgroundColor: '#fffaf7',
+    borderRadius: S.card,
+    padding: S.base,
+    marginBottom: S.md,
+    borderWidth: 1,
+    borderColor: C.amberLight,
     ...S.cardShadowElevated,
   },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: S.md },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: S.md },
+  heroCopy: { flex: 1, paddingRight: S.md },
   plantName: { ...T.hero, fontSize: 30, lineHeight: 36 },
   species: { ...T.caption, fontStyle: 'italic', color: C.stone, marginTop: 3 },
-  modeText: { ...T.badge, color: C.moss, marginTop: S.sm },
-  daysBadge: {
-    backgroundColor: C.amberLight, borderRadius: S.chip,
-    paddingHorizontal: S.md, paddingVertical: 5,
-    borderWidth: 1, borderColor: C.amber, marginLeft: S.sm, marginTop: 4,
+  modeText: { ...T.badge, color: C.moss, marginBottom: S.xs },
+  heroHint: { ...T.caption, color: C.clay, marginTop: S.sm, fontWeight: '700' },
+  plantIllustration: {
+    width: 104,
+    height: 116,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
-  daysText: { ...T.badge, color: C.clay },
+  leafCluster: {
+    position: 'absolute',
+    top: 2,
+    width: 96,
+    height: 76,
+  },
+  leafShape: {
+    position: 'absolute',
+    width: 34,
+    height: 52,
+    backgroundColor: C.leaf,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 6,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 28,
+    borderWidth: 1,
+    borderColor: C.forest,
+  },
+  leafLeft: { left: 8, top: 24, transform: [{ rotate: '-38deg' }], backgroundColor: C.moss },
+  leafCenter: { left: 32, top: 6, height: 60, transform: [{ rotate: '-5deg' }] },
+  leafRight: { right: 8, top: 22, transform: [{ rotate: '34deg' }], backgroundColor: C.sage },
+  leafSmall: { left: 56, top: 0, width: 24, height: 38, transform: [{ rotate: '24deg' }], backgroundColor: C.amberLight },
+  stem: {
+    width: 6,
+    height: 52,
+    backgroundColor: C.moss,
+    borderRadius: 6,
+    marginBottom: -5,
+  },
+  potRim: {
+    width: 58,
+    height: 14,
+    backgroundColor: C.amber,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+  },
+  potBody: {
+    width: 46,
+    height: 34,
+    backgroundColor: C.terracotta,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  detailStats: { flexDirection: 'row', flexWrap: 'wrap', gap: S.sm, marginBottom: S.md },
+  detailStat: {
+    backgroundColor: C.white,
+    borderRadius: S.md,
+    borderWidth: 1,
+    borderColor: C.mist,
+    paddingHorizontal: S.md,
+    paddingVertical: S.sm,
+    minWidth: 92,
+  },
+  detailStatLabel: { ...T.caption, color: C.stone, marginBottom: 2 },
+  detailStatValue: { ...T.label, color: C.forest },
+  careIntro: { ...T.caption, color: C.moss, fontWeight: '700', marginBottom: S.xs },
   careChips: { flexDirection: 'row', flexWrap: 'wrap', gap: S.xs },
   careChip: {
     flexDirection: 'row', alignItems: 'center',
@@ -373,7 +468,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: S.md, paddingVertical: 5,
     borderWidth: 1, borderColor: C.sage,
   },
-  careChipIcon: { fontSize: 13, marginRight: S.xs },
   careChipText: { ...T.caption, color: C.moss, fontWeight: '600' },
   section: {
     backgroundColor: C.white, borderRadius: S.card,

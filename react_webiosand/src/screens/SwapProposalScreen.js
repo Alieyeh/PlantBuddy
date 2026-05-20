@@ -6,6 +6,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { listingsService } from '../api/listingsService';
 import { C, T, S, shared } from '../lib/theme';
+import { TEXTBOX_SPELLCHECK_PROPS } from '../utils/textInputProps';
 
 export default function SwapProposalScreen({ route, navigation }) {
   const { listingId, listedPlantId, plantName } = route.params;
@@ -110,6 +111,7 @@ export default function SwapProposalScreen({ route, navigation }) {
         multiline
         value={message}
         onChangeText={setMessage}
+        {...TEXTBOX_SPELLCHECK_PROPS}
       />
 
       {submitting ? (

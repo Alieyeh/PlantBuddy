@@ -80,7 +80,7 @@ Completed:
 - browse feed has listing-type filters for sitting, gifts, sales, and swaps
 - browse feed has sort options for newest, soonest sitting date, price low-to-high, and price high-to-low
 - listing cards show type-aware summary and badges
-- listing detail screen now branches by listing type
+- listing detail screen now branches by listing type and has a more polished plant-detail hero with lightweight decorative plant graphics
 - non-owners can start gift or sale handoff flow from detail
 - owners can view swap proposals on swap listings
 - non-owners can propose swaps from detail
@@ -91,6 +91,26 @@ Files:
 - `react_webiosand/src/screens/ListingsScreen.js`
 - `react_webiosand/src/screens/ListingDetailScreen.js`
 - `react_webiosand/src/utils/browseListings.js`
+
+### User text input polish
+
+Completed:
+
+- natural-language text boxes now share spellcheck and keyboard suggestion defaults
+- machine-readable fields such as dates, currency, email, password, and numeric values explicitly disable spelling behavior
+- Browse search uses suggestion/spellcheck defaults while keeping lowercase search entry
+
+Files:
+
+- `react_webiosand/src/utils/textInputProps.js`
+- `react_webiosand/src/screens/AddEditPlantScreen.js`
+- `react_webiosand/src/screens/PostListingScreen.js`
+- `react_webiosand/src/screens/ApplyScreen.js`
+- `react_webiosand/src/screens/SwapProposalScreen.js`
+- `react_webiosand/src/screens/HandoffReviewScreen.js`
+- `react_webiosand/src/screens/ProfileSetupScreen.js`
+- `react_webiosand/src/screens/RegisterScreen.js`
+- `react_webiosand/src/screens/ListingsScreen.js`
 
 ### Swap proposal and handoff review flows
 
@@ -155,11 +175,11 @@ Command:
 npm test
 ```
 
-Latest result after browse filters and sorting:
+Latest result after spellcheck/suggestions and plant detail polish:
 
-- unit tests passed: 34/34
+- unit tests passed: 38/38
 - integration tests passed: 1/1
-- smoke tests passed: 7/7
+- smoke tests passed: 8/8
 - no editor errors were reported in the newly changed marketplace screens and navigation files
 
 This means the current tracked implementation is at least syntax-clean and test-clean for the existing test suite.
@@ -197,7 +217,9 @@ Implemented and usable now:
 - plant CRUD
 - listing creation for sitting, gift, and sale
 - browse feed for all open listing types with search, type filters, and sorting
+- spellcheck and writing suggestions for user-authored text boxes
 - listing detail with type-specific actions
+- prettier plant detail/listing detail hero with lightweight plant graphics
 - sitting application flow and owner applicant review
 - swap proposal create/review/accept-decline flow
 - exchanges inbox for proposals, pending handoffs, and completed exchanges
@@ -233,7 +255,7 @@ Current automated coverage is still lightweight.
 
 Present:
 
-- unit tests for plant form, listing form, listing domain, Supabase config, browse filters/sorting, and exchange inbox helpers
+- unit tests for plant form, listing form, listing domain, Supabase config, browse filters/sorting, text-input defaults, and exchange inbox helpers
 - integration test for composing exchange inbox rows into proposals, pending handoffs, and completed exchanges
 - smoke tests for key files, marketplace flow wiring, browse wiring, exchange inbox wiring, and schema/RLS files
 
@@ -301,7 +323,30 @@ Likely files:
 - `react_webiosand/src/api/listingsService.js`
 - `react_webiosand/src/utils/browseListings.js`
 
-### 4. Add automated coverage for the new flows
+### 4. Add explicit role dropdown and role-aware discovery
+
+Why this matters:
+Roles are currently partly inferred from profile setup and additive profile tables. A clearer role dropdown would make onboarding, permissions, and search/discovery easier to reason about.
+
+Recommended outcome:
+
+- add a dedicated role dropdown in profile/onboarding rather than only a sitter toggle
+- confirm the role vocabulary with the team, for example owner, sitter, buyer/adopter, swapper, and store owner
+- reflect the selected roles in the database through either profile tables, a user-role table, or another agreed schema pattern
+- update RLS and validation so selected roles match what users can do
+- make Browse/search able to filter or rank by role where useful, such as sitter-capable users or store-owner listings
+- document the final role model before implementation
+
+Likely files:
+
+- `react_webiosand/src/screens/ProfileSetupScreen.js`
+- `react_webiosand/src/screens/ListingsScreen.js`
+- `react_webiosand/src/utils/browseListings.js`
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/rls_policies.sql`
+- a future Supabase migration file
+
+### 5. Add automated coverage for the new flows
 
 Why this matters:
 The service and screen surface area grew a lot today.

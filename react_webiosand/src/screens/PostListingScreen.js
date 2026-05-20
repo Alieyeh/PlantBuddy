@@ -7,6 +7,11 @@ import { supabase } from '../lib/supabase';
 import { listingsService, LISTING_TYPES } from '../api/listingsService';
 import { C, T, S, shared } from '../lib/theme';
 import { buildListingPayload, validateListingForm } from '../utils/listingForm';
+import {
+  MACHINE_TEXTBOX_PROPS,
+  SHORT_TEXTBOX_SUGGESTION_PROPS,
+  TEXTBOX_SPELLCHECK_PROPS,
+} from '../utils/textInputProps';
 
 const LISTING_MODE_OPTIONS = [
   { value: LISTING_TYPES.SITTING_REQUEST, label: 'Find sitter' },
@@ -193,6 +198,7 @@ export default function PostListingScreen({ route, navigation }) {
                   onChangeText={setStartDate}
                   keyboardType="numbers-and-punctuation"
                   maxLength={10}
+                  {...MACHINE_TEXTBOX_PROPS}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -205,6 +211,7 @@ export default function PostListingScreen({ route, navigation }) {
                   onChangeText={setEndDate}
                   keyboardType="numbers-and-punctuation"
                   maxLength={10}
+                  {...MACHINE_TEXTBOX_PROPS}
                 />
               </View>
             </View>
@@ -224,6 +231,7 @@ export default function PostListingScreen({ route, navigation }) {
           placeholderTextColor={C.stone}
           value={title}
           onChangeText={setTitle}
+          {...SHORT_TEXTBOX_SUGGESTION_PROPS}
         />
 
         <Text style={styles.fieldLabel}>Description</Text>
@@ -240,6 +248,7 @@ export default function PostListingScreen({ route, navigation }) {
           multiline
           value={description}
           onChangeText={setDescription}
+          {...TEXTBOX_SPELLCHECK_PROPS}
         />
 
         {listingType === LISTING_TYPES.SITTING_REQUEST ? (
@@ -252,6 +261,7 @@ export default function PostListingScreen({ route, navigation }) {
               multiline
               value={sittingNotes}
               onChangeText={setSittingNotes}
+              {...TEXTBOX_SPELLCHECK_PROPS}
             />
           </>
         ) : null}
@@ -266,6 +276,7 @@ export default function PostListingScreen({ route, navigation }) {
               multiline
               value={giftNotes}
               onChangeText={setGiftNotes}
+              {...TEXTBOX_SPELLCHECK_PROPS}
             />
           </>
         ) : null}
@@ -283,6 +294,7 @@ export default function PostListingScreen({ route, navigation }) {
                   value={salePrice}
                   onChangeText={setSalePrice}
                   keyboardType="decimal-pad"
+                  {...MACHINE_TEXTBOX_PROPS}
                 />
               </View>
               <View style={{ width: 90 }}>
@@ -295,6 +307,8 @@ export default function PostListingScreen({ route, navigation }) {
                   onChangeText={setCurrencyCode}
                   autoCapitalize="characters"
                   maxLength={3}
+                  autoCorrect={false}
+                  spellCheck={false}
                 />
               </View>
             </View>

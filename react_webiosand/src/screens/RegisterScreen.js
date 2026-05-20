@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
+import { MACHINE_TEXTBOX_PROPS, SHORT_TEXTBOX_SUGGESTION_PROPS } from '../utils/textInputProps';
 
 /**
  * Account creation screen. Username and display name are passed into Supabase
@@ -67,6 +68,7 @@ export default function RegisterScreen({ navigation }) {
             placeholderTextColor={C.stone}
             value={displayName}
             onChangeText={setDisplayName}
+            {...SHORT_TEXTBOX_SUGGESTION_PROPS}
           />
           <Text style={styles.fieldLabel}>Username</Text>
           <TextInput
@@ -76,6 +78,8 @@ export default function RegisterScreen({ navigation }) {
             autoCapitalize="none"
             value={username}
             onChangeText={setUsername}
+            autoCorrect={false}
+            spellCheck={false}
           />
           <Text style={styles.fieldLabel}>Email</Text>
           <TextInput
@@ -86,6 +90,7 @@ export default function RegisterScreen({ navigation }) {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            {...MACHINE_TEXTBOX_PROPS}
           />
           <Text style={styles.fieldLabel}>Password</Text>
           <TextInput
@@ -95,6 +100,7 @@ export default function RegisterScreen({ navigation }) {
             secureTextEntry
             value={password}
             onChangeText={setPassword}
+            {...MACHINE_TEXTBOX_PROPS}
           />
 
           {loading ? (

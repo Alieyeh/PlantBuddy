@@ -6,6 +6,11 @@ import {
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
+import {
+  MACHINE_TEXTBOX_PROPS,
+  SHORT_TEXTBOX_SUGGESTION_PROPS,
+  TEXTBOX_SPELLCHECK_PROPS,
+} from '../utils/textInputProps';
 
 export default function ProfileSetupScreen({ navigation }) {
   const [displayName, setDisplayName] = useState('');
@@ -72,6 +77,7 @@ export default function ProfileSetupScreen({ navigation }) {
             placeholderTextColor={C.stone}
             value={displayName}
             onChangeText={setDisplayName}
+            {...SHORT_TEXTBOX_SUGGESTION_PROPS}
           />
 
           <View style={styles.divider} />
@@ -100,6 +106,7 @@ export default function ProfileSetupScreen({ navigation }) {
                 multiline
                 value={experienceSummary}
                 onChangeText={setExperienceSummary}
+                {...TEXTBOX_SPELLCHECK_PROPS}
               />
               <Text style={styles.fieldLabel}>Daily rate (optional)</Text>
               <TextInput
@@ -109,6 +116,7 @@ export default function ProfileSetupScreen({ navigation }) {
                 keyboardType="decimal-pad"
                 value={dailyRate}
                 onChangeText={setDailyRate}
+                {...MACHINE_TEXTBOX_PROPS}
               />
             </View>
           )}

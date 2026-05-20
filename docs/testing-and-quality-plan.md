@@ -14,9 +14,9 @@ npm.cmd test
 
 Available scripts:
 
-- `npm.cmd run test:unit` - tests extracted plant, listing, browse, config, domain, and exchange inbox utilities.
+- `npm.cmd run test:unit` - tests extracted plant, listing, browse, config, domain, text-input, and exchange inbox utilities.
 - `npm.cmd run test:integration` - tests exchange inbox composition from raw proposal/handoff rows.
-- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, browse filter/sort wiring, exchange inbox wiring, Supabase wiring, design dependencies, and key schema/RLS files.
+- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, browse filter/sort wiring, text-input spellcheck wiring, exchange inbox wiring, Supabase wiring, design dependencies, and key schema/RLS files.
 - `npm.cmd test` - runs unit, integration, and smoke tests.
 
 Manual testing is still required for actual Supabase login/register/database flows.
@@ -50,6 +50,7 @@ Run this after dependency install, `.env` setup, and Supabase schema/RLS setup.
 - Search for the plant/species and confirm the listing remains visible.
 - Try listing-type filters and sort options in Browse.
 - Open the listing detail screen.
+- Confirm the plant detail hero and care snapshot render cleanly on desktop and mobile widths.
 - Tap `Apply to Sit`.
 - Submit an application with a message and proposed dates.
 - As the listing owner, open the plant card's `Applicants` action.

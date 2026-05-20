@@ -6,6 +6,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { listingsService } from '../api/listingsService';
 import { C, T, S, shared } from '../lib/theme';
+import { TEXTBOX_SPELLCHECK_PROPS } from '../utils/textInputProps';
 
 export default function HandoffReviewScreen({ route, navigation }) {
   const { handoffId, revieweeUserId, revieweeLabel } = route.params;
@@ -67,6 +68,7 @@ export default function HandoffReviewScreen({ route, navigation }) {
           multiline
           value={reviewText}
           onChangeText={setReviewText}
+          {...TEXTBOX_SPELLCHECK_PROPS}
         />
 
         {loading ? (

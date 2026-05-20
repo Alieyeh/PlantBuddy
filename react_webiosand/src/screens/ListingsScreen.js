@@ -17,6 +17,7 @@ import {
   BROWSE_TYPE_FILTERS,
   filterAndSortListings,
 } from '../utils/browseListings';
+import { SEARCH_TEXTBOX_SUGGESTION_PROPS } from '../utils/textInputProps';
 import { C, T, S } from '../lib/theme';
 
 const formatDate = (dateStr) => {
@@ -194,8 +195,7 @@ export default function ListingsScreen({ navigation }) {
           placeholder="Search by plant, species, care need, or listing"
           placeholderTextColor={C.stone}
           style={styles.searchInput}
-          autoCapitalize="none"
-          autoCorrect={false}
+          {...SEARCH_TEXTBOX_SUGGESTION_PROPS}
         />
 
         <View style={styles.controlBlock}>

@@ -73,6 +73,7 @@ Files:
 - `react_webiosand/src/domain/listings.js`
 - `react_webiosand/src/utils/browseListings.js`
 - `react_webiosand/src/utils/listingForm.js`
+- `react_webiosand/src/utils/textInputProps.js`
 
 Current behavior:
 
@@ -82,7 +83,7 @@ Current behavior:
 - Browse supports text search across listing and plant fields.
 - Browse supports listing-type filters for all, sitting, gifts, sales, and swaps.
 - Browse supports sorting by newest, soonest sitting date, price low-to-high, and price high-to-low.
-- Users can view listing detail, including plant care information.
+- Users can view listing detail, including plant care information and a polished plant hero with lightweight decorative graphics.
 - `Apply to Sit` opens `ApplyScreen`.
 - Users can submit an application with a message and proposed dates.
 - Duplicate applications are handled from Postgres error code `23505`.
@@ -97,6 +98,7 @@ Architecture notes:
 
 - `src/domain/listings.js` centralizes listing types, statuses, handoff statuses, and listing insert payload construction.
 - `src/utils/browseListings.js` contains the pure browse search/filter/sort logic used by `ListingsScreen` and covered by unit tests.
+- `src/utils/textInputProps.js` centralizes spellcheck/suggestion behavior for user-authored text boxes.
 - `src/config/environment.js` validates required public Supabase environment variables before the app tries to use the Supabase client.
 
 Current application-flow limitations:
@@ -121,6 +123,7 @@ Current behavior:
 - Shared color, spacing, typography, shadow, button, input, card, and section-label styles live in `theme.js`.
 - App-level font loading uses Fraunces and Bricolage Grotesque through Expo Google Fonts.
 - The current Expo screens have been restyled around the shared theme tokens.
+- User-authored text fields now enable spellcheck and writing suggestions where appropriate; dates, currency, email, password, and numeric fields keep spelling behavior disabled.
 - `design.md` documents the intended visual language and interaction patterns.
 
 ### Navigation

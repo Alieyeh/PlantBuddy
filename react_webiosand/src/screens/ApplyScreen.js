@@ -7,6 +7,7 @@ import {
 import { listingsService } from '../api/listingsService';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
+import { MACHINE_TEXTBOX_PROPS, TEXTBOX_SPELLCHECK_PROPS } from '../utils/textInputProps';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -84,6 +85,7 @@ export default function ApplyScreen({ route, navigation }) {
           multiline
           value={message}
           onChangeText={setMessage}
+          {...TEXTBOX_SPELLCHECK_PROPS}
         />
 
         <View style={styles.datesCard}>
@@ -99,6 +101,7 @@ export default function ApplyScreen({ route, navigation }) {
                 value={proposedStart}
                 onChangeText={setProposedStart}
                 keyboardType="numbers-and-punctuation"
+                {...MACHINE_TEXTBOX_PROPS}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -110,6 +113,7 @@ export default function ApplyScreen({ route, navigation }) {
                 value={proposedEnd}
                 onChangeText={setProposedEnd}
                 keyboardType="numbers-and-punctuation"
+                {...MACHINE_TEXTBOX_PROPS}
               />
             </View>
           </View>

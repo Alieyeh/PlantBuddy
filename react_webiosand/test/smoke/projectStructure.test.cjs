@@ -27,6 +27,7 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/src/api/listingsService.js',
     'react_webiosand/src/utils/browseListings.js',
     'react_webiosand/src/utils/exchangeInbox.js',
+    'react_webiosand/src/utils/textInputProps.js',
     'react_webiosand/src/screens/LoginScreen.js',
     'react_webiosand/src/screens/RegisterScreen.js',
     'react_webiosand/src/screens/ProfileSetupScreen.js',
@@ -148,4 +149,17 @@ test('browse listings screen has search, filters, sorting, and shared utility wi
   assert.match(listingsScreen, /open listings/);
   assert.match(browseUtils, /BROWSE_TYPE_FILTERS/);
   assert.match(browseUtils, /BROWSE_SORT_OPTIONS/);
+});
+
+test('user-facing text boxes share spellcheck and suggestion defaults', () => {
+  const inputProps = read('react_webiosand/src/utils/textInputProps.js');
+  const plantScreen = read('react_webiosand/src/screens/AddEditPlantScreen.js');
+  const listingScreen = read('react_webiosand/src/screens/PostListingScreen.js');
+  const detailScreen = read('react_webiosand/src/screens/ListingDetailScreen.js');
+
+  assert.match(inputProps, /spellCheck: true/);
+  assert.match(inputProps, /autoCorrect: true/);
+  assert.match(plantScreen, /TEXTBOX_SPELLCHECK_PROPS/);
+  assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
+  assert.match(detailScreen, /PlantIllustration/);
 });

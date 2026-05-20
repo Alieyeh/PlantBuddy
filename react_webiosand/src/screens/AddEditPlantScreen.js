@@ -6,6 +6,11 @@ import {
 } from 'react-native';
 import { api } from '../api/apiService';
 import { C, T, S, shared } from '../lib/theme';
+import {
+  MACHINE_TEXTBOX_PROPS,
+  SHORT_TEXTBOX_SUGGESTION_PROPS,
+  TEXTBOX_SPELLCHECK_PROPS,
+} from '../utils/textInputProps';
 
 const parseInteger = (val) => {
   if (!val || val.trim() === '') return null;
@@ -93,38 +98,38 @@ export default function AddEditPlantScreen({ route, navigation }) {
         <SectionDivider label="Identity" />
 
         <Text style={styles.fieldLabel}>Name *</Text>
-        <TextInput style={styles.input} placeholder="e.g. Gerald" placeholderTextColor={C.stone} value={name} onChangeText={setName} />
+        <TextInput style={styles.input} placeholder="e.g. Gerald" placeholderTextColor={C.stone} value={name} onChangeText={setName} {...SHORT_TEXTBOX_SUGGESTION_PROPS} />
 
         <Text style={styles.fieldLabel}>Species</Text>
-        <TextInput style={styles.input} placeholder="e.g. Monstera deliciosa" placeholderTextColor={C.stone} value={species} onChangeText={setSpecies} />
+        <TextInput style={styles.input} placeholder="e.g. Monstera deliciosa" placeholderTextColor={C.stone} value={species} onChangeText={setSpecies} {...SHORT_TEXTBOX_SUGGESTION_PROPS} />
 
         <Text style={styles.fieldLabel}>Description</Text>
-        <TextInput style={[styles.input, styles.multiline]} placeholder="Personality, history, quirks..." placeholderTextColor={C.stone} multiline value={description} onChangeText={setDescription} />
+        <TextInput style={[styles.input, styles.multiline]} placeholder="Personality, history, quirks..." placeholderTextColor={C.stone} multiline value={description} onChangeText={setDescription} {...TEXTBOX_SPELLCHECK_PROPS} />
 
         <SectionDivider label="Physical" />
 
         <Text style={styles.fieldLabel}>Location / Room</Text>
-        <TextInput style={styles.input} placeholder="e.g. East-facing living room window" placeholderTextColor={C.stone} value={locationNotes} onChangeText={setLocationNotes} />
+        <TextInput style={styles.input} placeholder="e.g. East-facing living room window" placeholderTextColor={C.stone} value={locationNotes} onChangeText={setLocationNotes} {...TEXTBOX_SPELLCHECK_PROPS} />
 
         <Text style={styles.fieldLabel}>Size</Text>
-        <TextInput style={styles.input} placeholder="e.g. Medium, about 60cm tall" placeholderTextColor={C.stone} value={sizeDescription} onChangeText={setSizeDescription} />
+        <TextInput style={styles.input} placeholder="e.g. Medium, about 60cm tall" placeholderTextColor={C.stone} value={sizeDescription} onChangeText={setSizeDescription} {...TEXTBOX_SPELLCHECK_PROPS} />
 
         <Text style={styles.fieldLabel}>Health Status</Text>
-        <TextInput style={styles.input} placeholder="e.g. Healthy, new growth appearing" placeholderTextColor={C.stone} value={healthStatus} onChangeText={setHealthStatus} />
+        <TextInput style={styles.input} placeholder="e.g. Healthy, new growth appearing" placeholderTextColor={C.stone} value={healthStatus} onChangeText={setHealthStatus} {...TEXTBOX_SPELLCHECK_PROPS} />
 
         <SectionDivider label="Care" />
 
-        <Text style={styles.fieldLabel}>💧 Watering Frequency (days)</Text>
-        <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor={C.stone} keyboardType="numeric" value={wateringFrequency} onChangeText={setWateringFrequency} />
+        <Text style={styles.fieldLabel}>Watering Frequency (days)</Text>
+        <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor={C.stone} keyboardType="numeric" value={wateringFrequency} onChangeText={setWateringFrequency} {...MACHINE_TEXTBOX_PROPS} />
 
-        <Text style={styles.fieldLabel}>☀️ Light Requirements</Text>
-        <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor={C.stone} value={lightRequirements} onChangeText={setLightRequirements} />
+        <Text style={styles.fieldLabel}>Light Requirements</Text>
+        <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor={C.stone} value={lightRequirements} onChangeText={setLightRequirements} {...TEXTBOX_SPELLCHECK_PROPS} />
 
-        <Text style={styles.fieldLabel}>💧 Humidity Requirements</Text>
-        <TextInput style={styles.input} placeholder="e.g. High humidity, mist weekly" placeholderTextColor={C.stone} value={humidityRequirements} onChangeText={setHumidityRequirements} />
+        <Text style={styles.fieldLabel}>Humidity Requirements</Text>
+        <TextInput style={styles.input} placeholder="e.g. High humidity, mist weekly" placeholderTextColor={C.stone} value={humidityRequirements} onChangeText={setHumidityRequirements} {...TEXTBOX_SPELLCHECK_PROPS} />
 
         <Text style={styles.fieldLabel}>Special Instructions</Text>
-        <TextInput style={[styles.input, styles.multiline, styles.specialInput]} placeholder="Anything a sitter must know..." placeholderTextColor={C.stone} multiline value={specialInstructions} onChangeText={setSpecialInstructions} />
+        <TextInput style={[styles.input, styles.multiline, styles.specialInput]} placeholder="Anything a sitter must know..." placeholderTextColor={C.stone} multiline value={specialInstructions} onChangeText={setSpecialInstructions} {...TEXTBOX_SPELLCHECK_PROPS} />
 
         {loading ? (
           <ActivityIndicator size="large" color={C.amber} style={styles.loader} />
