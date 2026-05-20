@@ -18,6 +18,8 @@ test('active Expo app has the expected screen and service files', () => {
   [
     'react_webiosand/App.js',
     'react_webiosand/src/navigation/AppNavigator.js',
+    'react_webiosand/src/config/environment.js',
+    'react_webiosand/src/domain/listings.js',
     'react_webiosand/src/lib/supabase.js',
     'react_webiosand/src/lib/theme.js',
     'react_webiosand/src/storage/SessionManager.js',
@@ -56,10 +58,16 @@ test('package.json exposes runnable app and test scripts', () => {
 
 test('Supabase client reads only public Expo environment variables', () => {
   const supabaseClient = read('react_webiosand/src/lib/supabase.js');
+  const environment = read('react_webiosand/src/config/environment.js');
 
-  assert.match(supabaseClient, /EXPO_PUBLIC_SUPABASE_URL/);
-  assert.match(supabaseClient, /EXPO_PUBLIC_SUPABASE_ANON_KEY/);
+  assert.match(environment, /EXPO_PUBLIC_SUPABASE_URL/);
+  assert.match(environment, /EXPO_PUBLIC_SUPABASE_ANON_KEY/);
+  assert.match(supabaseClient, /createSupabaseConfig/);
+  assert.match(supabaseClient, /supabaseConfigError/);
   assert.doesNotMatch(supabaseClient, /SERVICE_ROLE|service_role|DATABASE_PASSWORD/);
+  assert.match(environment, /getSupabaseConfigError/);
+  assert.match(environment, /Missing Supabase configuration/);
+  assert.doesNotMatch(environment, /SERVICE_ROLE|service_role|DATABASE_PASSWORD/);
 });
 
 test('database schema and RLS files include the current MVP tables', () => {
@@ -94,6 +102,7 @@ test('current application and marketplace flows are wired into navigation and se
   const navigator = read('react_webiosand/src/navigation/AppNavigator.js');
   const detailScreen = read('react_webiosand/src/screens/ListingDetailScreen.js');
   const service = read('react_webiosand/src/api/listingsService.js');
+  const listingsDomain = read('react_webiosand/src/domain/listings.js');
 
   assert.match(navigator, /ProfileSetup/);
   assert.match(navigator, /Apply/);
@@ -112,6 +121,8 @@ test('current application and marketplace flows are wired into navigation and se
   assert.match(service, /createSwapProposal/);
   assert.match(service, /acceptSwapProposal/);
   assert.match(service, /createListingHandoffReview/);
+  assert.match(service, /buildListingInsertPayload/);
+  assert.match(listingsDomain, /LISTING_TYPES/);
 });
 
 test('exchanges inbox has refresh, summary, and shared utility wiring', () => {

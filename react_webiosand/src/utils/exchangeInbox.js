@@ -1,3 +1,9 @@
+const {
+  HANDOFF_STATUSES,
+  SWAP_PROPOSAL_STATUSES,
+  isTerminalHandoffStatus,
+} = require('../domain/listings');
+
 /**
  * Normalizes a Supabase nested relationship that can arrive as either a single
  * object or a one-item array depending on query shape.
@@ -70,11 +76,11 @@ function buildExchangeInbox({
   ].sort((left, right) => newestFirst(left, right, ['responded_at', 'created_at']));
 
   const pendingHandoffs = handoffs
-    .filter((handoff) => handoff.status !== 'COMPLETED' && handoff.status !== 'CANCELLED')
+    .filter((handoff) => !isTerminalHandoffStatus(handoff.status))
     .sort((left, right) => newestFirst(left, right, ['updated_at', 'created_at']));
 
   const completedExchanges = handoffs
-    .filter((handoff) => handoff.status === 'COMPLETED')
+    .filter((handoff) => handoff.status === HANDOFF_STATUSES.COMPLETED)
     .sort((left, right) => newestFirst(left, right, ['completed_at', 'updated_at', 'created_at']));
 
   return {
@@ -121,7 +127,7 @@ function getExchangeInboxCounts(inbox, userId) {
   const completedExchanges = inbox.completedExchanges?.length ?? 0;
 
   const incomingPending = (inbox.activeProposals ?? [])
-    .filter((proposal) => proposal.direction === 'INCOMING' && proposal.status === 'PENDING').length;
+    .filter((proposal) => proposal.direction === 'INCOMING' && proposal.status === SWAP_PROPOSAL_STATUSES.PENDING).length;
   const handoffsWaitingOnUser = (inbox.pendingHandoffs ?? [])
     .filter((handoff) => isHandoffWaitingOnUser(handoff, userId)).length;
   const completedWithoutReview = (inbox.completedExchanges ?? [])

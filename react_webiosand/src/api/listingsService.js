@@ -1,12 +1,14 @@
 import { supabase } from '../lib/supabase';
+import {
+  APPLICATION_STATUSES,
+  LISTING_STATUSES,
+  LISTING_TYPES,
+  SWAP_PROPOSAL_STATUSES,
+  buildListingInsertPayload,
+} from '../domain/listings';
 import { buildExchangeInbox } from '../utils/exchangeInbox';
 
-export const LISTING_TYPES = Object.freeze({
-  SITTING_REQUEST: 'SITTING_REQUEST',
-  GIFT: 'GIFT',
-  SWAP: 'SWAP',
-  SALE: 'SALE',
-});
+export { LISTING_TYPES };
 
 /**
  * Supabase-backed data access for marketplace and plant-sitting listings.
@@ -45,7 +47,7 @@ export const listingsService = {
           humidity_requirements
         )
       `)
-      .eq('status', 'OPEN')
+      .eq('status', LISTING_STATUSES.OPEN)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -128,30 +130,19 @@ export const listingsService = {
     salePrice,
     currencyCode,
   }) {
-    const payload = {
-      plant_id: plantId,
-      owner_user_id: ownerUserId,
-      listing_type: listingType,
-      status: 'OPEN',
+    const payload = buildListingInsertPayload({
+      plantId,
+      ownerUserId,
+      listingType,
       title,
-      description: description ?? null,
-      published_at: new Date().toISOString(),
-    };
-
-    if (listingType === LISTING_TYPES.SITTING_REQUEST) {
-      payload.sitting_start_date = startDate;
-      payload.sitting_end_date = endDate;
-      payload.sitting_notes = sittingNotes ?? null;
-    }
-
-    if (listingType === LISTING_TYPES.GIFT) {
-      payload.gift_notes = giftNotes ?? null;
-    }
-
-    if (listingType === LISTING_TYPES.SALE) {
-      payload.sale_price = salePrice;
-      payload.currency_code = currencyCode;
-    }
+      description,
+      startDate,
+      endDate,
+      sittingNotes,
+      giftNotes,
+      salePrice,
+      currencyCode,
+    });
 
     const { data, error } = await supabase
       .from('plant_listings')
@@ -172,7 +163,7 @@ export const listingsService = {
         message_to_lister: message || null,
         proposed_start_date: proposedStartDate || null,
         proposed_end_date: proposedEndDate || null,
-        status: 'PENDING',
+        status: APPLICATION_STATUSES.PENDING,
       })
       .select()
       .single();
@@ -242,7 +233,7 @@ export const listingsService = {
         proposer_owner_user_id: proposerOwnerUserId,
         offered_plant_id: offeredPlantId,
         message_to_owner: message || null,
-        status: 'PENDING',
+        status: SWAP_PROPOSAL_STATUSES.PENDING,
       })
       .select()
       .single();
@@ -436,7 +427,7 @@ export const listingsService = {
   },
 
   async acceptSwapProposal({ proposal, listingOwnerUserId, actingUserId }) {
-    await this.updateSwapProposalStatus(proposal.id, 'ACCEPTED');
+    await this.updateSwapProposalStatus(proposal.id, SWAP_PROPOSAL_STATUSES.ACCEPTED);
 
     try {
       return await this.startListingHandoff({
@@ -453,7 +444,7 @@ export const listingsService = {
     } catch (error) {
       await supabase
         .from('swap_proposals')
-        .update({ status: 'PENDING', responded_at: null })
+        .update({ status: SWAP_PROPOSAL_STATUSES.PENDING, responded_at: null })
         .eq('id', proposal.id);
       throw error;
     }
@@ -492,7 +483,7 @@ export const listingsService = {
         )
       `)
       .eq('listing.owner_user_id', ownerUserId)
-      .in('status', ['PENDING', 'ACCEPTED'])
+      .in('status', [SWAP_PROPOSAL_STATUSES.PENDING, SWAP_PROPOSAL_STATUSES.ACCEPTED])
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -528,7 +519,7 @@ export const listingsService = {
         )
       `)
       .eq('proposer_owner_user_id', proposerOwnerUserId)
-      .in('status', ['PENDING', 'ACCEPTED'])
+      .in('status', [SWAP_PROPOSAL_STATUSES.PENDING, SWAP_PROPOSAL_STATUSES.ACCEPTED])
       .order('created_at', { ascending: false });
 
     if (error) throw error;
