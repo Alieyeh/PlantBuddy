@@ -184,6 +184,10 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(plantScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(detailScreen, /PlantIllustration/);
+  assert.match(detailScreen, /HeroVines/);
+  assert.match(detailScreen, /CareTile/);
+  assert.match(detailScreen, /PlantNotesCard/);
+  assert.match(detailScreen, /Care snapshot/);
 });
 
 test('auth screens handle confirmed-email Supabase sessions explicitly', () => {

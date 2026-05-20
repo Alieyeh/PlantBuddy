@@ -33,6 +33,8 @@ function InfoRow({ label, value }) {
 function PlantIllustration() {
   return (
     <View style={styles.plantIllustration} accessible accessibilityLabel="Decorative plant illustration">
+      <View style={styles.illustrationHalo} />
+      <View style={styles.illustrationShelf} />
       <View style={styles.leafCluster}>
         <View style={[styles.leafShape, styles.leafLeft]} />
         <View style={[styles.leafShape, styles.leafCenter]} />
@@ -42,6 +44,20 @@ function PlantIllustration() {
       <View style={styles.stem} />
       <View style={styles.potRim} />
       <View style={styles.potBody} />
+    </View>
+  );
+}
+
+function HeroVines() {
+  return (
+    <View style={styles.heroVines} pointerEvents="none">
+      <View style={[styles.vineLine, styles.vineOne]} />
+      <View style={[styles.vineLine, styles.vineTwo]} />
+      <View style={[styles.tinyLeaf, styles.tinyLeafOne]} />
+      <View style={[styles.tinyLeaf, styles.tinyLeafTwo]} />
+      <View style={[styles.tinyLeaf, styles.tinyLeafThree]} />
+      <View style={[styles.tinyLeaf, styles.tinyLeafFour]} />
+      <View style={styles.gardenBed} />
     </View>
   );
 }
@@ -56,11 +72,23 @@ function DetailStat({ label, value }) {
   );
 }
 
-function CareChip({ label }) {
-  if (!label) return null;
+function CareTile({ title, value, accentColor }) {
+  if (!value) return null;
   return (
-    <View style={styles.careChip}>
-      <Text style={styles.careChipText}>{label}</Text>
+    <View style={styles.careTile}>
+      <View style={[styles.careTileAccent, { backgroundColor: accentColor }]} />
+      <Text style={styles.careTileTitle}>{title}</Text>
+      <Text style={styles.careTileValue}>{value}</Text>
+    </View>
+  );
+}
+
+function PlantNotesCard({ title, children }) {
+  if (!children) return null;
+  return (
+    <View style={styles.notePanel}>
+      <Text style={styles.notePanelTitle}>{title}</Text>
+      <Text style={styles.notePanelText}>{children}</Text>
     </View>
   );
 }
@@ -132,6 +160,7 @@ export default function ListingDetailScreen({ route, navigation }) {
     plant?.light_requirements,
     plant?.humidity_requirements,
   ].filter(Boolean);
+  const plantSummary = plant?.description || listing.description || 'A plant waiting for the right match.';
 
   const handleStartHandoff = () => {
     const noun = listing.listing_type === LISTING_TYPES.SALE ? 'purchase' : 'handoff';
@@ -271,14 +300,18 @@ export default function ListingDetailScreen({ route, navigation }) {
     <View style={{ flex: 1, backgroundColor: C.cream }}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Hero card */}
+        {/* Plant profile hero */}
         <View style={styles.heroCard}>
+          <HeroVines />
           <View style={styles.heroTop}>
             <View style={styles.heroCopy}>
-              <Text style={styles.modeText}>{modeLabel}</Text>
-              <Text style={styles.plantName}>{plant?.name}</Text>
+              <View style={styles.modePill}>
+                <Text style={styles.modeText}>{modeLabel}</Text>
+              </View>
+              <Text style={styles.plantName}>{plant?.name || 'Plant profile'}</Text>
               {plant?.species ? <Text style={styles.species}>{plant.species}</Text> : null}
               <Text style={styles.heroHint}>{headlineDetail}</Text>
+              <Text style={styles.heroSummary} numberOfLines={3}>{plantSummary}</Text>
             </View>
             <PlantIllustration />
           </View>
@@ -291,10 +324,10 @@ export default function ListingDetailScreen({ route, navigation }) {
           </View>
 
           {careSummary.length > 0 ? <Text style={styles.careIntro}>Care snapshot</Text> : null}
-          <View style={styles.careChips}>
-            <CareChip label={plant?.watering_frequency_days ? `Water: every ${plant.watering_frequency_days} days` : null} />
-            <CareChip label={plant?.light_requirements ? `Light: ${plant.light_requirements}` : null} />
-            <CareChip label={plant?.humidity_requirements ? `Humidity: ${plant.humidity_requirements}` : null} />
+          <View style={styles.careGrid}>
+            <CareTile title="Water rhythm" value={plant?.watering_frequency_days ? `Every ${plant.watering_frequency_days} days` : null} accentColor={C.leaf} />
+            <CareTile title="Light mood" value={plant?.light_requirements} accentColor={C.amber} />
+            <CareTile title="Humidity" value={plant?.humidity_requirements} accentColor={C.moss} />
           </View>
         </View>
 
@@ -313,9 +346,9 @@ export default function ListingDetailScreen({ route, navigation }) {
         <View style={styles.section}>
           <Text style={styles.listingTitle}>{listing.title}</Text>
           {listing.description ? <Text style={styles.bodyText}>{listing.description}</Text> : null}
-          {listing.sitting_notes ? <Text style={styles.notesText}>{listing.sitting_notes}</Text> : null}
-          {listing.gift_notes ? <Text style={styles.notesText}>{listing.gift_notes}</Text> : null}
-          {listing.desired_swap_notes ? <Text style={styles.notesText}>{listing.desired_swap_notes}</Text> : null}
+          <PlantNotesCard title="Sitting notes">{listing.sitting_notes}</PlantNotesCard>
+          <PlantNotesCard title="Gift notes">{listing.gift_notes}</PlantNotesCard>
+          <PlantNotesCard title="Swap wishes">{listing.desired_swap_notes}</PlantNotesCard>
         </View>
 
         {handoff ? (
@@ -345,8 +378,11 @@ export default function ListingDetailScreen({ route, navigation }) {
         {/* Plant care */}
         <Text style={shared.sectionLabel}>Plant care</Text>
         <View style={styles.section}>
-          <InfoRow label="Size" value={plant?.size_description} />
-          <InfoRow label="Health" value={plant?.health_status} />
+          <View style={styles.plantCareGrid}>
+            <DetailStat label="Size" value={plant?.size_description || 'Not set'} />
+            <DetailStat label="Health" value={plant?.health_status || 'Not set'} />
+            <DetailStat label="Species" value={plant?.species || 'Not set'} />
+          </View>
           {plant?.special_instructions && (
             <View style={styles.specialBox}>
               <Text style={styles.specialLabel}>Special instructions</Text>
@@ -384,35 +420,110 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: C.cream },
   heroCard: {
     backgroundColor: '#fffaf7',
-    borderRadius: S.card,
-    padding: S.base,
+    borderRadius: 22,
+    padding: S.lg,
     marginBottom: S.md,
     borderWidth: 1,
     borderColor: C.amberLight,
+    overflow: 'hidden',
     ...S.cardShadowElevated,
   },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: S.md },
-  heroCopy: { flex: 1, paddingRight: S.md },
-  plantName: { ...T.hero, fontSize: 30, lineHeight: 36 },
-  species: { ...T.caption, fontStyle: 'italic', color: C.stone, marginTop: 3 },
-  modeText: { ...T.badge, color: C.moss, marginBottom: S.xs },
+  heroVines: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  vineLine: {
+    position: 'absolute',
+    width: 2,
+    height: 138,
+    backgroundColor: '#dfe9db',
+    borderRadius: 2,
+  },
+  vineOne: { right: 28, top: -18, transform: [{ rotate: '-18deg' }] },
+  vineTwo: { right: 72, top: -34, transform: [{ rotate: '18deg' }] },
+  tinyLeaf: {
+    position: 'absolute',
+    width: 14,
+    height: 24,
+    backgroundColor: '#cfe0c6',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 4,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 18,
+  },
+  tinyLeafOne: { right: 26, top: 32, transform: [{ rotate: '34deg' }] },
+  tinyLeafTwo: { right: 67, top: 24, transform: [{ rotate: '-38deg' }] },
+  tinyLeafThree: { right: 40, top: 78, transform: [{ rotate: '-28deg' }] },
+  tinyLeafFour: { right: 86, top: 82, transform: [{ rotate: '32deg' }] },
+  gardenBed: {
+    position: 'absolute',
+    left: -24,
+    right: -24,
+    bottom: -20,
+    height: 64,
+    backgroundColor: '#eef3e8',
+    borderTopLeftRadius: 56,
+    borderTopRightRadius: 56,
+  },
+  heroTop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: S.base,
+    marginBottom: S.md,
+  },
+  heroCopy: { flex: 1, minWidth: 190, paddingRight: S.sm },
+  modePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: C.mist,
+    borderRadius: S.chip,
+    borderWidth: 1,
+    borderColor: C.sage,
+    paddingHorizontal: S.md,
+    paddingVertical: 6,
+    marginBottom: S.sm,
+  },
+  plantName: { ...T.hero, fontSize: 34, lineHeight: 40 },
+  species: { ...T.caption, fontSize: 12, fontStyle: 'italic', color: C.stone, marginTop: 3 },
+  modeText: { ...T.badge, color: C.moss },
   heroHint: { ...T.caption, color: C.clay, marginTop: S.sm, fontWeight: '700' },
+  heroSummary: { ...T.body, color: C.slate, marginTop: S.sm, maxWidth: 420 },
   plantIllustration: {
-    width: 104,
-    height: 116,
+    width: 138,
+    height: 148,
     alignItems: 'center',
     justifyContent: 'flex-end',
+    marginLeft: 'auto',
+  },
+  illustrationHalo: {
+    position: 'absolute',
+    width: 124,
+    height: 96,
+    bottom: 14,
+    backgroundColor: '#f7e5d4',
+    borderRadius: 48,
+    borderWidth: 1,
+    borderColor: '#f2cfb6',
+  },
+  illustrationShelf: {
+    position: 'absolute',
+    width: 110,
+    height: 10,
+    bottom: 0,
+    backgroundColor: C.forest,
+    borderRadius: 999,
+    opacity: 0.12,
   },
   leafCluster: {
     position: 'absolute',
-    top: 2,
-    width: 96,
-    height: 76,
+    top: 10,
+    width: 118,
+    height: 88,
   },
   leafShape: {
     position: 'absolute',
-    width: 34,
-    height: 52,
+    width: 42,
+    height: 62,
     backgroundColor: C.leaf,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 6,
@@ -421,20 +532,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.forest,
   },
-  leafLeft: { left: 8, top: 24, transform: [{ rotate: '-38deg' }], backgroundColor: C.moss },
-  leafCenter: { left: 32, top: 6, height: 60, transform: [{ rotate: '-5deg' }] },
-  leafRight: { right: 8, top: 22, transform: [{ rotate: '34deg' }], backgroundColor: C.sage },
-  leafSmall: { left: 56, top: 0, width: 24, height: 38, transform: [{ rotate: '24deg' }], backgroundColor: C.amberLight },
+  leafLeft: { left: 8, top: 28, transform: [{ rotate: '-38deg' }], backgroundColor: C.moss },
+  leafCenter: { left: 38, top: 6, height: 70, transform: [{ rotate: '-5deg' }] },
+  leafRight: { right: 8, top: 26, transform: [{ rotate: '34deg' }], backgroundColor: C.sage },
+  leafSmall: { left: 68, top: 0, width: 28, height: 46, transform: [{ rotate: '24deg' }], backgroundColor: C.amberLight },
   stem: {
     width: 6,
-    height: 52,
+    height: 60,
     backgroundColor: C.moss,
     borderRadius: 6,
     marginBottom: -5,
   },
   potRim: {
-    width: 58,
-    height: 14,
+    width: 72,
+    height: 16,
     backgroundColor: C.amber,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
@@ -442,15 +553,15 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 5,
   },
   potBody: {
-    width: 46,
-    height: 34,
+    width: 58,
+    height: 42,
     backgroundColor: C.terracotta,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
   },
   detailStats: { flexDirection: 'row', flexWrap: 'wrap', gap: S.sm, marginBottom: S.md },
   detailStat: {
-    backgroundColor: C.white,
+    backgroundColor: 'rgba(255,255,255,0.88)',
     borderRadius: S.md,
     borderWidth: 1,
     borderColor: C.mist,
@@ -460,15 +571,26 @@ const styles = StyleSheet.create({
   },
   detailStatLabel: { ...T.caption, color: C.stone, marginBottom: 2 },
   detailStatValue: { ...T.label, color: C.forest },
-  careIntro: { ...T.caption, color: C.moss, fontWeight: '700', marginBottom: S.xs },
-  careChips: { flexDirection: 'row', flexWrap: 'wrap', gap: S.xs },
-  careChip: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: C.mist, borderRadius: S.chip,
-    paddingHorizontal: S.md, paddingVertical: 5,
-    borderWidth: 1, borderColor: C.sage,
+  careIntro: { ...T.caption, color: C.moss, fontWeight: '700', marginBottom: S.sm },
+  careGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: S.sm },
+  careTile: {
+    flexGrow: 1,
+    flexBasis: 138,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: S.md,
+    padding: S.md,
+    borderWidth: 1,
+    borderColor: C.mist,
+    minHeight: 82,
   },
-  careChipText: { ...T.caption, color: C.moss, fontWeight: '600' },
+  careTileAccent: {
+    width: 34,
+    height: 4,
+    borderRadius: 999,
+    marginBottom: S.sm,
+  },
+  careTileTitle: { ...T.caption, color: C.stone, fontWeight: '700', textTransform: 'uppercase' },
+  careTileValue: { ...T.label, color: C.forest, marginTop: 3 },
   section: {
     backgroundColor: C.white, borderRadius: S.card,
     padding: S.base, marginBottom: S.md,
@@ -477,12 +599,23 @@ const styles = StyleSheet.create({
   listingTitle: { ...T.h3, color: C.ink, marginBottom: S.sm },
   bodyText: { ...T.body, color: C.slate, lineHeight: 22 },
   notesText: { ...T.body, color: C.slate, fontStyle: 'italic', marginTop: S.sm },
+  notePanel: {
+    backgroundColor: C.mist,
+    borderRadius: S.md,
+    borderWidth: 1,
+    borderColor: '#d9e7dc',
+    padding: S.md,
+    marginTop: S.md,
+  },
+  notePanelTitle: { ...T.badge, color: C.moss, marginBottom: S.xs },
+  notePanelText: { ...T.body, color: C.ink, lineHeight: 22 },
   infoRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     paddingVertical: S.sm, borderBottomWidth: 1, borderBottomColor: C.mist,
   },
   infoLabel: { ...T.label, color: C.stone },
   infoValue: { ...T.label, color: C.ink, flex: 1, textAlign: 'right' },
+  plantCareGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: S.sm },
   specialBox: {
     backgroundColor: '#fffaf7', borderRadius: S.md,
     padding: S.md, marginTop: S.sm,
