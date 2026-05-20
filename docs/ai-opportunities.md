@@ -96,6 +96,33 @@ Technical note:
 - This could eventually use embeddings and a vector search table in Supabase.
 - Start with regular SQL filters and add semantic search only when there is enough content to justify it.
 
+### 6. AI-Assisted Moderation
+
+AI could help flag unsafe, abusive, spammy, or policy-breaking content before it reaches other users.
+
+Possible uses:
+
+- Review listing descriptions, plant bios, application messages, reviews, and future chat messages for harassment, spam, scams, hate, threats, or sexual content.
+- Flag suspicious payment or off-platform contact requests such as "pay me outside the app" or repeated phone/email sharing in public areas.
+- Prioritise moderation cases for human review.
+- Suggest a reason category for reports, such as spam, harassment, unsafe care advice, fraud, or inappropriate content.
+- Detect repeated low-quality or copied applications.
+
+Best practice:
+
+- Use AI as a triage and flagging tool, not as the only judge.
+- Keep a human review path for account penalties, bans, disputes, payment issues, and serious reports.
+- Store moderation outcomes in `moderation_cases` and important actions in `audit_log`.
+- Give users clear community rules and appeal routes.
+- Avoid showing raw AI labels to users if they could be misleading or inflammatory.
+
+Risks:
+
+- False positives can unfairly block normal users.
+- False negatives can let harmful content through.
+- Moderation models may behave inconsistently across languages, slang, or cultural context.
+- Sending private messages to an AI provider has privacy implications, so the app should minimise what is sent and document the policy clearly.
+
 ## Later, More Playful Ideas
 
 ### Plant Personalities And Chat
@@ -192,6 +219,7 @@ The server-side function should:
 - Give users control before publishing AI-generated text.
 - Keep an audit trail for important generated content if it affects listings, applications, or contracts.
 - Add abuse monitoring before AI chat or messaging features.
+- Use AI moderation only as an assistant to policy enforcement; keep human review for serious account or contract consequences.
 - Make it easy to delete AI-generated drafts and profile text.
 
 ## Suggested AI Roadmap
@@ -223,6 +251,7 @@ Add intelligence after there is enough user/listing data:
 - Match explanations.
 - Semantic search.
 - Better sitter recommendations.
+- AI-assisted moderation queues for public content and future messaging.
 
 ### Phase D - Playful And Advanced Features
 

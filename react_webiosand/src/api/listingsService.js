@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { buildExchangeInbox } from '../utils/exchangeInbox';
 
 export const LISTING_TYPES = Object.freeze({
   SITTING_REQUEST: 'SITTING_REQUEST',
@@ -585,24 +586,7 @@ export const listingsService = {
       this.getMyHandoffs(userId),
     ]);
 
-    const activeProposals = [
-      ...incomingSwapProposals.map((proposal) => ({ ...proposal, direction: 'INCOMING' })),
-      ...outgoingSwapProposals.map((proposal) => ({ ...proposal, direction: 'OUTGOING' })),
-    ].sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
-
-    const pendingHandoffs = handoffs
-      .filter((handoff) => handoff.status !== 'COMPLETED' && handoff.status !== 'CANCELLED')
-      .sort((left, right) => new Date(right.updated_at) - new Date(left.updated_at));
-
-    const completedExchanges = handoffs
-      .filter((handoff) => handoff.status === 'COMPLETED')
-      .sort((left, right) => new Date(right.completed_at ?? right.updated_at) - new Date(left.completed_at ?? left.updated_at));
-
-    return {
-      activeProposals,
-      pendingHandoffs,
-      completedExchanges,
-    };
+    return buildExchangeInbox({ incomingSwapProposals, outgoingSwapProposals, handoffs });
   },
 
   /**

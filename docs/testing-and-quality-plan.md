@@ -14,9 +14,10 @@ npm.cmd test
 
 Available scripts:
 
-- `npm.cmd run test:unit` - tests extracted plant and listing form utilities.
-- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, Supabase wiring, design dependencies, and key schema/RLS files.
-- `npm.cmd test` - runs both unit and smoke tests.
+- `npm.cmd run test:unit` - tests extracted plant, listing, and exchange inbox utilities.
+- `npm.cmd run test:integration` - tests exchange inbox composition from raw proposal/handoff rows.
+- `npm.cmd run test:smoke` - checks expected app files, application-flow wiring, exchange inbox wiring, Supabase wiring, design dependencies, and key schema/RLS files.
+- `npm.cmd test` - runs unit, integration, and smoke tests.
 
 Manual testing is still required for actual Supabase login/register/database flows.
 
@@ -73,6 +74,7 @@ Continue expanding tests for pure logic:
 - date range formatting
 - plant form payload construction
 - listing form payload construction
+- exchange inbox counts, action-needed state, and date/participant helpers
 
 Suggested tools:
 

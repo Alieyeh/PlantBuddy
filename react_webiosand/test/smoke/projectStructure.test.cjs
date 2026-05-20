@@ -23,6 +23,7 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/src/storage/SessionManager.js',
     'react_webiosand/src/api/apiService.js',
     'react_webiosand/src/api/listingsService.js',
+    'react_webiosand/src/utils/exchangeInbox.js',
     'react_webiosand/src/screens/LoginScreen.js',
     'react_webiosand/src/screens/RegisterScreen.js',
     'react_webiosand/src/screens/ProfileSetupScreen.js',
@@ -45,7 +46,8 @@ test('package.json exposes runnable app and test scripts', () => {
 
   assert.equal(pkg.scripts.start, 'expo start');
   assert.equal(pkg.scripts.web, 'expo start --web');
-  assert.equal(pkg.scripts.test, 'npm run test:unit && npm run test:smoke');
+  assert.equal(pkg.scripts.test, 'npm run test:unit && npm run test:integration && npm run test:smoke');
+  assert.match(pkg.scripts['test:integration'], /test\/integration\/exchangeInboxComposition\.test\.cjs/);
   assert.ok(pkg.dependencies['@supabase/supabase-js']);
   assert.ok(pkg.dependencies.expo);
   assert.ok(pkg.dependencies['@expo-google-fonts/fraunces']);
@@ -110,4 +112,15 @@ test('current application and marketplace flows are wired into navigation and se
   assert.match(service, /createSwapProposal/);
   assert.match(service, /acceptSwapProposal/);
   assert.match(service, /createListingHandoffReview/);
+});
+
+test('exchanges inbox has refresh, summary, and shared utility wiring', () => {
+  const exchangesScreen = read('react_webiosand/src/screens/ExchangesScreen.js');
+  const service = read('react_webiosand/src/api/listingsService.js');
+
+  assert.match(exchangesScreen, /RefreshControl/);
+  assert.match(exchangesScreen, /Needs action/);
+  assert.match(exchangesScreen, /refreshControl/);
+  assert.match(exchangesScreen, /getExchangeInboxCounts/);
+  assert.match(service, /buildExchangeInbox/);
 });

@@ -2,7 +2,7 @@
 
 Date: 2026.5.19
 Done by: EZ
-Last updated: 2026-05-19
+Last updated: 2026-05-20
 Purpose: give the next engineer or AI a fast, reliable handoff point with enough detail to continue implementation immediately.
 
 ---
@@ -151,10 +151,11 @@ Command:
 npm test
 ```
 
-Result on 2026-05-19:
+Latest result after inbox polish:
 
-- unit tests passed: 14/14
-- smoke tests passed: 5/5
+- unit tests passed: 20/20
+- integration tests passed: 1/1
+- smoke tests passed: 6/6
 - no editor errors were reported in the newly changed marketplace screens and navigation files
 
 This means the current tracked implementation is at least syntax-clean and test-clean for the existing test suite.
@@ -227,8 +228,9 @@ Current automated coverage is still lightweight.
 
 Present:
 
-- unit tests for plant form and listing form helpers
-- smoke tests for key files and listing-detail action text
+- unit tests for plant form, listing form, and exchange inbox helpers
+- integration test for composing exchange inbox rows into proposals, pending handoffs, and completed exchanges
+- smoke tests for key files, marketplace flow wiring, exchange inbox wiring, and schema/RLS files
 
 Missing:
 
@@ -258,16 +260,17 @@ Likely files:
 - `android_only/db/2026_05_19_marketplace_alignment.sql`
 - live Supabase project
 
-### 2. Strengthen the exchanges inbox
+### 2. Continue exchanges inbox polish
 
 Why this matters:
-The inbox now exists, but it is still a first-pass operational surface.
+The inbox now has action-needed counts, pull-to-refresh, richer metadata, and review/confirmation highlighting. It can still become a stronger operational surface.
 
 Recommended outcome:
 
-- add action-needed badges or counts
-- add proposal timestamps and richer participant identity cues
-- add pull-to-refresh and better empty/loading states by section
+- add notification badges at tab level
+- add deeper participant profile previews
+- add filter chips for action-needed, proposals, handoffs, and completed exchanges
+- add section-level empty states if sections are hidden by filters
 
 Likely files:
 
@@ -299,7 +302,8 @@ The service and screen surface area grew a lot today.
 Recommended outcome:
 
 - unit tests for new listing service payload decisions where possible
-- smoke tests for new screen presence and key actions already started
+- smoke tests for new screen presence and key actions
+- integration tests for additional exchange state shaping as new flows are added
 - if the team adopts UI testing, cover swap acceptance and handoff confirmation paths
 
 ---
