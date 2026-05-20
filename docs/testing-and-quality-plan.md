@@ -126,11 +126,16 @@ Minimum RLS tests:
 - User can insert their own plant.
 - User cannot update another user's plant.
 - User can create listing only for their own plant.
+- User cannot create or update a listing using another user's plant.
+- Store-owner listing writes require an approved store profile.
 - User can browse open listings.
 - User cannot apply to their own listing.
+- User cannot apply without a sitter profile.
+- New applications must start as `PENDING`.
 - User can apply only once to the same listing.
 - Owner can see applications for their own listing.
 - Owner cannot accept applications for someone else's listing.
+- Swap proposer can only offer an active plant they own.
 - User cannot see private profile details they should not see.
 - User cannot add themselves to unrelated conversations.
 

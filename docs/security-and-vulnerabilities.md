@@ -4,47 +4,53 @@ This is a current risk register based on the repo as it exists now. It is not a 
 
 ## High Priority
 
-### Listing Creation Does Not Verify Plant Ownership
+### Listing Creation Plant Ownership Guard
 
 File:
 
 - `android_only/db/rls_policies.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
 
-Current policy:
+Status:
 
-```sql
-WITH CHECK (owner_user_id = auth.uid() OR store_owner_user_id = auth.uid())
-```
+Mitigated in source SQL and the 2026-05-20 hardening migration.
 
-Risk:
+Previous risk:
 
 An authenticated user may be able to create a listing using a `plant_id` they do not own, as long as they set `owner_user_id` to themselves. The policy checks the listing owner field, but not whether the selected plant belongs to that owner.
 
-Recommended fix:
+Current fix:
 
-Require an `EXISTS` check against `plants`:
+The insert policy now requires an active, unarchived plant owned by `auth.uid()`:
 
 ```sql
 EXISTS (
   SELECT 1 FROM plants p
   WHERE p.id = plant_listings.plant_id
     AND p.current_owner_user_id = auth.uid()
+    AND p.is_active = TRUE
+    AND p.archived_at IS NULL
 )
 ```
 
-### Listing Updates Do Not Verify Plant Ownership
+### Listing Updates Plant Ownership Guard
 
 File:
 
 - `android_only/db/rls_policies.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
 
-Risk:
+Status:
+
+Mitigated in source SQL and the 2026-05-20 hardening migration.
+
+Previous risk:
 
 A listing owner can update their own listing, but the policy does not appear to stop them from changing `plant_id` to another user's plant. This is closely related to the listing creation issue.
 
-Recommended fix:
+Current fix:
 
-Use a stricter update `WITH CHECK` that verifies the final `plant_id` is still owned by the authenticated user.
+The update policy now uses the same plant ownership `EXISTS` check as listing creation, so the final row must still point at an active plant owned by the authenticated user.
 
 ### Sensitive Profile Data Is Broadly Readable
 
@@ -104,42 +110,43 @@ Use RLS or RPC functions to enforce those rules.
 
 ## Medium Priority
 
-### Sitter Role Is Not Enforced For Applications
+### Sitter Role Is Enforced For Applications
 
 Files:
 
 - `android_only/db/sql_build_tables.sql`
 - `android_only/db/rls_policies.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
 - `react_webiosand/src/screens/ApplyScreen.js`
 
-The RLS comment says sitter role is enforced by schema constraints, but `listing_applications.applicant_user_id` references `users(id)`, not `sitter_profiles(user_id)`.
+Status:
 
-Risk:
+Mitigated in source SQL and the 2026-05-20 hardening migration.
 
-Any authenticated user may be able to apply, even if they have not activated sitter mode. The frontend now has basic sitter profile setup, but application eligibility is not enforced as a database rule.
+Current behavior:
 
-Recommended fix:
+- RLS requires a matching `sitter_profiles` row before inserting into `listing_applications`.
+- The application validation trigger also raises `Applicants must have a sitter profile` if the applicant lacks that row.
 
-Either:
+Residual risk:
 
-- change `applicant_user_id` to reference `sitter_profiles(user_id)`, or
-- add RLS `EXISTS` checks requiring a sitter profile, or
-- intentionally allow applications from any user and create sitter profile during application onboarding.
+This still needs live Supabase verification with two users because current automated tests are static checks, not live RLS execution tests.
 
-### Owners May Apply To Their Own Listings
+### Owners Are Blocked From Applying To Their Own Listings
 
 Files:
 
 - `react_webiosand/src/screens/ApplyScreen.js`
 - `android_only/db/rls_policies.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
 
-Risk:
+Status:
 
-The application screen inserts the current authenticated user as `applicant_user_id`, but the frontend and RLS policies do not currently appear to block a listing owner from applying to their own listing.
+Mitigated in source SQL and the 2026-05-20 hardening migration.
 
-Recommended fix:
+Current behavior:
 
-Add a database/RLS check that prevents `listing_applications.applicant_user_id` from matching the listing's `owner_user_id` or `store_owner_user_id`.
+Application insert now requires `COALESCE(pl.owner_user_id, pl.store_owner_user_id) <> auth.uid()`, and the validation trigger raises `Listing owners cannot apply to their own listings`.
 
 ### Accepting Applications Is Not Transactional
 

@@ -75,6 +75,7 @@ test('Supabase client reads only public Expo environment variables', () => {
 test('database schema and RLS files include the current MVP tables', () => {
   const schema = read('android_only/db/sql_build_tables.sql');
   const rls = read('android_only/db/rls_policies.sql');
+  const securityMigration = read('android_only/db/2026_05_20_security_rls_hardening.sql');
 
   assert.ok(schema.includes("CREATE TYPE listing_type AS ENUM ('SITTING_REQUEST', 'GIFT', 'SWAP', 'SALE')"));
 
@@ -98,6 +99,27 @@ test('database schema and RLS files include the current MVP tables', () => {
     'CREATE POLICY "plant_listings_select_open"',
     'CREATE POLICY "listing_handoffs_select"',
   ].forEach((statement) => assert.match(rls, new RegExp(statement)));
+
+  assert.match(securityMigration, /2026_05_20_security_rls_hardening|plant_listings_insert_own|listing_applications_insert|swap_proposals_insert/);
+});
+
+test('RLS hardening guards listing ownership, sitter applications, and swap offers', () => {
+  const schema = read('android_only/db/sql_build_tables.sql');
+  const rls = read('android_only/db/rls_policies.sql');
+  const securityMigration = read('android_only/db/2026_05_20_security_rls_hardening.sql');
+  const combined = `${schema}\n${rls}\n${securityMigration}`;
+
+  assert.match(combined, /p\.current_owner_user_id = auth\.uid\(\)/);
+  assert.match(combined, /p\.is_active = TRUE/);
+  assert.match(combined, /p\.archived_at IS NULL/);
+  assert.match(combined, /sop\.is_approved = TRUE/);
+  assert.match(combined, /sitter_profiles sp/);
+  assert.match(combined, /Applicants must have a sitter profile/);
+  assert.match(combined, /Listing owners cannot apply to their own listings/);
+  assert.match(combined, /status = 'PENDING'/);
+  assert.match(combined, /status = 'WITHDRAWN'/);
+  assert.match(combined, /offered_plant_id/);
+  assert.match(combined, /pl\.owner_user_id <> auth\.uid\(\)/);
 });
 
 test('current application and marketplace flows are wired into navigation and services', () => {

@@ -1,6 +1,6 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-20 (browse filters and sorting)_
+_Last updated: 2026-05-20 (Security/RLS hardening)_
 
 ---
 
@@ -8,7 +8,7 @@ _Last updated: 2026-05-20 (browse filters and sorting)_
 
 **Phase 2 — Marketplace + Care Foundation (listing modes, exchange RPC, and inbox live in app)**
 
-The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. The next highest-value step is applying or confirming the updated migration in the live Supabase project so the deployed backend matches the repo.
+The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. The next highest-value step is applying or confirming the 2026-05-19 and 2026-05-20 migrations in the live Supabase project so the deployed backend matches the repo.
 
 ---
 
@@ -22,11 +22,12 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] All enums, constraints, and indexes defined
 - [x] Covers: users, roles, plants, listings, applications, swaps, handoffs, contracts, messaging, payments, notifications, reviews, moderation, audit log
 - [x] Added marketplace alignment migration: `android_only/db/2026_05_19_marketplace_alignment.sql`
+- [x] Added security hardening migration: `android_only/db/2026_05_20_security_rls_hardening.sql`
 - [x] Added `listing_handoffs` and `listing_handoff_reviews`
 - [x] Listing type vocabulary aligned to `GIFT` instead of `DONATION`
 - [x] Listing validation rules tightened by listing type
 - [x] Added `confirm_listing_handoff` RPC for atomic handoff confirmation and ownership transfer
-- [ ] Live Supabase state should be treated as migrated because the user reported running the 2026-05-19 migration; re-check only if behavior contradicts that
+- [ ] Live Supabase should be checked for both `2026_05_19_marketplace_alignment.sql` and `2026_05_20_security_rls_hardening.sql`; re-run or verify if behavior contradicts the repo
 - [ ] Seed data file (`002_seed_dev.sql`) not committed
 
 ### Backend — Supabase
@@ -36,7 +37,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] **RLS policies written for all 23 tables** (`android_only/db/rls_policies.sql`) — `refresh_tokens` section removed (session 4 fix)
 - [x] `plant_listings`, `listing_applications`, `swap_proposals`, `listing_handoffs`, `listing_handoff_reviews`, and `contracts` secured by RLS and accessible via PostgREST
 - [ ] `react_webiosand/.env` is not present in this checkout; create it locally with Supabase URL + anon key
-- [ ] Live Supabase still needs the updated migration applied so `confirm_listing_handoff` exists remotely
+- [ ] Live Supabase still needs migrations verified so `confirm_listing_handoff` and hardened RLS policies exist remotely
 
 ### Expo Frontend (`react_webiosand/`) — Android + iOS + Web
 - [x] Session management (AsyncStorage)
@@ -153,6 +154,15 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - Added unit tests for Browse filtering and sorting
 - Updated smoke tests to verify Browse wiring
 - Confirmed `npm.cmd test` passes from `react_webiosand/` with 42 total tests passing: 34 unit, 1 integration, and 7 smoke
+
+## Security/RLS Refresh (2026-05-20)
+
+- Added `android_only/db/2026_05_20_security_rls_hardening.sql`
+- Hardened listing insert/update RLS so listings must point at active plants owned by the authenticated user
+- Hardened application insert/update RLS so sitting applicants need sitter profiles, cannot apply to their own listings, and new applications start as pending
+- Hardened swap proposal insert RLS so proposers can only offer active plants they own on open swap listings owned by someone else
+- Updated static smoke tests for these SQL expectations
+- Confirmed `npm.cmd test` passes from `react_webiosand/` with 48 total tests passing: 38 unit, 1 integration, and 9 smoke
 
 ## Last Session (2026-05-19)
 

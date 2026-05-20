@@ -15,15 +15,16 @@ Best practices:
 - Never rely on hidden buttons or frontend checks as the only authorization control.
 - Prefer database constraints and RPC functions for important state transitions.
 
-### Listing Ownership Needs Tightening
+### Listing Ownership Is Now Guarded, But Needs Live Verification
 
-The current RLS policy allows a listing when `owner_user_id = auth.uid()`, but should also verify the listed `plant_id` belongs to that owner.
+The source SQL and `android_only/db/2026_05_20_security_rls_hardening.sql` now require listing inserts/updates to reference an active, unarchived plant owned by the authenticated user. This should still be verified against live Supabase with multiple users.
 
 Best practices:
 
 - Use `EXISTS` checks against `plants` in insert/update policies.
 - Prevent changing `plant_id` on an existing listing unless the new plant is also owned by the user.
 - Add RLS tests before relying on applications with real users.
+- Apply and verify the 2026-05-20 hardening migration before demoing with real accounts.
 
 ### Profile Data Exposure
 
@@ -46,6 +47,18 @@ Best practices:
 - Return the resulting contract/application state from the RPC.
 - Avoid doing important multi-step state changes entirely in client code.
 - Treat the current accept/decline UI as an interim implementation until contract creation is transactional.
+
+### Anti-Spam And Text-Field Threats Need Controls
+
+PlantBuddy has user-authored plant bios, listing descriptions, applications, swap proposals, reviews, reports, and future messages.
+
+Best practices:
+
+- Add maximum lengths and validation for every free-text field.
+- Rate-limit high-abuse actions such as applications, listing creation, proposals, reviews, reports, and messages.
+- Detect suspicious links, repeated messages, private-contact leakage, scams, threats, harassment, and unsafe content.
+- Use deterministic checks first; add AI-assisted moderation only after privacy and escalation rules are defined.
+- Store moderation outcomes in `moderation_cases` and important actions in `audit_log`.
 
 ## Current Functionality Risks
 

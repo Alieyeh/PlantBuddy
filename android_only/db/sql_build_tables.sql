@@ -792,9 +792,12 @@ CREATE OR REPLACE FUNCTION public.validate_listing_application()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
     v_listing_type listing_type;
+    v_listing_status listing_status;
+    v_owner_user_id UUID;
+    v_store_owner_user_id UUID;
 BEGIN
-    SELECT listing_type
-    INTO v_listing_type
+    SELECT listing_type, status, owner_user_id, store_owner_user_id
+    INTO v_listing_type, v_listing_status, v_owner_user_id, v_store_owner_user_id
     FROM plant_listings
     WHERE id = NEW.listing_id;
 
@@ -804,6 +807,32 @@ BEGIN
 
     IF v_listing_type <> 'SITTING_REQUEST' THEN
         RAISE EXCEPTION 'Applications are only valid for sitting request listings';
+    END IF;
+
+    IF TG_OP = 'INSERT' AND v_listing_status <> 'OPEN' THEN
+        RAISE EXCEPTION 'Applications can only be created for open listings';
+    END IF;
+
+    IF NEW.applicant_user_id = COALESCE(v_owner_user_id, v_store_owner_user_id) THEN
+        RAISE EXCEPTION 'Listing owners cannot apply to their own listings';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM sitter_profiles sp
+        WHERE sp.user_id = NEW.applicant_user_id
+    ) THEN
+        RAISE EXCEPTION 'Applicants must have a sitter profile';
+    END IF;
+
+    IF TG_OP = 'INSERT' AND NEW.status <> 'PENDING' THEN
+        RAISE EXCEPTION 'New applications must start as pending';
+    END IF;
+
+    IF TG_OP = 'UPDATE' THEN
+        IF NEW.listing_id <> OLD.listing_id OR NEW.applicant_user_id <> OLD.applicant_user_id THEN
+            RAISE EXCEPTION 'Application listing and applicant cannot be changed';
+        END IF;
     END IF;
 
     RETURN NEW;

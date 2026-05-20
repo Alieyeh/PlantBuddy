@@ -149,7 +149,25 @@ Files:
 - `android_only/db/sql_build_tables.sql`
 - `android_only/db/rls_policies.sql`
 - `android_only/db/2026_05_19_marketplace_alignment.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
 - `react_webiosand/src/api/listingsService.js`
+
+### Security and RLS hardening
+
+Completed in source SQL and migration:
+
+- listing insert/update policies now verify the listing plant is active, unarchived, and owned by the authenticated user
+- store-backed listing writes require an approved store owner profile
+- sitting applications require a sitter profile and cannot target a listing owned by the applicant
+- new applications must start as `PENDING`
+- applicants can only update their own application into `WITHDRAWN`; owners still handle application status decisions
+- swap proposals must target open swap listings owned by someone else and offer an active plant owned by the proposer
+
+Files:
+
+- `android_only/db/rls_policies.sql`
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
 
 ### Documentation and product direction
 
@@ -167,7 +185,7 @@ Updated:
 
 The latest verified command was run from:
 
-- `D:\PlantBuddy\react_webiosand`
+- `C:\PlantBuddy\react_webiosand`
 
 Command:
 
@@ -175,11 +193,11 @@ Command:
 npm test
 ```
 
-Latest result after spellcheck/suggestions and plant detail polish:
+Latest result after Security/RLS hardening:
 
 - unit tests passed: 38/38
 - integration tests passed: 1/1
-- smoke tests passed: 8/8
+- smoke tests passed: 9/9
 - no editor errors were reported in the newly changed marketplace screens and navigation files
 
 This means the current tracked implementation is at least syntax-clean and test-clean for the existing test suite.
@@ -323,30 +341,54 @@ Likely files:
 - `react_webiosand/src/api/listingsService.js`
 - `react_webiosand/src/utils/browseListings.js`
 
-### 4. Add explicit role dropdown and role-aware discovery
+### 4. Add plant size unit dropdown and unit-aware discovery
 
 Why this matters:
-Roles are currently partly inferred from profile setup and additive profile tables. A clearer role dropdown would make onboarding, permissions, and search/discovery easier to reason about.
+Plant size is currently free text. A separate unit selector such as cm, inches, or meters would make plant profiles easier to compare, validate, and search.
 
 Recommended outcome:
 
-- add a dedicated role dropdown in profile/onboarding rather than only a sitter toggle
-- confirm the role vocabulary with the team, for example owner, sitter, buyer/adopter, swapper, and store owner
-- reflect the selected roles in the database through either profile tables, a user-role table, or another agreed schema pattern
-- update RLS and validation so selected roles match what users can do
-- make Browse/search able to filter or rank by role where useful, such as sitter-capable users or store-owner listings
-- document the final role model before implementation
+- add a dedicated plant size unit dropdown in `AddEditPlantScreen`
+- decide the storage model, for example `size_value` numeric plus `size_unit` enum/text while keeping `size_description` for notes
+- reflect the new fields in the database schema and a forward migration
+- update plant form validation and payload helpers
+- include size value/unit in Browse search and future plant-care filters
+- document whether existing `size_description` remains as free-form context
 
 Likely files:
 
-- `react_webiosand/src/screens/ProfileSetupScreen.js`
+- `react_webiosand/src/screens/AddEditPlantScreen.js`
 - `react_webiosand/src/screens/ListingsScreen.js`
 - `react_webiosand/src/utils/browseListings.js`
+- `react_webiosand/src/utils/plantForm.js`
 - `android_only/db/sql_build_tables.sql`
 - `android_only/db/rls_policies.sql`
 - a future Supabase migration file
 
-### 5. Add automated coverage for the new flows
+### 5. Add anti-spam and text-field threat safeguards
+
+Why this matters:
+The app now has many user-authored fields: plant bios, listing descriptions, application messages, swap proposals, reviews, and future chat. These need abuse controls before public use.
+
+Recommended outcome:
+
+- add length limits and consistent validation for user-authored text fields
+- add rate limits or cooldowns for listings, applications, swap proposals, reviews, reports, and future messages
+- add blocked-word/scam-link checks where appropriate
+- add moderation flags for spam, harassment, fraud, threats, unsafe content, and private-info leakage
+- consider AI-assisted moderation only after deterministic checks and privacy rules are defined
+- store moderation outcomes in `moderation_cases` and keep audit trails for important actions
+
+Likely files:
+
+- `react_webiosand/src/utils/*Form.js`
+- `react_webiosand/src/screens/*`
+- `android_only/db/sql_build_tables.sql`
+- `android_only/db/rls_policies.sql`
+- future moderation/RPC migration files
+- `docs/ai-opportunities.md`
+
+### 6. Add automated coverage for the new flows
 
 Why this matters:
 The service and screen surface area grew a lot today.

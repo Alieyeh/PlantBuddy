@@ -155,6 +155,22 @@ That means all important authorization rules must be enforced in:
 
 Do not rely only on frontend UI checks.
 
+Current RLS hardening source:
+
+- `android_only/db/rls_policies.sql`
+- `android_only/db/2026_05_20_security_rls_hardening.sql`
+
+The 2026-05-20 hardening migration adds:
+
+- plant ownership checks for `plant_listings` insert/update policies
+- approved store-owner checks for store-backed listing writes
+- sitter-profile requirements for `listing_applications`
+- self-application prevention for listing owners
+- stricter application update rules so applicants can only withdraw their own applications
+- swap proposal checks requiring an active offered plant owned by the proposer
+
+After applying it, manually verify with at least two Supabase users because the current automated suite only performs static SQL checks.
+
 ## Missing Database Tooling
 
 Currently missing:

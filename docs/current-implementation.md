@@ -192,6 +192,8 @@ Important current database behavior:
 - `users.id` is a UUID tied to Supabase Auth's `auth.users(id)`.
 - `handle_new_user()` is intended to create a public `users` row and an `owner_profiles` row after Supabase Auth signup.
 - Non-user entity IDs, such as plants and listings, are still BIGINT identity columns.
+- `android_only/db/2026_05_20_security_rls_hardening.sql` adds RLS hardening for listing plant ownership, sitter-only applications, self-application prevention, and swap proposal ownership.
+- The source RLS file has also been updated with those rules, but live Supabase still needs the migration applied and manually verified.
 
 ## Legacy Native Android Implementation
 
@@ -234,12 +236,14 @@ Frontend missing:
 - Admin/moderation UI.
 - Saved searches and favorites.
 - Server-side or database-backed browse search for larger datasets.
+- Plant size value/unit fields, such as a cm/inch unit dropdown reflected in the database and Browse/search.
+- Anti-spam and text-field threat safeguards for listings, applications, swap proposals, reviews, reports, and future messages.
 
 Project tooling currently present:
 
 - Node unit tests for plant forms, listing forms, listing domain helpers, Supabase environment validation, browse filters/sorting, and exchange inbox helpers.
 - Node integration test for exchange inbox composition.
-- Node smoke tests for key app files, browse wiring, exchange inbox wiring, Supabase wiring, and schema/RLS files.
+- Node smoke tests for key app files, browse wiring, exchange inbox wiring, Supabase wiring, schema/RLS files, and static RLS hardening expectations.
 
 Project tooling still missing:
 

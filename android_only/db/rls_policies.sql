@@ -239,14 +239,59 @@ CREATE POLICY "plant_listings_select_open"
 CREATE POLICY "plant_listings_insert_own"
   ON plant_listings FOR INSERT
   TO authenticated
-  WITH CHECK (owner_user_id = auth.uid() OR store_owner_user_id = auth.uid());
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM plants p
+      WHERE p.id = plant_listings.plant_id
+        AND p.current_owner_user_id = auth.uid()
+        AND p.is_active = TRUE
+        AND p.archived_at IS NULL
+    )
+    AND (
+      (owner_user_id = auth.uid() AND store_owner_user_id IS NULL)
+      OR
+      (
+        store_owner_user_id = auth.uid()
+        AND owner_user_id IS NULL
+        AND EXISTS (
+          SELECT 1 FROM store_owner_profiles sop
+          WHERE sop.user_id = auth.uid()
+            AND sop.is_approved = TRUE
+        )
+      )
+    )
+  );
 
 -- Owners can update/cancel their own listings
 CREATE POLICY "plant_listings_update_own"
   ON plant_listings FOR UPDATE
   TO authenticated
-  USING (owner_user_id = auth.uid() OR store_owner_user_id = auth.uid())
-  WITH CHECK (owner_user_id = auth.uid() OR store_owner_user_id = auth.uid());
+  USING (
+    owner_user_id = auth.uid()
+    OR store_owner_user_id = auth.uid()
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM plants p
+      WHERE p.id = plant_listings.plant_id
+        AND p.current_owner_user_id = auth.uid()
+        AND p.is_active = TRUE
+        AND p.archived_at IS NULL
+    )
+    AND (
+      (owner_user_id = auth.uid() AND store_owner_user_id IS NULL)
+      OR
+      (
+        store_owner_user_id = auth.uid()
+        AND owner_user_id IS NULL
+        AND EXISTS (
+          SELECT 1 FROM store_owner_profiles sop
+          WHERE sop.user_id = auth.uid()
+            AND sop.is_approved = TRUE
+        )
+      )
+    )
+  );
 
 -- =========================================================
 -- LISTING APPLICATIONS
@@ -266,17 +311,23 @@ CREATE POLICY "listing_applications_select"
     )
   );
 
--- Any authenticated user can apply (sitter role enforced by CHECK constraints in schema)
+-- Only sitter-profile users can apply to open sitting listings they do not own.
 CREATE POLICY "listing_applications_insert"
   ON listing_applications FOR INSERT
   TO authenticated
   WITH CHECK (
     applicant_user_id = auth.uid()
+    AND status = 'PENDING'
+    AND EXISTS (
+      SELECT 1 FROM sitter_profiles sp
+      WHERE sp.user_id = auth.uid()
+    )
     AND EXISTS (
       SELECT 1 FROM plant_listings pl
       WHERE pl.id = listing_applications.listing_id
         AND pl.listing_type = 'SITTING_REQUEST'
         AND pl.status = 'OPEN'
+        AND COALESCE(pl.owner_user_id, pl.store_owner_user_id) <> auth.uid()
     )
   );
 
@@ -294,7 +345,10 @@ CREATE POLICY "listing_applications_update"
     )
   )
   WITH CHECK (
-    applicant_user_id = auth.uid()
+    (
+      applicant_user_id = auth.uid()
+      AND status = 'WITHDRAWN'
+    )
     OR EXISTS (
       SELECT 1 FROM plant_listings pl
       WHERE pl.id = listing_applications.listing_id
@@ -330,6 +384,14 @@ CREATE POLICY "swap_proposals_insert"
       WHERE pl.id = swap_proposals.listing_id
         AND pl.listing_type = 'SWAP'
         AND pl.status = 'OPEN'
+        AND pl.owner_user_id <> auth.uid()
+    )
+    AND EXISTS (
+      SELECT 1 FROM plants p
+      WHERE p.id = swap_proposals.offered_plant_id
+        AND p.current_owner_user_id = auth.uid()
+        AND p.is_active = TRUE
+        AND p.archived_at IS NULL
     )
   );
 

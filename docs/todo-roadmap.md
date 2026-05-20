@@ -14,12 +14,18 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 
 ## Priority 1 - Security And Data Integrity
 
-- Tighten RLS for `plant_listings` so users can only create listings for plants they own.
-- Tighten RLS for `plant_listings` updates so plant ownership cannot be bypassed.
+- Apply `android_only/db/2026_05_20_security_rls_hardening.sql` to live Supabase if it has not already been run.
+- Verify hardened RLS for `plant_listings` so users can only create/update listings for active plants they own.
+- Verify sitter-profile enforcement and self-application prevention for `listing_applications`.
+- Verify swap proposals can only offer active plants owned by the proposer.
 - Decide whether all authenticated users should see all active plants.
 - Restrict public visibility of sensitive profile fields such as email, phone, address, and emergency contacts.
 - Fix or redesign permissive conversation participant policies before implementing messaging.
-- Add missing sitter-role enforcement for listing applications.
+- Add anti-spam and text-field threat safeguards:
+  - max lengths and validation for free-text fields
+  - cooldowns/rate limits for applications, listings, proposals, reviews, reports, and future messages
+  - scam-link and suspicious-contact checks
+  - moderation categories for spam, harassment, fraud, threats, unsafe content, and private-info leakage
 - Keep generated local folders and `local.properties` out of commits.
 
 ## Priority 2 - Complete Sitter Profile
@@ -63,6 +69,8 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 ## Priority 6 - Better Plant Profiles
 
 - Add plant photos with Supabase Storage.
+- Add separate plant size value and unit fields, such as `size_value` plus a cm/inch/unit dropdown.
+- Reflect plant size unit fields in the database, migrations, form validation, and Browse/search filters.
 - Add recurring care tasks.
 - Add profile completeness indicators.
 - Add better plant card design for web and mobile.
