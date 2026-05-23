@@ -16,6 +16,7 @@ import {
   buildPlantPayload,
   formatWateringFrequency,
   normalizeWateringFrequencyUnit,
+  validatePlantForm,
 } from '../utils/plantForm';
 
 function SectionDivider({ label }) {
@@ -122,8 +123,19 @@ export default function AddEditPlantScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert('Required', 'Please give your plant a name.');
+    const validation = validatePlantForm({
+      name,
+      species,
+      sizeDescription,
+      healthStatus,
+      lightRequirements,
+      humidityRequirements,
+      wateringFrequency,
+      wateringFrequencyUnit,
+    });
+
+    if (!validation.valid) {
+      Alert.alert(validation.title, validation.message);
       return;
     }
 

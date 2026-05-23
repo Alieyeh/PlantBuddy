@@ -79,14 +79,18 @@ export default function ListingsScreen({ navigation }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [listingTypeFilter, setListingTypeFilter] = useState(BROWSE_TYPE_FILTERS.ALL);
   const [sortBy, setSortBy] = useState(BROWSE_SORT_OPTIONS.NEWEST);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fetchListings = useCallback(() => {
     async function load() {
       setLoading(true);
       try {
+        setErrorMessage('');
         const data = await listingsService.getOpenListings();
         setListings(data);
       } catch (err) {
+        setErrorMessage(err.message || 'Failed to load listings');
+        setListings([]);
         Alert.alert('Error', err.message || 'Failed to load listings');
       } finally {
         setLoading(false);
@@ -180,11 +184,15 @@ export default function ListingsScreen({ navigation }) {
 
   const renderEmptyState = () => (
     <View style={styles.emptyInner}>
-      <Text style={styles.emptyTitle}>{hasActiveFilters ? 'No matching listings' : 'No listings right now'}</Text>
+      <Text style={styles.emptyTitle}>
+        {errorMessage ? 'Browse could not load' : hasActiveFilters ? 'No matching listings' : 'No open listings yet'}
+      </Text>
       <Text style={styles.emptyBody}>
-        {hasActiveFilters
+        {errorMessage
+          ? `${errorMessage}. If this mentions watering_frequency_unit, run the latest Supabase migration.`
+          : hasActiveFilters
           ? 'Try a different search, listing type, or sort option.'
-          : 'Check back soon, or post your own plant to get started.'}
+          : 'Browse shows open listings, not every plant profile. Create a sale, gift, swap, or sitter listing from My Plants to make a plant appear here.'}
       </Text>
     </View>
   );
@@ -192,8 +200,8 @@ export default function ListingsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Browse Plants</Text>
-        <Text style={styles.subtitle}>Sale, gift, swap, and sitter listings</Text>
+        <Text style={styles.title}>Browse Listings</Text>
+        <Text style={styles.subtitle}>Open sale, gift, swap, and sitter listings</Text>
 
         <TextInput
           value={searchTerm}

@@ -47,6 +47,7 @@ Current behavior:
 - Users can create plant profiles.
 - Users can edit plant profiles.
 - The add/edit plant form now uses a designed plant-profile hero, grouped form cards, and care preview tiles for water, light, and humidity.
+- The add/edit plant form validates user input against the database shape before saving, including varchar-style text limits, positive whole-number watering frequency, and allowed watering units.
 - Delete is implemented as a soft delete by setting `is_active = false` and `archived_at`.
 - Plant data is read/written directly through the `plants` table in Supabase.
 
@@ -83,6 +84,7 @@ Current behavior:
 - Owners can create `SITTING_REQUEST`, `GIFT`, and `SALE` listings for one of their plants.
 - The listing is inserted into `plant_listings` with status `OPEN`.
 - Users can browse all open listing modes: `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP`.
+- Browse reads from `plant_listings` joined to `plants`; it does not show every plant row unless that plant has an open listing.
 - Browse supports text search across listing and plant fields.
 - Browse supports listing-type filters for all, sitting, gifts, sales, and swaps.
 - Browse supports sorting by newest, soonest sitting date, price low-to-high, and price high-to-low.

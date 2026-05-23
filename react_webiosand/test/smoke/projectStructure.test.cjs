@@ -129,6 +129,7 @@ test('RLS hardening guards listing ownership, sitter applications, and swap offe
 
 test('current application and marketplace flows are wired into navigation and services', () => {
   const navigator = read('react_webiosand/src/navigation/AppNavigator.js');
+  const applyScreen = read('react_webiosand/src/screens/ApplyScreen.js');
   const detailScreen = read('react_webiosand/src/screens/ListingDetailScreen.js');
   const service = read('react_webiosand/src/api/listingsService.js');
   const listingsDomain = read('react_webiosand/src/domain/listings.js');
@@ -147,6 +148,7 @@ test('current application and marketplace flows are wired into navigation and se
   assert.match(navigator, /tabIconWrapActive/);
   assert.match(detailScreen, /Apply to Sit/);
   assert.match(detailScreen, /navigation\.navigate\('Apply'/);
+  assert.match(applyScreen, /isIsoDate/);
   assert.match(service, /applyToListing/);
   assert.match(service, /getApplicationsForListing/);
   assert.match(service, /updateApplicationStatus/);
@@ -201,6 +203,8 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(plantScreen, /WATERING_FREQUENCY_UNITS/);
   assert.match(plantScreen, /wateringFrequencyUnit/);
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
+  assert.match(listingScreen, /navigateToBrowseAfterPost/);
+  assert.match(listingScreen, /getParent\(\)\?\.navigate\('Browse'/);
   assert.match(detailScreen, /PlantIllustration/);
   assert.match(detailScreen, /HeroVines/);
   assert.match(detailScreen, /CareTile/);

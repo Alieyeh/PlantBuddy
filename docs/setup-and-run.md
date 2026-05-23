@@ -169,6 +169,20 @@ Check whether Supabase email confirmation is enabled. If it is enabled, confirm 
 
 Supabase stores password hashes in its protected Auth schema, not in the public PlantBuddy tables. The app should never query or store user passwords directly.
 
+### Browse Is Not Showing Plants
+
+Browse shows open rows from `plant_listings` joined to their plant details. It does not show every row in the `plants` table automatically.
+
+To make a plant appear in Browse:
+
+1. Log in.
+2. Go to `My Plants`.
+3. Create or choose a plant.
+4. Create a sale, gift, swap, or sitter listing for that plant.
+5. Confirm the matching `plant_listings` row has `status = 'OPEN'`.
+
+If Browse shows an error mentioning `watering_frequency_unit`, run `android_only/db/2026_05_23_watering_frequency_unit.sql` in the Supabase SQL Editor. That column must exist before the updated Browse query can join plant care details.
+
 ### RLS Permission Errors
 
 Likely causes:

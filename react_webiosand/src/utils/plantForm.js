@@ -9,9 +9,10 @@ function parseOptionalInteger(value) {
   if (value == null) return null;
   const text = String(value).trim();
   if (!text) return null;
+  if (!/^\d+$/.test(text)) return null;
 
   const number = Number.parseInt(text, 10);
-  return Number.isNaN(number) ? null : number;
+  return number > 0 ? number : null;
 }
 
 /**
@@ -30,6 +31,15 @@ const WATERING_FREQUENCY_UNITS = Object.freeze([
   { value: 'weeks', label: 'Weeks', singular: 'week' },
   { value: 'months', label: 'Months', singular: 'month' },
 ]);
+
+const PLANT_TEXT_LIMITS = Object.freeze({
+  name: 150,
+  species: 150,
+  sizeDescription: 100,
+  healthStatus: 100,
+  lightRequirements: 120,
+  humidityRequirements: 120,
+});
 
 function normalizeWateringFrequencyUnit(value) {
   const unit = String(value ?? '').trim().toLowerCase();
@@ -50,6 +60,15 @@ function formatWateringFrequency(amount, unit = 'days', compact = false) {
   }
 
   return `Every ${frequency} ${displayUnit}`;
+}
+
+function isAllowedWateringFrequencyUnit(value) {
+  const unit = String(value ?? '').trim().toLowerCase();
+  return WATERING_FREQUENCY_UNITS.some((option) => option.value === unit);
+}
+
+function isWithinLimit(value, limit) {
+  return String(value ?? '').trim().length <= limit;
 }
 
 /**
@@ -100,6 +119,33 @@ function validatePlantForm(form) {
     return { valid: false, title: 'Error', message: 'Plant name is required' };
   }
 
+  for (const [field, limit] of Object.entries(PLANT_TEXT_LIMITS)) {
+    if (!isWithinLimit(form[field], limit)) {
+      return {
+        valid: false,
+        title: 'Too long',
+        message: `Please keep ${field.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`)} to ${limit} characters or fewer.`,
+      };
+    }
+  }
+
+  const wateringText = String(form.wateringFrequency ?? '').trim();
+  if (wateringText && parseOptionalInteger(wateringText) == null) {
+    return {
+      valid: false,
+      title: 'Invalid watering frequency',
+      message: 'Watering frequency must be a whole number greater than 0.',
+    };
+  }
+
+  if (wateringText && !isAllowedWateringFrequencyUnit(form.wateringFrequencyUnit)) {
+    return {
+      valid: false,
+      title: 'Invalid watering unit',
+      message: 'Choose days, weeks, or months for the watering frequency unit.',
+    };
+  }
+
   return { valid: true };
 }
 
@@ -107,6 +153,7 @@ module.exports = {
   WATERING_FREQUENCY_UNITS,
   buildPlantPayload,
   formatWateringFrequency,
+  isAllowedWateringFrequencyUnit,
   normalizeWateringFrequencyUnit,
   optionalText,
   parseOptionalInteger,

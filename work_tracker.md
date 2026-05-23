@@ -119,6 +119,8 @@ Completed:
 
 - Add/Edit Plant now has a designed plant-profile hero, grouped form cards, and live care preview tiles for water, light, and humidity
 - Add/Edit Plant now lets users choose watering frequency units: days, weeks, or months
+- Add/Edit Plant validates user-entered values against database-shaped expectations before saving, including text length limits, positive whole-number watering frequency, and allowed units
+- Browse now labels itself as listing-based and explains that plant rows only appear after they have an open listing
 - Listing detail keeps its designed plant hero, care tiles, and note panels
 - the authenticated bottom navigation now uses a raised rounded tab bar with shape-based icons instead of fragile emoji glyphs
 

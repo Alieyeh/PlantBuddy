@@ -23,6 +23,9 @@ test('getTodayIsoDate returns the YYYY-MM-DD part of a Date', () => {
 
 test('isIsoDate validates the form date shape', () => {
   assert.equal(isIsoDate('2026-06-01'), true);
+  assert.equal(isIsoDate('2026-02-29'), false);
+  assert.equal(isIsoDate('2028-02-29'), true);
+  assert.equal(isIsoDate('2026-13-01'), false);
   assert.equal(isIsoDate('06-01-2026'), false);
   assert.equal(isIsoDate('2026-6-1'), false);
   assert.equal(isIsoDate(''), false);

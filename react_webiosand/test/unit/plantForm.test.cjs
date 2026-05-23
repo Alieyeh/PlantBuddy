@@ -19,6 +19,10 @@ test('parseOptionalInteger handles optional numeric form input', () => {
   assert.equal(parseOptionalInteger('7'), 7);
   assert.equal(parseOptionalInteger(' 12 '), 12);
   assert.equal(parseOptionalInteger('abc'), null);
+  assert.equal(parseOptionalInteger('7abc'), null);
+  assert.equal(parseOptionalInteger('2.5'), null);
+  assert.equal(parseOptionalInteger('-1'), null);
+  assert.equal(parseOptionalInteger('0'), null);
 });
 
 test('validatePlantForm requires a plant name', () => {
@@ -29,6 +33,29 @@ test('validatePlantForm requires a plant name', () => {
   });
 
   assert.deepEqual(validatePlantForm({ name: 'Gerald' }), { valid: true });
+});
+
+test('validatePlantForm enforces database-shaped plant field types and limits', () => {
+  assert.deepEqual(
+    validatePlantForm({ name: 'Fern', wateringFrequency: 'weekly', wateringFrequencyUnit: 'days' }),
+    {
+      valid: false,
+      title: 'Invalid watering frequency',
+      message: 'Watering frequency must be a whole number greater than 0.',
+    }
+  );
+
+  assert.deepEqual(
+    validatePlantForm({ name: 'Fern', wateringFrequency: '2', wateringFrequencyUnit: 'years' }),
+    {
+      valid: false,
+      title: 'Invalid watering unit',
+      message: 'Choose days, weeks, or months for the watering frequency unit.',
+    }
+  );
+
+  assert.equal(validatePlantForm({ name: 'x'.repeat(151) }).valid, false);
+  assert.deepEqual(validatePlantForm({ name: 'Fern', wateringFrequency: '2', wateringFrequencyUnit: 'weeks' }), { valid: true });
 });
 
 test('optionalText trims text and preserves null for blank values', () => {

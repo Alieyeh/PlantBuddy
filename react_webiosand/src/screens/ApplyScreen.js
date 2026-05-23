@@ -8,8 +8,7 @@ import { listingsService } from '../api/listingsService';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
 import { MACHINE_TEXTBOX_PROPS, TEXTBOX_SPELLCHECK_PROPS } from '../utils/textInputProps';
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+import { isIsoDate } from '../utils/listingForm';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return null;
@@ -27,8 +26,8 @@ export default function ApplyScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleApply = async () => {
-    if (proposedStart && !DATE_RE.test(proposedStart)) { Alert.alert('Error', 'Start date must be YYYY-MM-DD'); return; }
-    if (proposedEnd && !DATE_RE.test(proposedEnd)) { Alert.alert('Error', 'End date must be YYYY-MM-DD'); return; }
+    if (proposedStart && !isIsoDate(proposedStart)) { Alert.alert('Error', 'Start date must be a real YYYY-MM-DD date'); return; }
+    if (proposedEnd && !isIsoDate(proposedEnd)) { Alert.alert('Error', 'End date must be a real YYYY-MM-DD date'); return; }
     if (proposedStart && proposedEnd && proposedEnd < proposedStart) { Alert.alert('Error', 'End date must be on or after start date'); return; }
 
     setLoading(true);

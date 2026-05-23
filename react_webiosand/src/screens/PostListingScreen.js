@@ -81,6 +81,11 @@ export default function PostListingScreen({ route, navigation }) {
     init();
   }, []);
 
+  const navigateToBrowseAfterPost = () => {
+    navigation.popToTop();
+    navigation.getParent()?.navigate('Browse', { screen: 'ListingsFeed' });
+  };
+
   const handlePost = async () => {
     const validation = validateListingForm({
       listingType,
@@ -112,7 +117,7 @@ export default function PostListingScreen({ route, navigation }) {
         currencyCode,
       }));
       Alert.alert(LISTING_COPY[listingType].successTitle, LISTING_COPY[listingType].successMessage, [
-        { text: 'OK', onPress: () => navigation.goBack() },
+        { text: 'OK', onPress: navigateToBrowseAfterPost },
       ]);
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to post listing.');
