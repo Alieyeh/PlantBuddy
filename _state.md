@@ -23,11 +23,12 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] Covers: users, roles, plants, listings, applications, swaps, handoffs, contracts, messaging, payments, notifications, reviews, moderation, audit log
 - [x] Added marketplace alignment migration: `android_only/db/2026_05_19_marketplace_alignment.sql`
 - [x] Added security hardening migration: `android_only/db/2026_05_20_security_rls_hardening.sql`
+- [x] Added watering frequency unit migration: `android_only/db/2026_05_23_watering_frequency_unit.sql`
 - [x] Added `listing_handoffs` and `listing_handoff_reviews`
 - [x] Listing type vocabulary aligned to `GIFT` instead of `DONATION`
 - [x] Listing validation rules tightened by listing type
 - [x] Added `confirm_listing_handoff` RPC for atomic handoff confirmation and ownership transfer
-- [ ] Live Supabase should be checked for both `2026_05_19_marketplace_alignment.sql` and `2026_05_20_security_rls_hardening.sql`; re-run or verify if behavior contradicts the repo
+- [ ] Live Supabase should be checked for `2026_05_19_marketplace_alignment.sql`, `2026_05_20_security_rls_hardening.sql`, and `2026_05_23_watering_frequency_unit.sql`; re-run or verify if behavior contradicts the repo
 - [ ] Seed data file (`002_seed_dev.sql`) not committed
 
 ### Backend — Supabase
@@ -37,14 +38,14 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] **RLS policies written for all 23 tables** (`android_only/db/rls_policies.sql`) — `refresh_tokens` section removed (session 4 fix)
 - [x] `plant_listings`, `listing_applications`, `swap_proposals`, `listing_handoffs`, `listing_handoff_reviews`, and `contracts` secured by RLS and accessible via PostgREST
 - [ ] `react_webiosand/.env` is not present in this checkout; create it locally with Supabase URL + anon key
-- [ ] Live Supabase still needs migrations verified so `confirm_listing_handoff` and hardened RLS policies exist remotely
+- [ ] Live Supabase still needs migrations verified so `confirm_listing_handoff`, hardened RLS policies, and `plants.watering_frequency_unit` exist remotely
 
 ### Expo Frontend (`react_webiosand/`) — Android + iOS + Web
 - [x] Session management (AsyncStorage)
 - [x] Login screen
 - [x] Register screen
 - [x] Plants list screen — with "Find sitter" button per plant card
-- [x] Add/edit plant screen with designed hero, grouped sections, and care preview tiles
+- [x] Add/edit plant screen with designed hero, grouped sections, care preview tiles, and watering frequency units
 - [x] Auth-gated navigation
 - [x] **Tab navigation** - raised bottom tabs for My Plants, Browse, and Exchanges
 - [x] **ListingsScreen** — feed of all open marketplace and sitting listings

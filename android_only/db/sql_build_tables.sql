@@ -350,6 +350,7 @@ CREATE TABLE IF NOT EXISTS plants (
     size_description            VARCHAR(100),
     health_status               VARCHAR(100),
     watering_frequency_days     INTEGER,
+    watering_frequency_unit     TEXT NOT NULL DEFAULT 'days',
     light_requirements          VARCHAR(120),
     humidity_requirements       VARCHAR(120),
     special_instructions        TEXT,
@@ -358,7 +359,8 @@ CREATE TABLE IF NOT EXISTS plants (
     created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     archived_at                 TIMESTAMPTZ,
-    CONSTRAINT plants_watering_chk CHECK (watering_frequency_days IS NULL OR watering_frequency_days > 0)
+    CONSTRAINT plants_watering_chk CHECK (watering_frequency_days IS NULL OR watering_frequency_days > 0),
+    CONSTRAINT plants_watering_unit_chk CHECK (watering_frequency_unit IN ('days', 'weeks', 'months'))
 );
 
 CREATE TABLE IF NOT EXISTS plant_photos (

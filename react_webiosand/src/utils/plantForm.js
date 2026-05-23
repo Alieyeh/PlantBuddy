@@ -25,6 +25,33 @@ function optionalText(value) {
   return text || null;
 }
 
+const WATERING_FREQUENCY_UNITS = Object.freeze([
+  { value: 'days', label: 'Days', singular: 'day' },
+  { value: 'weeks', label: 'Weeks', singular: 'week' },
+  { value: 'months', label: 'Months', singular: 'month' },
+]);
+
+function normalizeWateringFrequencyUnit(value) {
+  const unit = String(value ?? '').trim().toLowerCase();
+  return WATERING_FREQUENCY_UNITS.some((option) => option.value === unit) ? unit : 'days';
+}
+
+function formatWateringFrequency(amount, unit = 'days', compact = false) {
+  const frequency = parseOptionalInteger(amount);
+  if (!frequency) return null;
+
+  const normalizedUnit = normalizeWateringFrequencyUnit(unit);
+  const option = WATERING_FREQUENCY_UNITS.find((item) => item.value === normalizedUnit);
+  const displayUnit = frequency === 1 ? option.singular : option.value;
+
+  if (compact) {
+    const suffix = normalizedUnit === 'days' ? 'd' : normalizedUnit === 'weeks' ? 'wk' : 'mo';
+    return `Every ${frequency}${suffix}`;
+  }
+
+  return `Every ${frequency} ${displayUnit}`;
+}
+
 /**
  * Normalizes plant form fields into the snake_case shape used by Supabase.
  * Blank optional text fields are stored as null instead of empty strings.
@@ -39,10 +66,13 @@ function optionalText(value) {
  * @param {string} [form.lightRequirements]
  * @param {string} [form.humidityRequirements]
  * @param {string} [form.wateringFrequency]
+ * @param {string} [form.wateringFrequencyUnit]
  * @param {string} [form.specialInstructions]
  * @returns {object}
  */
 function buildPlantPayload(form) {
+  const wateringFrequencyDays = parseOptionalInteger(form.wateringFrequency);
+
   return {
     name: (form.name ?? '').trim(),
     species: optionalText(form.species),
@@ -52,7 +82,8 @@ function buildPlantPayload(form) {
     health_status: optionalText(form.healthStatus),
     light_requirements: optionalText(form.lightRequirements),
     humidity_requirements: optionalText(form.humidityRequirements),
-    watering_frequency_days: parseOptionalInteger(form.wateringFrequency),
+    watering_frequency_days: wateringFrequencyDays,
+    watering_frequency_unit: wateringFrequencyDays ? normalizeWateringFrequencyUnit(form.wateringFrequencyUnit) : 'days',
     special_instructions: optionalText(form.specialInstructions),
   };
 }
@@ -73,7 +104,10 @@ function validatePlantForm(form) {
 }
 
 module.exports = {
+  WATERING_FREQUENCY_UNITS,
   buildPlantPayload,
+  formatWateringFrequency,
+  normalizeWateringFrequencyUnit,
   optionalText,
   parseOptionalInteger,
   validatePlantForm,

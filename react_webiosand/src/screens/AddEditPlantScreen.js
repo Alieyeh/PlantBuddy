@@ -11,12 +11,12 @@ import {
   SHORT_TEXTBOX_SUGGESTION_PROPS,
   TEXTBOX_SPELLCHECK_PROPS,
 } from '../utils/textInputProps';
-
-const parseInteger = (val) => {
-  if (!val || val.trim() === '') return null;
-  const n = parseInt(val.trim(), 10);
-  return isNaN(n) ? null : n;
-};
+import {
+  WATERING_FREQUENCY_UNITS,
+  buildPlantPayload,
+  formatWateringFrequency,
+  normalizeWateringFrequencyUnit,
+} from '../utils/plantForm';
 
 function SectionDivider({ label }) {
   return (
@@ -74,9 +74,9 @@ function FormSection({ title, subtitle, children }) {
   );
 }
 
-function CarePreview({ wateringFrequency, lightRequirements, humidityRequirements }) {
+function CarePreview({ wateringFrequency, wateringFrequencyUnit, lightRequirements, humidityRequirements }) {
   const careItems = [
-    { label: 'Water', value: wateringFrequency ? `Every ${wateringFrequency} days` : 'Not set', color: C.leaf },
+    { label: 'Water', value: formatWateringFrequency(wateringFrequency, wateringFrequencyUnit) || 'Not set', color: C.leaf },
     { label: 'Light', value: lightRequirements || 'Not set', color: C.amber },
     { label: 'Humidity', value: humidityRequirements || 'Not set', color: C.moss },
   ];
@@ -115,6 +115,9 @@ export default function AddEditPlantScreen({ route, navigation }) {
   const [wateringFrequency, setWateringFrequency] = useState(
     existing?.watering_frequency_days != null ? String(existing.watering_frequency_days) : ''
   );
+  const [wateringFrequencyUnit, setWateringFrequencyUnit] = useState(
+    normalizeWateringFrequencyUnit(existing?.watering_frequency_unit)
+  );
   const [specialInstructions, setSpecialInstructions] = useState(existing?.special_instructions ?? '');
   const [loading, setLoading] = useState(false);
 
@@ -124,18 +127,19 @@ export default function AddEditPlantScreen({ route, navigation }) {
       return;
     }
 
-    const plantData = {
-      name: name.trim(),
-      species: species.trim() || null,
-      description: description.trim() || null,
-      location_notes: locationNotes.trim() || null,
-      size_description: sizeDescription.trim() || null,
-      health_status: healthStatus.trim() || null,
-      light_requirements: lightRequirements.trim() || null,
-      humidity_requirements: humidityRequirements.trim() || null,
-      watering_frequency_days: parseInteger(wateringFrequency),
-      special_instructions: specialInstructions.trim() || null,
-    };
+    const plantData = buildPlantPayload({
+      name,
+      species,
+      description,
+      locationNotes,
+      sizeDescription,
+      healthStatus,
+      lightRequirements,
+      humidityRequirements,
+      wateringFrequency,
+      wateringFrequencyUnit,
+      specialInstructions,
+    });
 
     setLoading(true);
     try {
@@ -191,12 +195,45 @@ export default function AddEditPlantScreen({ route, navigation }) {
         <FormSection title="Care rhythm" subtitle="These fields become the quick care snapshot on plant and listing detail pages.">
           <CarePreview
             wateringFrequency={wateringFrequency}
+            wateringFrequencyUnit={wateringFrequencyUnit}
             lightRequirements={lightRequirements}
             humidityRequirements={humidityRequirements}
           />
 
-          <Text style={styles.fieldLabel}>Watering Frequency (days)</Text>
-          <TextInput style={styles.input} placeholder="e.g. 7" placeholderTextColor={C.stone} keyboardType="numeric" value={wateringFrequency} onChangeText={setWateringFrequency} {...MACHINE_TEXTBOX_PROPS} />
+          <Text style={styles.fieldLabel}>Watering Frequency</Text>
+          <View style={styles.frequencyRow}>
+            <TextInput
+              style={[styles.input, styles.frequencyInput]}
+              placeholder="e.g. 7"
+              placeholderTextColor={C.stone}
+              keyboardType="numeric"
+              value={wateringFrequency}
+              onChangeText={setWateringFrequency}
+              {...MACHINE_TEXTBOX_PROPS}
+            />
+            <View style={styles.unitControl}>
+              {WATERING_FREQUENCY_UNITS.map((unit) => (
+                <TouchableOpacity
+                  key={unit.value}
+                  style={[
+                    styles.unitOption,
+                    wateringFrequencyUnit === unit.value && styles.unitOptionActive,
+                  ]}
+                  onPress={() => setWateringFrequencyUnit(unit.value)}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    style={[
+                      styles.unitOptionText,
+                      wateringFrequencyUnit === unit.value && styles.unitOptionTextActive,
+                    ]}
+                  >
+                    {unit.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           <Text style={styles.fieldLabel}>Light Requirements</Text>
           <TextInput style={styles.input} placeholder="e.g. Bright indirect light" placeholderTextColor={C.stone} value={lightRequirements} onChangeText={setLightRequirements} {...TEXTBOX_SPELLCHECK_PROPS} />
@@ -330,6 +367,49 @@ const styles = StyleSheet.create({
   sectionSubtitle: { ...T.caption, color: C.stone, marginTop: 2 },
   fieldLabel: { ...T.label, marginBottom: S.xs, marginTop: S.xs },
   input: { ...shared.input },
+  frequencyRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: S.sm,
+    alignItems: 'flex-start',
+  },
+  frequencyInput: {
+    flexGrow: 1,
+    flexBasis: 96,
+  },
+  unitControl: {
+    flexGrow: 2,
+    flexBasis: 220,
+    flexDirection: 'row',
+    backgroundColor: C.mist,
+    borderRadius: S.button,
+    borderWidth: 1,
+    borderColor: C.sage,
+    padding: 3,
+    marginBottom: S.sm,
+  },
+  unitOption: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: S.sm,
+  },
+  unitOptionActive: {
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.amberLight,
+    ...S.cardShadow,
+  },
+  unitOptionText: {
+    ...T.label,
+    color: C.stone,
+  },
+  unitOptionTextActive: {
+    color: C.forest,
+    fontWeight: '700',
+  },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
   carePreview: {
     flexDirection: 'row',

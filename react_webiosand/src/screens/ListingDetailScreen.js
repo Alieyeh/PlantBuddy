@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { listingsService, LISTING_TYPES } from '../api/listingsService';
 import { supabase } from '../lib/supabase';
 import { C, T, S, shared } from '../lib/theme';
+import { formatWateringFrequency } from '../utils/plantForm';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -155,8 +156,17 @@ export default function ListingDetailScreen({ route, navigation }) {
         ? 'Swap listing'
         : 'Sitting request';
   const headlineDetail = plant?.health_status || plant?.size_description || 'Plant profile';
+  const wateringFrequencyLabel = formatWateringFrequency(
+    plant?.watering_frequency_days,
+    plant?.watering_frequency_unit
+  );
+  const compactWateringFrequencyLabel = formatWateringFrequency(
+    plant?.watering_frequency_days,
+    plant?.watering_frequency_unit,
+    true
+  );
   const careSummary = [
-    plant?.watering_frequency_days ? `Water every ${plant.watering_frequency_days} days` : null,
+    wateringFrequencyLabel,
     plant?.light_requirements,
     plant?.humidity_requirements,
   ].filter(Boolean);
@@ -320,12 +330,12 @@ export default function ListingDetailScreen({ route, navigation }) {
             <DetailStat label="Mode" value={modeLabel} />
             {listing.listing_type === LISTING_TYPES.SITTING_REQUEST && days != null ? <DetailStat label="Duration" value={`${days} days`} /> : null}
             {listing.listing_type === LISTING_TYPES.SALE ? <DetailStat label="Price" value={`${listing.currency_code} ${Number(listing.sale_price ?? 0).toFixed(2)}`} /> : null}
-            {plant?.watering_frequency_days ? <DetailStat label="Water" value={`Every ${plant.watering_frequency_days}d`} /> : null}
+            {compactWateringFrequencyLabel ? <DetailStat label="Water" value={compactWateringFrequencyLabel} /> : null}
           </View>
 
           {careSummary.length > 0 ? <Text style={styles.careIntro}>Care snapshot</Text> : null}
           <View style={styles.careGrid}>
-            <CareTile title="Water rhythm" value={plant?.watering_frequency_days ? `Every ${plant.watering_frequency_days} days` : null} accentColor={C.leaf} />
+            <CareTile title="Water rhythm" value={wateringFrequencyLabel} accentColor={C.leaf} />
             <CareTile title="Light mood" value={plant?.light_requirements} accentColor={C.amber} />
             <CareTile title="Humidity" value={plant?.humidity_requirements} accentColor={C.moss} />
           </View>

@@ -61,6 +61,12 @@ The schema file creates tables, enum types, indexes, and the `handle_new_user()`
 
 The RLS file enables Row Level Security and creates access policies.
 
+If your Supabase database already existed before watering frequency units were added, run this migration too:
+
+3. `android_only/db/2026_05_23_watering_frequency_unit.sql`
+
+That migration adds `plants.watering_frequency_unit` with allowed values `days`, `weeks`, and `months`, while keeping existing plant rows as `days`.
+
 ## 4. Check Auth Settings
 
 In Supabase Auth settings, decide how local development should work:

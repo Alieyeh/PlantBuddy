@@ -14,7 +14,7 @@ export const api = {
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase
       .from('plants')
-      .select('id, name, species, description, size_description, health_status, watering_frequency_days, light_requirements, humidity_requirements, special_instructions, location_notes, is_active, created_at, updated_at')
+      .select('id, name, species, description, size_description, health_status, watering_frequency_days, watering_frequency_unit, light_requirements, humidity_requirements, special_instructions, location_notes, is_active, created_at, updated_at')
       .eq('current_owner_user_id', user.id)
       .eq('is_active', true)
       .order('name');

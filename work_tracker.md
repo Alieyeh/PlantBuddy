@@ -118,6 +118,7 @@ Files:
 Completed:
 
 - Add/Edit Plant now has a designed plant-profile hero, grouped form cards, and live care preview tiles for water, light, and humidity
+- Add/Edit Plant now lets users choose watering frequency units: days, weeks, or months
 - Listing detail keeps its designed plant hero, care tiles, and note panels
 - the authenticated bottom navigation now uses a raised rounded tab bar with shape-based icons instead of fragile emoji glyphs
 
@@ -125,8 +126,11 @@ Files:
 
 - `react_webiosand/src/screens/AddEditPlantScreen.js`
 - `react_webiosand/src/screens/ListingDetailScreen.js`
+- `react_webiosand/src/screens/ListingsScreen.js`
+- `react_webiosand/src/utils/plantForm.js`
 - `react_webiosand/src/navigation/AppNavigator.js`
 - `react_webiosand/test/smoke/projectStructure.test.cjs`
+- `android_only/db/2026_05_23_watering_frequency_unit.sql`
 
 ### Auth flow clarification
 

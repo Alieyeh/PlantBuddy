@@ -135,6 +135,7 @@ C:\PlantBuddy
 |   |-- db\
 |   |   |-- sql_build_tables.sql
 |   |   |-- rls_policies.sql
+|   |   |-- 2026_05_23_watering_frequency_unit.sql
 |   |   |-- db_schema_mermaid.png
 |   |-- docs\
 |   |   |-- ER.jpg

@@ -17,6 +17,7 @@ There is no active Java/Tomcat backend in the current project direction.
 
 - `android_only/db/sql_build_tables.sql` - schema, enum types, indexes, auth trigger.
 - `android_only/db/rls_policies.sql` - Row Level Security policies.
+- `android_only/db/2026_05_23_watering_frequency_unit.sql` - forward migration for plant watering frequency units.
 - `react_webiosand/src/lib/supabase.js` - frontend Supabase client.
 
 ## Schema Summary
@@ -44,6 +45,11 @@ This is handled by the `handle_new_user()` trigger.
 - `plant_care_tasks`
 
 Plants are owned through `current_owner_user_id`, which references `owner_profiles(user_id)`.
+
+Plant care fields now include:
+
+- `watering_frequency_days` - the numeric frequency amount retained for backward compatibility.
+- `watering_frequency_unit` - the frequency unit, constrained to `days`, `weeks`, or `months`, with existing rows defaulting to `days`.
 
 ### Listings And Matching
 
@@ -96,7 +102,7 @@ These are mostly future-facing right now.
 
 ## Setup Order
 
-In Supabase SQL editor:
+For a fresh Supabase setup, run in Supabase SQL editor:
 
 1. Run `android_only/db/sql_build_tables.sql`.
 2. Run `android_only/db/rls_policies.sql`.
@@ -105,6 +111,26 @@ In Supabase SQL editor:
    - `auth.users`
    - `public.users`
    - `public.owner_profiles`
+
+For an existing Supabase database that already has the `plants` table, also run:
+
+```sql
+ALTER TABLE public.plants
+ADD COLUMN IF NOT EXISTS watering_frequency_unit TEXT NOT NULL DEFAULT 'days';
+
+UPDATE public.plants
+SET watering_frequency_unit = 'days'
+WHERE watering_frequency_unit IS NULL;
+
+ALTER TABLE public.plants
+DROP CONSTRAINT IF EXISTS plants_watering_unit_chk;
+
+ALTER TABLE public.plants
+ADD CONSTRAINT plants_watering_unit_chk
+CHECK (watering_frequency_unit IN ('days', 'weeks', 'months'));
+```
+
+This is also saved in `android_only/db/2026_05_23_watering_frequency_unit.sql`.
 
 ## Important Schema Warning
 

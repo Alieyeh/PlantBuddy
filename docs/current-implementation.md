@@ -60,7 +60,7 @@ Implemented plant fields include:
 - health status
 - light requirements
 - humidity requirements
-- watering frequency
+- watering frequency amount and unit (`days`, `weeks`, or `months`)
 - special instructions
 
 ### Listings

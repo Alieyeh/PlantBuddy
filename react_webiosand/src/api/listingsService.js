@@ -43,6 +43,7 @@ export const listingsService = {
           species,
           size_description,
           watering_frequency_days,
+          watering_frequency_unit,
           light_requirements,
           humidity_requirements
         )
@@ -613,6 +614,7 @@ export const listingsService = {
           size_description,
           health_status,
           watering_frequency_days,
+          watering_frequency_unit,
           light_requirements,
           humidity_requirements,
           special_instructions,

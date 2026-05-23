@@ -2,7 +2,10 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const {
+  WATERING_FREQUENCY_UNITS,
   buildPlantPayload,
+  formatWateringFrequency,
+  normalizeWateringFrequencyUnit,
   optionalText,
   parseOptionalInteger,
   validatePlantForm,
@@ -34,6 +37,16 @@ test('optionalText trims text and preserves null for blank values', () => {
   assert.equal(optionalText(undefined), null);
 });
 
+test('watering frequency helpers normalize units and display labels', () => {
+  assert.deepEqual(WATERING_FREQUENCY_UNITS.map((unit) => unit.value), ['days', 'weeks', 'months']);
+  assert.equal(normalizeWateringFrequencyUnit('weeks'), 'weeks');
+  assert.equal(normalizeWateringFrequencyUnit('bad-value'), 'days');
+  assert.equal(formatWateringFrequency('1', 'weeks'), 'Every 1 week');
+  assert.equal(formatWateringFrequency('2', 'months'), 'Every 2 months');
+  assert.equal(formatWateringFrequency('7', 'days', true), 'Every 7d');
+  assert.equal(formatWateringFrequency('', 'days'), null);
+});
+
 test('buildPlantPayload trims text and converts blank optional fields to null', () => {
   assert.deepEqual(
     buildPlantPayload({
@@ -46,6 +59,7 @@ test('buildPlantPayload trims text and converts blank optional fields to null', 
       lightRequirements: ' Bright indirect ',
       humidityRequirements: '',
       wateringFrequency: ' 7 ',
+      wateringFrequencyUnit: 'weeks',
       specialInstructions: ' Do not move ',
     }),
     {
@@ -58,7 +72,13 @@ test('buildPlantPayload trims text and converts blank optional fields to null', 
       light_requirements: 'Bright indirect',
       humidity_requirements: null,
       watering_frequency_days: 7,
+      watering_frequency_unit: 'weeks',
       special_instructions: 'Do not move',
     }
   );
+});
+
+test('buildPlantPayload defaults watering unit for old or blank forms', () => {
+  assert.equal(buildPlantPayload({ name: 'Fern', wateringFrequency: '3' }).watering_frequency_unit, 'days');
+  assert.equal(buildPlantPayload({ name: 'Fern', wateringFrequency: '' }).watering_frequency_unit, 'days');
 });

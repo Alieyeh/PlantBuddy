@@ -76,6 +76,7 @@ test('database schema and RLS files include the current MVP tables', () => {
   const schema = read('android_only/db/sql_build_tables.sql');
   const rls = read('android_only/db/rls_policies.sql');
   const securityMigration = read('android_only/db/2026_05_20_security_rls_hardening.sql');
+  const wateringMigration = read('android_only/db/2026_05_23_watering_frequency_unit.sql');
 
   assert.ok(schema.includes("CREATE TYPE listing_type AS ENUM ('SITTING_REQUEST', 'GIFT', 'SWAP', 'SALE')"));
 
@@ -101,6 +102,10 @@ test('database schema and RLS files include the current MVP tables', () => {
   ].forEach((statement) => assert.match(rls, new RegExp(statement)));
 
   assert.match(securityMigration, /2026_05_20_security_rls_hardening|plant_listings_insert_own|listing_applications_insert|swap_proposals_insert/);
+  assert.match(schema, /watering_frequency_unit\s+TEXT NOT NULL DEFAULT 'days'/);
+  assert.match(schema, /plants_watering_unit_chk/);
+  assert.match(wateringMigration, /ADD COLUMN IF NOT EXISTS watering_frequency_unit/);
+  assert.match(wateringMigration, /'days', 'weeks', 'months'/);
 });
 
 test('RLS hardening guards listing ownership, sitter applications, and swap offers', () => {
@@ -193,6 +198,8 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(plantScreen, /FormHero/);
   assert.match(plantScreen, /PlantSketch/);
   assert.match(plantScreen, /CarePreview/);
+  assert.match(plantScreen, /WATERING_FREQUENCY_UNITS/);
+  assert.match(plantScreen, /wateringFrequencyUnit/);
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(detailScreen, /PlantIllustration/);
   assert.match(detailScreen, /HeroVines/);

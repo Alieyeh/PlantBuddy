@@ -17,6 +17,7 @@ import {
   BROWSE_TYPE_FILTERS,
   filterAndSortListings,
 } from '../utils/browseListings';
+import { formatWateringFrequency } from '../utils/plantForm';
 import { SEARCH_TEXTBOX_SUGGESTION_PROPS } from '../utils/textInputProps';
 import { C, T, S } from '../lib/theme';
 
@@ -111,6 +112,11 @@ export default function ListingsScreen({ navigation }) {
     const dateRange = item.sitting_start_date
       ? `${formatDate(item.sitting_start_date)} - ${formatDate(item.sitting_end_date)}`
       : null;
+    const wateringFrequencyLabel = formatWateringFrequency(
+      plant?.watering_frequency_days,
+      plant?.watering_frequency_unit,
+      true
+    );
     const typeMeta = TYPE_META[item.listing_type] ?? TYPE_META[LISTING_TYPES.SITTING_REQUEST];
     const summary = item.listing_type === LISTING_TYPES.SALE
       ? `${item.currency_code ?? 'GBP'} ${Number(item.sale_price ?? 0).toFixed(2)}`
@@ -165,7 +171,7 @@ export default function ListingsScreen({ navigation }) {
 
         <View style={styles.chips}>
           {plant?.light_requirements ? <MetaChip label={`Light: ${plant.light_requirements}`} /> : null}
-          {plant?.watering_frequency_days ? <MetaChip label={`Water: every ${plant.watering_frequency_days}d`} /> : null}
+          {wateringFrequencyLabel ? <MetaChip label={`Water: ${wateringFrequencyLabel.toLowerCase()}`} /> : null}
           {item.listing_type === LISTING_TYPES.SALE ? <MetaChip label={`${item.currency_code ?? 'GBP'} ${Number(item.sale_price ?? 0).toFixed(2)}`} /> : null}
         </View>
       </TouchableOpacity>
