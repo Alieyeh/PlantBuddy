@@ -67,7 +67,9 @@ There is no active custom backend server in this repo.
 1. `App.js` loads Fraunces and Bricolage Grotesque fonts.
 2. `src/lib/theme.js` exposes shared color, typography, spacing, and reusable style tokens.
 3. Screens import theme tokens rather than defining each visual pattern from scratch.
-4. `design.md` describes the intended visual language and should guide new screen work.
+4. `src/navigation/AppNavigator.js` owns the authenticated bottom tab shell and its shape-based tab icons.
+5. `src/utils/textInputProps.js` centralizes spellcheck, autocorrect, autocomplete, and input-mode props for user-authored text boxes.
+6. `design.md` describes the intended visual language and should guide new screen work.
 
 ## Current File Tree
 
@@ -169,11 +171,11 @@ Key files:
 - `src/config/environment.js` - public Supabase environment validation and configuration errors.
 - `src/domain/listings.js` - listing/status constants and listing insert payload builder.
 - `src/lib/theme.js` - shared design tokens and reusable style fragments.
-- `src/navigation/AppNavigator.js` - app navigation.
+- `src/navigation/AppNavigator.js` - app navigation, authenticated bottom tabs, and tab icon styling.
 - `src/api/apiService.js` - plant CRUD.
 - `src/api/listingsService.js` - listing queries, creation, application submission, swaps, handoffs, and reviews.
 - `src/screens/*` - UI screens.
-- `src/utils/*` - shared form validation, browse filtering/sorting, inbox shaping, and payload helpers used by screens and tests.
+- `src/utils/*` - shared form validation, browse filtering/sorting, text-input defaults, inbox shaping, and payload helpers used by screens and tests.
 - `test/` - Node unit, integration, and smoke tests.
 
 ### `android_only/`

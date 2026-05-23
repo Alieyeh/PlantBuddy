@@ -192,10 +192,12 @@ PlantBuddy should feel listing-first.
 
 | Tab | Purpose |
 |---|---|
-| Explore | Browse plants and sit requests |
 | My Plants | Manage owned plants and active listings |
-| Inbox | Applications, messages, booking updates |
-| Profile | Identity, ratings, roles, saved searches |
+| Browse | Browse plants and open sitting, gift, sale, and swap listings |
+| Exchanges | Applications, swap proposals, handoff updates, and completed exchanges |
+| Profile | Identity, ratings, roles, saved searches; planned but not implemented yet |
+
+Current implementation note: the Expo app currently ships `My Plants`, `Browse`, and `Exchanges` as the authenticated bottom tabs. The bottom tab bar should use a raised rounded surface, warm borders, and clear shape-based icons rather than fragile emoji glyphs.
 
 ### Global CTA
 
@@ -307,6 +309,7 @@ Write trust copy like a calm host, not a legal disclaimer. The interface should 
 
 - Break the form into clear sections: Identity, Condition, Care, Logistics.
 - Use helper text that sounds like a knowledgeable plant friend.
+- Keep a visual plant-profile hero at the top and care preview tiles near the care fields.
 - Photo upload should feel first-class because imagery drives discovery.
 
 ### Sitter discovery
@@ -360,6 +363,7 @@ Write trust copy like a calm host, not a legal disclaimer. The interface should 
 - Label above field.
 - Clear validation and human error text.
 - Use segmented selectors for listing mode rather than raw dropdowns.
+- Natural-language fields should request spellcheck, autocorrect, autocomplete, and text/search input modes. Visible suggestions still depend on browser and operating-system settings.
 
 ### Chips
 

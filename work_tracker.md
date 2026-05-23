@@ -2,7 +2,7 @@
 
 Date: 2026.5.19
 Done by: EZ
-Last updated: 2026-05-20
+Last updated: 2026-05-23
 Purpose: give the next engineer or AI a fast, reliable handoff point with enough detail to continue implementation immediately.
 
 ---
@@ -96,9 +96,10 @@ Files:
 
 Completed:
 
-- natural-language text boxes now share spellcheck and keyboard suggestion defaults
+- natural-language text boxes now share spellcheck, autocorrect, autocomplete, and input-mode defaults
 - machine-readable fields such as dates, currency, email, password, and numeric values explicitly disable spelling behavior
 - Browse search uses suggestion/spellcheck defaults while keeping lowercase search entry
+- browser-visible spellcheck suggestions still depend on the user's browser and operating-system spellcheck/language settings
 
 Files:
 
@@ -111,6 +112,21 @@ Files:
 - `react_webiosand/src/screens/ProfileSetupScreen.js`
 - `react_webiosand/src/screens/RegisterScreen.js`
 - `react_webiosand/src/screens/ListingsScreen.js`
+
+### UI polish for plant forms and navigation
+
+Completed:
+
+- Add/Edit Plant now has a designed plant-profile hero, grouped form cards, and live care preview tiles for water, light, and humidity
+- Listing detail keeps its designed plant hero, care tiles, and note panels
+- the authenticated bottom navigation now uses a raised rounded tab bar with shape-based icons instead of fragile emoji glyphs
+
+Files:
+
+- `react_webiosand/src/screens/AddEditPlantScreen.js`
+- `react_webiosand/src/screens/ListingDetailScreen.js`
+- `react_webiosand/src/navigation/AppNavigator.js`
+- `react_webiosand/test/smoke/projectStructure.test.cjs`
 
 ### Auth flow clarification
 
@@ -207,11 +223,11 @@ Command:
 npm test
 ```
 
-Latest result after Security/RLS hardening:
+Latest result after UI/navigation/text-input polish:
 
 - unit tests passed: 38/38
 - integration tests passed: 1/1
-- smoke tests passed: 9/9
+- smoke tests passed: 10/10
 - no editor errors were reported in the newly changed marketplace screens and navigation files
 
 This means the current tracked implementation is at least syntax-clean and test-clean for the existing test suite.
@@ -252,6 +268,8 @@ Implemented and usable now:
 - spellcheck and writing suggestions for user-authored text boxes
 - listing detail with type-specific actions
 - prettier plant detail/listing detail hero with lightweight plant graphics
+- prettier add/edit plant form with a visual hero, grouped sections, and care preview tiles
+- raised bottom tab navigation with shape-based icons
 - sitting application flow and owner applicant review
 - swap proposal create/review/accept-decline flow
 - exchanges inbox for proposals, pending handoffs, and completed exchanges
@@ -379,7 +397,28 @@ Likely files:
 - `android_only/db/rls_policies.sql`
 - a future Supabase migration file
 
-### 5. Add anti-spam and text-field threat safeguards
+### 5. Add species-based smart plant-profile suggestions
+
+Why this matters:
+Add Plant currently collects care details manually. Species-based suggestions would help users fill in watering frequency, light requirements, humidity needs, and likely location or room guidance faster, especially if they do not know plant-care terminology.
+
+Recommended outcome:
+
+- when a user enters or selects a species, suggest editable defaults for watering cadence, light, humidity, location/room guidance, and care notes
+- clearly label suggestions as editable guidance, not guaranteed care facts
+- base the first version on a small local care-knowledge table for common species before adding AI
+- later, consider AI-assisted suggestions that combine species, user notes, local climate, and current season
+- never overwrite user-entered values without confirmation
+- add tests for suggestion lookup, fallback behavior, and manual override behavior
+
+Likely files:
+
+- `react_webiosand/src/screens/AddEditPlantScreen.js`
+- `react_webiosand/src/utils/plantCareSuggestions.js`
+- `react_webiosand/test/unit/plantCareSuggestions.test.cjs`
+- `docs/ai-opportunities.md`
+
+### 6. Add anti-spam and text-field threat safeguards
 
 Why this matters:
 The app now has many user-authored fields: plant bios, listing descriptions, application messages, swap proposals, reviews, and future chat. These need abuse controls before public use.
@@ -402,7 +441,7 @@ Likely files:
 - future moderation/RPC migration files
 - `docs/ai-opportunities.md`
 
-### 6. Add automated coverage for the new flows
+### 7. Add automated coverage for the new flows
 
 Why this matters:
 The service and screen surface area grew a lot today.

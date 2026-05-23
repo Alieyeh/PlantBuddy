@@ -46,6 +46,7 @@ Current behavior:
 - Logged-in users can see their active plants.
 - Users can create plant profiles.
 - Users can edit plant profiles.
+- The add/edit plant form now uses a designed plant-profile hero, grouped form cards, and care preview tiles for water, light, and humidity.
 - Delete is implemented as a soft delete by setting `is_active = false` and `archived_at`.
 - Plant data is read/written directly through the `plants` table in Supabase.
 
@@ -125,7 +126,9 @@ Current behavior:
 - Shared color, spacing, typography, shadow, button, input, card, and section-label styles live in `theme.js`.
 - App-level font loading uses Fraunces and Bricolage Grotesque through Expo Google Fonts.
 - The current Expo screens have been restyled around the shared theme tokens.
-- User-authored text fields now enable spellcheck and writing suggestions where appropriate; dates, currency, email, password, and numeric fields keep spelling behavior disabled.
+- The authenticated bottom navigation uses a raised rounded tab bar with shape-based icons for My Plants, Browse, and Exchanges.
+- User-authored text fields now request spellcheck, autocorrect, autocomplete, and text/search input modes where appropriate; dates, currency, email, password, and numeric fields keep spelling behavior disabled.
+- Browser-visible spellcheck suggestions still depend on the user's browser and operating-system language/spellcheck settings.
 - `design.md` documents the intended visual language and interaction patterns.
 
 ### Navigation
@@ -144,6 +147,7 @@ Current navigation:
 - Main tabs:
   - My Plants
   - Browse
+  - Exchanges
 - My Plants stack:
   - Plants list
   - Add/edit plant
@@ -152,6 +156,12 @@ Current navigation:
 - Browse stack:
   - Listings feed
   - Listing detail
+  - Apply
+- Exchanges stack:
+  - Exchanges inbox
+  - Listing detail
+  - Swap proposals
+  - Handoff review
   - Apply
 
 ## Implemented In The Database
@@ -245,7 +255,7 @@ Project tooling currently present:
 
 - Node unit tests for plant forms, listing forms, listing domain helpers, Supabase environment validation, browse filters/sorting, and exchange inbox helpers.
 - Node integration test for exchange inbox composition.
-- Node smoke tests for key app files, browse wiring, exchange inbox wiring, Supabase wiring, schema/RLS files, and static RLS hardening expectations.
+- Node smoke tests for key app files, bottom navigation wiring, browse wiring, exchange inbox wiring, text-input defaults, Supabase wiring, schema/RLS files, and static RLS hardening expectations.
 
 Project tooling still missing:
 

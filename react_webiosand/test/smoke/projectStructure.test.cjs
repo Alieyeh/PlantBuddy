@@ -135,6 +135,11 @@ test('current application and marketplace flows are wired into navigation and se
   assert.match(navigator, /SwapProposal/);
   assert.match(navigator, /SwapProposals/);
   assert.match(navigator, /HandoffReview/);
+  assert.match(navigator, /PlantTabIcon/);
+  assert.match(navigator, /BrowseTabIcon/);
+  assert.match(navigator, /ExchangesTabIcon/);
+  assert.match(navigator, /tabBarHideOnKeyboard/);
+  assert.match(navigator, /tabIconWrapActive/);
   assert.match(detailScreen, /Apply to Sit/);
   assert.match(detailScreen, /navigation\.navigate\('Apply'/);
   assert.match(service, /applyToListing/);
@@ -181,6 +186,9 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
 
   assert.match(inputProps, /spellCheck: true/);
   assert.match(inputProps, /autoCorrect: true/);
+  assert.match(inputProps, /autoComplete: 'on'/);
+  assert.match(inputProps, /inputMode: 'text'/);
+  assert.match(inputProps, /inputMode: 'search'/);
   assert.match(plantScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(plantScreen, /FormHero/);
   assert.match(plantScreen, /PlantSketch/);

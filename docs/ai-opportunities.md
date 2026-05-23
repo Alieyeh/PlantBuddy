@@ -38,6 +38,7 @@ Possible uses:
 
 - Turn messy notes into a clear plant bio.
 - Suggest missing profile fields such as watering frequency or light needs.
+- Suggest editable species-based defaults for watering cadence, light requirements, humidity needs, likely location/room guidance, and special care notes.
 - Rewrite care instructions so sitters can follow them easily.
 - Generate a friendly plant personality paragraph if the product wants a playful tone.
 
@@ -47,6 +48,13 @@ Why this is a strong first AI feature:
 - It does not make financial or safety decisions.
 - It improves data quality for later matching.
 - It gives a visible "AI" feature without making the app dependent on AI.
+
+Guardrails:
+
+- Treat species-based suggestions as editable guidance, not guaranteed care facts.
+- Do not overwrite fields the user has already typed without asking.
+- Keep a small deterministic care-knowledge table for common species as the first version; AI can be added later for richer wording or less common plants.
+- Remind users that care varies by cultivar, pot, soil, season, room temperature, and local climate.
 
 ### 3. Listing And Application Writing Help
 

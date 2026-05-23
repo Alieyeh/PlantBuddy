@@ -1,6 +1,6 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-20 (Security/RLS hardening)_
+_Last updated: 2026-05-23 (UI/navigation polish and text-input defaults)_
 
 ---
 
@@ -8,7 +8,7 @@ _Last updated: 2026-05-20 (Security/RLS hardening)_
 
 **Phase 2 — Marketplace + Care Foundation (listing modes, exchange RPC, and inbox live in app)**
 
-The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. The next highest-value step is applying or confirming the 2026-05-19 and 2026-05-20 migrations in the live Supabase project so the deployed backend matches the repo.
+The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. Recent UI work added a designed Add/Edit Plant form, a more visual listing detail page, a raised bottom tab bar, and stronger shared text-input spellcheck/autocomplete defaults. The next highest-value step is applying or confirming the 2026-05-19 and 2026-05-20 migrations in the live Supabase project so the deployed backend matches the repo.
 
 ---
 
@@ -44,9 +44,9 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] Login screen
 - [x] Register screen
 - [x] Plants list screen — with "Find sitter" button per plant card
-- [x] Add/edit plant screen
+- [x] Add/edit plant screen with designed hero, grouped sections, and care preview tiles
 - [x] Auth-gated navigation
-- [x] **Tab navigation** — My Plants tab + Browse tab (Stage 1)
+- [x] **Tab navigation** - raised bottom tabs for My Plants, Browse, and Exchanges
 - [x] **ListingsScreen** — feed of all open marketplace and sitting listings
 - [x] **ListingsScreen browse controls** — text search, listing-type filters, newest/sitting-date/price sorting
 - [x] **ListingDetailScreen** — supports sitting, gift, sale, and swap actions
@@ -59,8 +59,8 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] **apiService.js** — all plants CRUD now uses `supabase.from('plants')` (session 3)
 - [x] **PlantsScreen** — updated to consume direct Supabase response (no `.data.data` wrapper) (session 3)
 - [x] **AddEditPlantScreen** — field names updated to match schema snake_case columns (session 3)
-- [ ] `.env` credentials are not present in this checkout; create `react_webiosand/.env` locally with `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] `npm.cmd install` still needed in this checkout; `react_webiosand/node_modules` is not present
+- [x] Local `.env` exists in this working copy; keep it uncommitted and recreate it manually in fresh checkouts
+- [x] `react_webiosand/node_modules` exists in this working copy
 - [x] Node unit tests added for plant form, listing form, config, listing domain, browse, and exchange inbox helpers
 - [x] Node smoke tests added for app structure, Supabase env wiring, browse wiring, exchange wiring, and schema/RLS files
 - [x] **Stage 2a: owner_profiles auto-creation** — `handle_new_user()` trigger also inserts into `owner_profiles`; every signup gets owner mode immediately
@@ -76,6 +76,7 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] Listing handoff start / confirm flow implemented in listing detail
 - [x] `HandoffReviewScreen` — participants can leave a review after a completed handoff
 - [x] `ExchangesScreen` — tab inbox for active proposals, pending handoffs, and completed exchanges
+- [x] Shared text-input props request spellcheck, autocorrect, autocomplete, and explicit text/search input modes for user-authored fields
 - [ ] Contract screens (Stage 3)
 - [ ] Messaging (Stage 4)
 - [ ] Notifications
@@ -162,8 +163,16 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - Hardened application insert/update RLS so sitting applicants need sitter profiles, cannot apply to their own listings, and new applications start as pending
 - Hardened swap proposal insert RLS so proposers can only offer active plants they own on open swap listings owned by someone else
 - Updated static smoke tests for these SQL expectations
-- Confirmed `npm.cmd test` passes from `react_webiosand/` with 48 total tests passing: 38 unit, 1 integration, and 9 smoke
+- Confirmed `npm.cmd test` passes from `react_webiosand/` with 49 total tests passing: 38 unit, 1 integration, and 10 smoke
 
+## Last Session (2026-05-23)
+
+- Replaced fragile emoji tab icons in `AppNavigator.js` with shape-based My Plants, Browse, and Exchanges icons
+- Restyled the authenticated bottom tab bar as a raised rounded navigation surface
+- Added a designed Add/Edit Plant form hero, grouped form cards, and live care preview tiles
+- Strengthened `textInputProps.js` with autocomplete and explicit text/search input modes alongside spellcheck/autocorrect
+- Updated docs and smoke/unit tests to reflect the navigation, Add Plant UI, and text-input behavior
+- Confirmed `npm.cmd test` passes from `react_webiosand/`
 ## Last Session (2026-05-19)
 
 - Reframed the product around a plant marketplace + care network and rewrote `PRODUCT.md` and `design.md`

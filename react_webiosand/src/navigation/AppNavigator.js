@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -25,12 +25,47 @@ import { C } from '../lib/theme';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ label, focused }) {
-  const icons = { 'My Plants': '🌿', Browse: '🔍', Exchanges: '🤝', Profile: '👤' };
+function PlantTabIcon() {
   return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
-      {icons[label] ?? '●'}
-    </Text>
+    <View style={styles.plantIcon}>
+      <View style={[styles.plantLeaf, styles.plantLeafLeft]} />
+      <View style={[styles.plantLeaf, styles.plantLeafRight]} />
+      <View style={styles.plantStem} />
+    </View>
+  );
+}
+
+function BrowseTabIcon() {
+  return (
+    <View style={styles.searchIcon}>
+      <View style={styles.searchCircle} />
+      <View style={styles.searchHandle} />
+    </View>
+  );
+}
+
+function ExchangesTabIcon() {
+  return (
+    <View style={styles.exchangeIcon}>
+      <View style={[styles.exchangeLine, styles.exchangeLineTop]} />
+      <View style={[styles.exchangeLine, styles.exchangeLineBottom]} />
+      <View style={[styles.exchangeArrowHead, styles.exchangeArrowTop]} />
+      <View style={[styles.exchangeArrowHead, styles.exchangeArrowBottom]} />
+    </View>
+  );
+}
+
+function TabIcon({ label, focused }) {
+  const icon = label === 'My Plants'
+    ? <PlantTabIcon />
+    : label === 'Browse'
+      ? <BrowseTabIcon />
+      : <ExchangesTabIcon />;
+
+  return (
+    <View style={[styles.tabIconWrap, focused && styles.tabIconWrapActive]}>
+      {icon}
+    </View>
   );
 }
 
@@ -81,7 +116,7 @@ function PlantsStack() {
 }
 
 /**
- * Stack for browsing open sitting requests.
+ * Stack for browsing open plant marketplace listings.
  */
 function BrowseStack() {
   return (
@@ -162,17 +197,34 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: C.forest,
         tabBarInactiveTintColor: C.stone,
         tabBarStyle: {
-          backgroundColor: C.white,
-          borderTopColor: C.mist,
+          backgroundColor: '#fffdf9',
+          borderTopColor: C.amberLight,
           borderTopWidth: 1,
-          paddingBottom: 6,
-          paddingTop: 4,
-          height: 60,
+          borderRadius: 24,
+          height: 74,
+          marginHorizontal: 14,
+          marginBottom: 10,
+          paddingBottom: 9,
+          paddingTop: 9,
+          shadowColor: C.forest,
+          shadowOpacity: 0.14,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: -3 },
+          elevation: 10,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarItemStyle: {
+          borderRadius: 18,
+          marginHorizontal: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '700',
+          marginTop: 1,
+        },
         tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
       })}
     >
@@ -215,3 +267,108 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  tabIconWrap: {
+    width: 42,
+    height: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: C.mist,
+    borderWidth: 1,
+    borderColor: C.sage,
+  },
+  plantIcon: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  plantLeaf: {
+    position: 'absolute',
+    width: 10,
+    height: 17,
+    backgroundColor: C.leaf,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 3,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 10,
+  },
+  plantLeafLeft: {
+    left: 4,
+    top: 4,
+    transform: [{ rotate: '-36deg' }],
+    backgroundColor: C.moss,
+  },
+  plantLeafRight: {
+    right: 4,
+    top: 2,
+    transform: [{ rotate: '36deg' }],
+    backgroundColor: C.sage,
+  },
+  plantStem: {
+    width: 4,
+    height: 16,
+    borderRadius: 4,
+    backgroundColor: C.forest,
+  },
+  searchIcon: {
+    width: 24,
+    height: 24,
+  },
+  searchCircle: {
+    width: 15,
+    height: 15,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: C.forest,
+    position: 'absolute',
+    left: 2,
+    top: 2,
+  },
+  searchHandle: {
+    width: 10,
+    height: 3,
+    borderRadius: 3,
+    backgroundColor: C.forest,
+    position: 'absolute',
+    right: 1,
+    bottom: 4,
+    transform: [{ rotate: '42deg' }],
+  },
+  exchangeIcon: {
+    width: 26,
+    height: 24,
+  },
+  exchangeLine: {
+    position: 'absolute',
+    left: 2,
+    right: 4,
+    height: 3,
+    borderRadius: 3,
+    backgroundColor: C.forest,
+  },
+  exchangeLineTop: { top: 6 },
+  exchangeLineBottom: { bottom: 6 },
+  exchangeArrowHead: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderColor: C.forest,
+  },
+  exchangeArrowTop: {
+    right: 2,
+    top: 3,
+    transform: [{ rotate: '45deg' }],
+  },
+  exchangeArrowBottom: {
+    left: 2,
+    bottom: 3,
+    transform: [{ rotate: '225deg' }],
+  },
+});
