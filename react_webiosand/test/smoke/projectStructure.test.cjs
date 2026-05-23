@@ -182,6 +182,9 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(inputProps, /spellCheck: true/);
   assert.match(inputProps, /autoCorrect: true/);
   assert.match(plantScreen, /TEXTBOX_SPELLCHECK_PROPS/);
+  assert.match(plantScreen, /FormHero/);
+  assert.match(plantScreen, /PlantSketch/);
+  assert.match(plantScreen, /CarePreview/);
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(detailScreen, /PlantIllustration/);
   assert.match(detailScreen, /HeroVines/);
