@@ -37,7 +37,7 @@ Run this after dependency install, `.env` setup, and Supabase schema/RLS setup.
 
 - Add a plant with only a name.
 - Add a plant with full care details.
-- Confirm the Add/Edit Plant screen shows the designed plant-profile hero, grouped form sections, live care preview tiles, and watering frequency unit choices for days/weeks/months.
+- Confirm the Add/Edit Plant screen shows the designed plant-profile hero, grouped form sections, optional age/life-stage choices, live care preview tiles, and watering frequency unit choices for days/weeks/months.
 - Try invalid plant form values, such as `weekly` or `2.5` for watering frequency, and confirm the form blocks them before saving.
 - Type a deliberately misspelled word into a natural-language field such as Description or Special Instructions and confirm the browser/mobile keyboard offers spellcheck suggestions when OS/browser spellcheck is enabled.
 - Edit the plant.
@@ -71,6 +71,7 @@ In Supabase, confirm:
 - `owner_profiles` row exists.
 - `plants` rows point to the current user's UUID.
 - `plants.watering_frequency_unit` exists and accepts only `days`, `weeks`, or `months`.
+- `plants.age_description` exists and accepts only the current dropdown choices or `NULL`.
 - `plant_listings` rows point to the current user's UUID.
 
 ## Recommended Frontend Test Layers

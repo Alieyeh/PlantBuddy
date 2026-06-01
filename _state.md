@@ -1,6 +1,6 @@
 # PlantBuddy — Project State
 
-_Last updated: 2026-05-23 (UI/navigation polish and text-input defaults)_
+_Last updated: 2026-06-01 (plant age/life-stage dropdown and Supabase migration)_
 
 ---
 
@@ -8,7 +8,7 @@ _Last updated: 2026-05-23 (UI/navigation polish and text-input defaults)_
 
 **Phase 2 — Marketplace + Care Foundation (listing modes, exchange RPC, and inbox live in app)**
 
-The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. Recent UI work added a designed Add/Edit Plant form, a more visual listing detail page, a raised bottom tab bar, and stronger shared text-input spellcheck/autocomplete defaults. The next highest-value step is applying or confirming the 2026-05-19 and 2026-05-20 migrations in the live Supabase project so the deployed backend matches the repo.
+The app is no longer sitting-only. The current product supports a hybrid model built around `SITTING_REQUEST`, `GIFT`, `SALE`, and `SWAP` listings. Users can browse those listing types in-app with search, listing-type filters, and sorting; owners can review sitting applicants; users can propose swaps; owners can accept or decline swap proposals; participants can confirm listing handoffs through a backend RPC; participants can leave handoff reviews; and users now have an `Exchanges` inbox. Recent UI work added a designed Add/Edit Plant form, optional plant age/life-stage choices, a more visual listing detail page, a raised bottom tab bar, and stronger shared text-input spellcheck/autocomplete defaults. The next highest-value step is applying or confirming the 2026-05-19, 2026-05-20, 2026-05-23, and 2026-06-01 migrations in the live Supabase project so the deployed backend matches the repo.
 
 ---
 
@@ -24,11 +24,12 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] Added marketplace alignment migration: `android_only/db/2026_05_19_marketplace_alignment.sql`
 - [x] Added security hardening migration: `android_only/db/2026_05_20_security_rls_hardening.sql`
 - [x] Added watering frequency unit migration: `android_only/db/2026_05_23_watering_frequency_unit.sql`
+- [x] Added plant age/life-stage migration: `android_only/db/2026_06_01_plant_age_description.sql`
 - [x] Added `listing_handoffs` and `listing_handoff_reviews`
 - [x] Listing type vocabulary aligned to `GIFT` instead of `DONATION`
 - [x] Listing validation rules tightened by listing type
 - [x] Added `confirm_listing_handoff` RPC for atomic handoff confirmation and ownership transfer
-- [ ] Live Supabase should be checked for `2026_05_19_marketplace_alignment.sql`, `2026_05_20_security_rls_hardening.sql`, and `2026_05_23_watering_frequency_unit.sql`; re-run or verify if behavior contradicts the repo
+- [ ] Live Supabase should be checked for `2026_05_19_marketplace_alignment.sql`, `2026_05_20_security_rls_hardening.sql`, `2026_05_23_watering_frequency_unit.sql`, and `2026_06_01_plant_age_description.sql`; re-run or verify if behavior contradicts the repo
 - [ ] Seed data file (`002_seed_dev.sql`) not committed
 
 ### Backend — Supabase
@@ -38,14 +39,14 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - [x] **RLS policies written for all 23 tables** (`android_only/db/rls_policies.sql`) — `refresh_tokens` section removed (session 4 fix)
 - [x] `plant_listings`, `listing_applications`, `swap_proposals`, `listing_handoffs`, `listing_handoff_reviews`, and `contracts` secured by RLS and accessible via PostgREST
 - [ ] `react_webiosand/.env` is not present in this checkout; create it locally with Supabase URL + anon key
-- [ ] Live Supabase still needs migrations verified so `confirm_listing_handoff`, hardened RLS policies, and `plants.watering_frequency_unit` exist remotely
+- [ ] Live Supabase still needs migrations verified so `confirm_listing_handoff`, hardened RLS policies, `plants.watering_frequency_unit`, and `plants.age_description` exist remotely
 
 ### Expo Frontend (`react_webiosand/`) — Android + iOS + Web
 - [x] Session management (AsyncStorage)
 - [x] Login screen
 - [x] Register screen
 - [x] Plants list screen — with "Find sitter" button per plant card
-- [x] Add/edit plant screen with designed hero, grouped sections, care preview tiles, and watering frequency units
+- [x] Add/edit plant screen with designed hero, grouped sections, optional age/life-stage dropdown, care preview tiles, and watering frequency units
 - [x] Auth-gated navigation
 - [x] **Tab navigation** - raised bottom tabs for My Plants, Browse, and Exchanges
 - [x] **ListingsScreen** — feed of all open marketplace and sitting listings
@@ -165,6 +166,14 @@ The app is no longer sitting-only. The current product supports a hybrid model b
 - Hardened swap proposal insert RLS so proposers can only offer active plants they own on open swap listings owned by someone else
 - Updated static smoke tests for these SQL expectations
 - Confirmed `npm.cmd test` passes from `react_webiosand/` with 49 total tests passing: 38 unit, 1 integration, and 10 smoke
+
+## Last Session (2026-06-01)
+
+- Added an optional plant age/life-stage dropdown to `AddEditPlantScreen`
+- Reused the existing `plants.age_description` database concept and constrained it to broad dropdown values suitable for most plants
+- Added `android_only/db/2026_06_01_plant_age_description.sql` for existing Supabase databases
+- Updated plant payload validation, Supabase selects, Browse chips, and listing detail plant care stats for age/life-stage
+- Updated unit and smoke tests plus docs to reflect the new field
 
 ## Last Session (2026-05-23)
 

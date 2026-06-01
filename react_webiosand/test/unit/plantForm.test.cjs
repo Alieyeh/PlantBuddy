@@ -2,9 +2,11 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const {
+  PLANT_AGE_OPTIONS,
   WATERING_FREQUENCY_UNITS,
   buildPlantPayload,
   formatWateringFrequency,
+  normalizePlantAgeDescription,
   normalizeWateringFrequencyUnit,
   optionalText,
   parseOptionalInteger,
@@ -54,8 +56,25 @@ test('validatePlantForm enforces database-shaped plant field types and limits', 
     }
   );
 
+  assert.deepEqual(
+    validatePlantForm({ name: 'Fern', ageDescription: 'Very ancient' }),
+    {
+      valid: false,
+      title: 'Invalid plant age',
+      message: 'Choose one of the plant age options.',
+    }
+  );
+
   assert.equal(validatePlantForm({ name: 'x'.repeat(151) }).valid, false);
-  assert.deepEqual(validatePlantForm({ name: 'Fern', wateringFrequency: '2', wateringFrequencyUnit: 'weeks' }), { valid: true });
+  assert.deepEqual(
+    validatePlantForm({
+      name: 'Fern',
+      ageDescription: 'Young plant',
+      wateringFrequency: '2',
+      wateringFrequencyUnit: 'weeks',
+    }),
+    { valid: true }
+  );
 });
 
 test('optionalText trims text and preserves null for blank values', () => {
@@ -74,6 +93,21 @@ test('watering frequency helpers normalize units and display labels', () => {
   assert.equal(formatWateringFrequency('', 'days'), null);
 });
 
+test('plant age helpers normalize optional life-stage choices', () => {
+  assert.deepEqual(PLANT_AGE_OPTIONS.map((option) => option.value), [
+    null,
+    'Cutting / propagation',
+    'Seedling',
+    'Young plant',
+    'Mature plant',
+    'Established plant',
+  ]);
+  assert.equal(normalizePlantAgeDescription('Young plant'), 'Young plant');
+  assert.equal(normalizePlantAgeDescription('  Seedling  '), 'Seedling');
+  assert.equal(normalizePlantAgeDescription('Very old'), null);
+  assert.equal(normalizePlantAgeDescription(''), null);
+});
+
 test('buildPlantPayload trims text and converts blank optional fields to null', () => {
   assert.deepEqual(
     buildPlantPayload({
@@ -81,6 +115,7 @@ test('buildPlantPayload trims text and converts blank optional fields to null', 
       species: ' Monstera deliciosa ',
       description: '',
       locationNotes: ' Living room ',
+      ageDescription: 'Mature plant',
       sizeDescription: '',
       healthStatus: ' Healthy ',
       lightRequirements: ' Bright indirect ',
@@ -94,6 +129,7 @@ test('buildPlantPayload trims text and converts blank optional fields to null', 
       species: 'Monstera deliciosa',
       description: null,
       location_notes: 'Living room',
+      age_description: 'Mature plant',
       size_description: null,
       health_status: 'Healthy',
       light_requirements: 'Bright indirect',

@@ -18,6 +18,7 @@ There is no active Java/Tomcat backend in the current project direction.
 - `android_only/db/sql_build_tables.sql` - schema, enum types, indexes, auth trigger.
 - `android_only/db/rls_policies.sql` - Row Level Security policies.
 - `android_only/db/2026_05_23_watering_frequency_unit.sql` - forward migration for plant watering frequency units.
+- `android_only/db/2026_06_01_plant_age_description.sql` - forward migration for the optional plant age/life-stage dropdown.
 - `react_webiosand/src/lib/supabase.js` - frontend Supabase client.
 
 ## Schema Summary
@@ -50,6 +51,7 @@ Plant care fields now include:
 
 - `watering_frequency_days` - the numeric frequency amount retained for backward compatibility.
 - `watering_frequency_unit` - the frequency unit, constrained to `days`, `weeks`, or `months`, with existing rows defaulting to `days`.
+- `age_description` - an optional life-stage value constrained to `Cutting / propagation`, `Seedling`, `Young plant`, `Mature plant`, or `Established plant`.
 
 ### Listings And Matching
 
@@ -64,7 +66,7 @@ The schema supports four listing types:
 - `SWAP`
 - `SALE`
 
-Only `SITTING_REQUEST` listings are currently implemented in the frontend. The frontend also writes and reads `listing_applications` for sitter applications and owner accept/decline decisions.
+The frontend can create sitting, gift, and sale listings, browse all four listing types, and supports swap proposals for swap listings. The frontend also writes and reads `listing_applications` for sitter applications and owner accept/decline decisions.
 
 ### Contracts
 
@@ -131,6 +133,41 @@ CHECK (watering_frequency_unit IN ('days', 'weeks', 'months'));
 ```
 
 This is also saved in `android_only/db/2026_05_23_watering_frequency_unit.sql`.
+
+For an existing Supabase database that already has the `plants` table but does not have the controlled age/life-stage field, also run:
+
+```sql
+ALTER TABLE public.plants
+ADD COLUMN IF NOT EXISTS age_description VARCHAR(100);
+
+UPDATE public.plants
+SET age_description = NULL
+WHERE age_description IS NOT NULL
+  AND age_description NOT IN (
+    'Cutting / propagation',
+    'Seedling',
+    'Young plant',
+    'Mature plant',
+    'Established plant'
+  );
+
+ALTER TABLE public.plants
+DROP CONSTRAINT IF EXISTS plants_age_description_chk;
+
+ALTER TABLE public.plants
+ADD CONSTRAINT plants_age_description_chk
+CHECK (
+  age_description IS NULL OR age_description IN (
+    'Cutting / propagation',
+    'Seedling',
+    'Young plant',
+    'Mature plant',
+    'Established plant'
+  )
+);
+```
+
+This is also saved in `android_only/db/2026_06_01_plant_age_description.sql`. The cleanup step clears old custom age strings that do not match the current dropdown choices.
 
 ## Important Schema Warning
 

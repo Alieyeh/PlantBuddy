@@ -360,7 +360,16 @@ CREATE TABLE IF NOT EXISTS plants (
     updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     archived_at                 TIMESTAMPTZ,
     CONSTRAINT plants_watering_chk CHECK (watering_frequency_days IS NULL OR watering_frequency_days > 0),
-    CONSTRAINT plants_watering_unit_chk CHECK (watering_frequency_unit IN ('days', 'weeks', 'months'))
+    CONSTRAINT plants_watering_unit_chk CHECK (watering_frequency_unit IN ('days', 'weeks', 'months')),
+    CONSTRAINT plants_age_description_chk CHECK (
+        age_description IS NULL OR age_description IN (
+            'Cutting / propagation',
+            'Seedling',
+            'Young plant',
+            'Mature plant',
+            'Established plant'
+        )
+    )
 );
 
 CREATE TABLE IF NOT EXISTS plant_photos (

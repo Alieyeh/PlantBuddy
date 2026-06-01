@@ -174,6 +174,7 @@ export default function ListingsScreen({ navigation }) {
         )}
 
         <View style={styles.chips}>
+          {plant?.age_description ? <MetaChip label={`Stage: ${plant.age_description}`} /> : null}
           {plant?.light_requirements ? <MetaChip label={`Light: ${plant.light_requirements}`} /> : null}
           {wateringFrequencyLabel ? <MetaChip label={`Water: ${wateringFrequencyLabel.toLowerCase()}`} /> : null}
           {item.listing_type === LISTING_TYPES.SALE ? <MetaChip label={`${item.currency_code ?? 'GBP'} ${Number(item.sale_price ?? 0).toFixed(2)}`} /> : null}

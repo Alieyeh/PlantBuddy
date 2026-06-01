@@ -2,7 +2,7 @@
 
 Date: 2026.5.19
 Done by: EZ
-Last updated: 2026-05-23
+Last updated: 2026-06-01
 Purpose: give the next engineer or AI a fast, reliable handoff point with enough detail to continue implementation immediately.
 
 ---
@@ -119,8 +119,10 @@ Completed:
 
 - Add/Edit Plant now has a designed plant-profile hero, grouped form cards, and live care preview tiles for water, light, and humidity
 - Add/Edit Plant now lets users choose watering frequency units: days, weeks, or months
-- Add/Edit Plant validates user-entered values against database-shaped expectations before saving, including text length limits, positive whole-number watering frequency, and allowed units
+- Add/Edit Plant now has an optional age/life-stage dropdown using broad plant-friendly choices: cutting, seedling, young, mature, or established
+- Add/Edit Plant validates user-entered values against database-shaped expectations before saving, including text length limits, positive whole-number watering frequency, allowed units, and allowed age/life-stage options
 - Browse now labels itself as listing-based and explains that plant rows only appear after they have an open listing
+- Browse and listing detail now display plant age/life-stage when present
 - Listing detail keeps its designed plant hero, care tiles, and note panels
 - the authenticated bottom navigation now uses a raised rounded tab bar with shape-based icons instead of fragile emoji glyphs
 
@@ -133,6 +135,7 @@ Files:
 - `react_webiosand/src/navigation/AppNavigator.js`
 - `react_webiosand/test/smoke/projectStructure.test.cjs`
 - `android_only/db/2026_05_23_watering_frequency_unit.sql`
+- `android_only/db/2026_06_01_plant_age_description.sql`
 
 ### Auth flow clarification
 
@@ -179,6 +182,7 @@ Completed:
 - completed `SWAP` handoffs transfer both plants to their new owners
 - completed handoffs close the listing and settle swap proposal state server-side
 - listing visibility was widened so handoff participants can still access completed exchange listings
+- the optional `plants.age_description` field is now constrained in SQL to the dropdown values used by the app
 
 Files:
 
@@ -229,12 +233,12 @@ Command:
 npm test
 ```
 
-Latest result after UI/navigation/text-input polish:
+Latest result after plant age/life-stage dropdown work:
 
-- unit tests passed: 38/38
+- unit tests passed: 42/42
 - integration tests passed: 1/1
 - smoke tests passed: 10/10
-- no editor errors were reported in the newly changed marketplace screens and navigation files
+- Expo web export passed with `npx.cmd expo export --platform web --output-dir dist-check`
 
 This means the current tracked implementation is at least syntax-clean and test-clean for the existing test suite.
 
@@ -300,10 +304,11 @@ Implemented in schema and migration source:
 - handoff and handoff review tables
 - RLS policies for the new tables and flows
 - `confirm_listing_handoff` RPC for atomic exchange confirmation and finalization
+- optional `plants.age_description` life-stage field and constraint
 
 Important limitation:
 
-The repo now contains the server-side finalization path, but the live Supabase project must have the updated migration applied before the frontend can rely on it safely. Until that SQL is run remotely, the app code and the deployed database may be out of sync.
+The repo now contains the server-side finalization path and plant age/life-stage column, but the live Supabase project must have the updated migrations applied before the frontend can rely on them safely. Until that SQL is run remotely, the app code and the deployed database may be out of sync.
 
 ### Tests
 
@@ -327,20 +332,24 @@ Missing:
 
 These are the best next actions in priority order.
 
-### 1. Apply the updated migration to live Supabase
+### 1. Apply the updated migrations to live Supabase
 
 Why this matters:
-The repo now expects `confirm_listing_handoff` to exist in the database.
+The repo now expects `confirm_listing_handoff`, hardened RLS, `watering_frequency_unit`, and `age_description` to exist in the database.
 
 Recommended outcome:
 
 - run the updated `android_only/db/2026_05_19_marketplace_alignment.sql` in the Supabase SQL editor
+- run `android_only/db/2026_05_20_security_rls_hardening.sql`
+- run `android_only/db/2026_05_23_watering_frequency_unit.sql`
+- run `android_only/db/2026_06_01_plant_age_description.sql`
 - verify the `confirm_listing_handoff` function exists and executes as `authenticated`
 - confirm completed exchanges update plant ownership and listing status remotely
 
 Likely files:
 
 - `android_only/db/2026_05_19_marketplace_alignment.sql`
+- `android_only/db/2026_06_01_plant_age_description.sql`
 - live Supabase project
 
 ### 2. Continue exchanges inbox polish

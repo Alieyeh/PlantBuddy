@@ -390,6 +390,7 @@ export default function ListingDetailScreen({ route, navigation }) {
         <View style={styles.section}>
           <View style={styles.plantCareGrid}>
             <DetailStat label="Size" value={plant?.size_description || 'Not set'} />
+            <DetailStat label="Age" value={plant?.age_description || 'Not set'} />
             <DetailStat label="Health" value={plant?.health_status || 'Not set'} />
             <DetailStat label="Species" value={plant?.species || 'Not set'} />
           </View>

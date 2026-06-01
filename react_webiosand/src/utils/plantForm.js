@@ -32,6 +32,15 @@ const WATERING_FREQUENCY_UNITS = Object.freeze([
   { value: 'months', label: 'Months', singular: 'month' },
 ]);
 
+const PLANT_AGE_OPTIONS = Object.freeze([
+  { value: null, label: 'Not sure' },
+  { value: 'Cutting / propagation', label: 'Cutting' },
+  { value: 'Seedling', label: 'Seedling' },
+  { value: 'Young plant', label: 'Young' },
+  { value: 'Mature plant', label: 'Mature' },
+  { value: 'Established plant', label: 'Established' },
+]);
+
 const PLANT_TEXT_LIMITS = Object.freeze({
   name: 150,
   species: 150,
@@ -44,6 +53,13 @@ const PLANT_TEXT_LIMITS = Object.freeze({
 function normalizeWateringFrequencyUnit(value) {
   const unit = String(value ?? '').trim().toLowerCase();
   return WATERING_FREQUENCY_UNITS.some((option) => option.value === unit) ? unit : 'days';
+}
+
+function normalizePlantAgeDescription(value) {
+  const text = optionalText(value);
+  if (!text) return null;
+
+  return PLANT_AGE_OPTIONS.some((option) => option.value === text) ? text : null;
 }
 
 function formatWateringFrequency(amount, unit = 'days', compact = false) {
@@ -67,6 +83,13 @@ function isAllowedWateringFrequencyUnit(value) {
   return WATERING_FREQUENCY_UNITS.some((option) => option.value === unit);
 }
 
+function isAllowedPlantAgeDescription(value) {
+  const text = optionalText(value);
+  if (!text) return true;
+
+  return PLANT_AGE_OPTIONS.some((option) => option.value === text);
+}
+
 function isWithinLimit(value, limit) {
   return String(value ?? '').trim().length <= limit;
 }
@@ -80,6 +103,7 @@ function isWithinLimit(value, limit) {
  * @param {string} [form.species]
  * @param {string} [form.description]
  * @param {string} [form.locationNotes]
+ * @param {string} [form.ageDescription]
  * @param {string} [form.sizeDescription]
  * @param {string} [form.healthStatus]
  * @param {string} [form.lightRequirements]
@@ -97,6 +121,7 @@ function buildPlantPayload(form) {
     species: optionalText(form.species),
     description: optionalText(form.description),
     location_notes: optionalText(form.locationNotes),
+    age_description: normalizePlantAgeDescription(form.ageDescription),
     size_description: optionalText(form.sizeDescription),
     health_status: optionalText(form.healthStatus),
     light_requirements: optionalText(form.lightRequirements),
@@ -146,14 +171,25 @@ function validatePlantForm(form) {
     };
   }
 
+  if (!isAllowedPlantAgeDescription(form.ageDescription)) {
+    return {
+      valid: false,
+      title: 'Invalid plant age',
+      message: 'Choose one of the plant age options.',
+    };
+  }
+
   return { valid: true };
 }
 
 module.exports = {
+  PLANT_AGE_OPTIONS,
   WATERING_FREQUENCY_UNITS,
   buildPlantPayload,
   formatWateringFrequency,
+  isAllowedPlantAgeDescription,
   isAllowedWateringFrequencyUnit,
+  normalizePlantAgeDescription,
   normalizeWateringFrequencyUnit,
   optionalText,
   parseOptionalInteger,

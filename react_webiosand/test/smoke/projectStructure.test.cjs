@@ -77,6 +77,7 @@ test('database schema and RLS files include the current MVP tables', () => {
   const rls = read('android_only/db/rls_policies.sql');
   const securityMigration = read('android_only/db/2026_05_20_security_rls_hardening.sql');
   const wateringMigration = read('android_only/db/2026_05_23_watering_frequency_unit.sql');
+  const ageMigration = read('android_only/db/2026_06_01_plant_age_description.sql');
 
   assert.ok(schema.includes("CREATE TYPE listing_type AS ENUM ('SITTING_REQUEST', 'GIFT', 'SWAP', 'SALE')"));
 
@@ -106,6 +107,10 @@ test('database schema and RLS files include the current MVP tables', () => {
   assert.match(schema, /plants_watering_unit_chk/);
   assert.match(wateringMigration, /ADD COLUMN IF NOT EXISTS watering_frequency_unit/);
   assert.match(wateringMigration, /'days', 'weeks', 'months'/);
+  assert.match(schema, /age_description\s+VARCHAR\(100\)/);
+  assert.match(schema, /plants_age_description_chk/);
+  assert.match(ageMigration, /ADD COLUMN IF NOT EXISTS age_description/);
+  assert.match(ageMigration, /'Cutting \/ propagation'/);
 });
 
 test('RLS hardening guards listing ownership, sitter applications, and swap offers', () => {
@@ -200,6 +205,8 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(plantScreen, /FormHero/);
   assert.match(plantScreen, /PlantSketch/);
   assert.match(plantScreen, /CarePreview/);
+  assert.match(plantScreen, /PLANT_AGE_OPTIONS/);
+  assert.match(plantScreen, /ageDescription/);
   assert.match(plantScreen, /WATERING_FREQUENCY_UNITS/);
   assert.match(plantScreen, /wateringFrequencyUnit/);
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
@@ -210,6 +217,7 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(detailScreen, /CareTile/);
   assert.match(detailScreen, /PlantNotesCard/);
   assert.match(detailScreen, /Care snapshot/);
+  assert.match(detailScreen, /label="Age"/);
 });
 
 test('auth screens handle confirmed-email Supabase sessions explicitly', () => {

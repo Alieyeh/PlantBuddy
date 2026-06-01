@@ -47,7 +47,7 @@ Current behavior:
 - Users can create plant profiles.
 - Users can edit plant profiles.
 - The add/edit plant form now uses a designed plant-profile hero, grouped form cards, and care preview tiles for water, light, and humidity.
-- The add/edit plant form validates user input against the database shape before saving, including varchar-style text limits, positive whole-number watering frequency, and allowed watering units.
+- The add/edit plant form validates user input against the database shape before saving, including varchar-style text limits, positive whole-number watering frequency, allowed watering units, and the controlled age/life-stage options.
 - Delete is implemented as a soft delete by setting `is_active = false` and `archived_at`.
 - Plant data is read/written directly through the `plants` table in Supabase.
 
@@ -57,6 +57,7 @@ Implemented plant fields include:
 - species
 - description
 - location notes
+- optional age / life stage (`Cutting / propagation`, `Seedling`, `Young plant`, `Mature plant`, or `Established plant`)
 - size description
 - health status
 - light requirements

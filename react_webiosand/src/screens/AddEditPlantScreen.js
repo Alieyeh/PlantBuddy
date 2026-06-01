@@ -12,9 +12,11 @@ import {
   TEXTBOX_SPELLCHECK_PROPS,
 } from '../utils/textInputProps';
 import {
+  PLANT_AGE_OPTIONS,
   WATERING_FREQUENCY_UNITS,
   buildPlantPayload,
   formatWateringFrequency,
+  normalizePlantAgeDescription,
   normalizeWateringFrequencyUnit,
   validatePlantForm,
 } from '../utils/plantForm';
@@ -109,6 +111,7 @@ export default function AddEditPlantScreen({ route, navigation }) {
   const [species, setSpecies] = useState(existing?.species ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const [locationNotes, setLocationNotes] = useState(existing?.location_notes ?? '');
+  const [ageDescription, setAgeDescription] = useState(normalizePlantAgeDescription(existing?.age_description));
   const [sizeDescription, setSizeDescription] = useState(existing?.size_description ?? '');
   const [healthStatus, setHealthStatus] = useState(existing?.health_status ?? '');
   const [lightRequirements, setLightRequirements] = useState(existing?.light_requirements ?? '');
@@ -126,6 +129,7 @@ export default function AddEditPlantScreen({ route, navigation }) {
     const validation = validatePlantForm({
       name,
       species,
+      ageDescription,
       sizeDescription,
       healthStatus,
       lightRequirements,
@@ -144,6 +148,7 @@ export default function AddEditPlantScreen({ route, navigation }) {
       species,
       description,
       locationNotes,
+      ageDescription,
       sizeDescription,
       healthStatus,
       lightRequirements,
@@ -198,6 +203,25 @@ export default function AddEditPlantScreen({ route, navigation }) {
 
           <Text style={styles.fieldLabel}>Size</Text>
           <TextInput style={styles.input} placeholder="e.g. Medium, about 60cm tall" placeholderTextColor={C.stone} value={sizeDescription} onChangeText={setSizeDescription} {...TEXTBOX_SPELLCHECK_PROPS} />
+
+          <Text style={styles.fieldLabel}>Age / Life Stage</Text>
+          <View style={styles.ageOptions}>
+            {PLANT_AGE_OPTIONS.map((option) => {
+              const active = ageDescription === option.value;
+              return (
+                <TouchableOpacity
+                  key={option.value ?? 'not-sure'}
+                  style={[styles.ageOption, active && styles.ageOptionActive]}
+                  onPress={() => setAgeDescription(option.value)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.ageOptionText, active && styles.ageOptionTextActive]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
           <Text style={styles.fieldLabel}>Health Status</Text>
           <TextInput style={styles.input} placeholder="e.g. Healthy, new growth appearing" placeholderTextColor={C.stone} value={healthStatus} onChangeText={setHealthStatus} {...TEXTBOX_SPELLCHECK_PROPS} />
@@ -421,6 +445,34 @@ const styles = StyleSheet.create({
   unitOptionTextActive: {
     color: C.forest,
     fontWeight: '700',
+  },
+  ageOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: S.xs,
+    marginBottom: S.sm,
+  },
+  ageOption: {
+    minHeight: 38,
+    borderRadius: S.chip,
+    borderWidth: 1,
+    borderColor: C.sage,
+    backgroundColor: C.mist,
+    paddingHorizontal: S.md,
+    paddingVertical: 7,
+    justifyContent: 'center',
+  },
+  ageOptionActive: {
+    backgroundColor: C.forest,
+    borderColor: C.forest,
+  },
+  ageOptionText: {
+    ...T.caption,
+    color: C.moss,
+    fontWeight: '700',
+  },
+  ageOptionTextActive: {
+    color: C.white,
   },
   multiline: { minHeight: 90, textAlignVertical: 'top' },
   carePreview: {
