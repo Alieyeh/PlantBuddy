@@ -121,6 +121,7 @@ Completed:
 - Add/Edit Plant now lets users choose watering frequency units: days, weeks, or months
 - Add/Edit Plant now has an optional age/life-stage dropdown using broad plant-friendly choices: cutting, seedling, young, mature, or established
 - Add/Edit Plant validates user-entered values against database-shaped expectations before saving, including text length limits, positive whole-number watering frequency, allowed units, and allowed age/life-stage options
+- Add/Edit Plant can now autofill editable care guidance from a Supabase `common_plant_care_profiles` reference table based on species/common name and selected age/life-stage
 - Browse now labels itself as listing-based and explains that plant rows only appear after they have an open listing
 - Browse and listing detail now display plant age/life-stage when present
 - Listing detail keeps its designed plant hero, care tiles, and note panels
@@ -129,6 +130,8 @@ Completed:
 Files:
 
 - `react_webiosand/src/screens/AddEditPlantScreen.js`
+- `react_webiosand/src/api/commonPlantCareService.js`
+- `react_webiosand/src/utils/plantCareProfiles.js`
 - `react_webiosand/src/screens/ListingDetailScreen.js`
 - `react_webiosand/src/screens/ListingsScreen.js`
 - `react_webiosand/src/utils/plantForm.js`
@@ -136,6 +139,7 @@ Files:
 - `react_webiosand/test/smoke/projectStructure.test.cjs`
 - `android_only/db/2026_05_23_watering_frequency_unit.sql`
 - `android_only/db/2026_06_01_plant_age_description.sql`
+- `android_only/db/2026_06_01_common_plant_care_profiles.sql`
 
 ### Auth flow clarification
 
@@ -183,11 +187,13 @@ Completed:
 - completed handoffs close the listing and settle swap proposal state server-side
 - listing visibility was widened so handoff participants can still access completed exchange listings
 - the optional `plants.age_description` field is now constrained in SQL to the dropdown values used by the app
+- added `common_plant_care_profiles` with seeded common houseplant care guidance and authenticated read access
 
 Files:
 
 - `android_only/db/sql_build_tables.sql`
 - `android_only/db/rls_policies.sql`
+- `android_only/db/2026_06_01_common_plant_care_profiles.sql`
 - `android_only/db/2026_05_19_marketplace_alignment.sql`
 - `android_only/db/2026_05_20_security_rls_hardening.sql`
 - `react_webiosand/src/api/listingsService.js`
@@ -233,9 +239,9 @@ Command:
 npm test
 ```
 
-Latest result after plant age/life-stage dropdown work:
+Latest result after common plant care profiles and autofill work:
 
-- unit tests passed: 42/42
+- unit tests passed: 49/49
 - integration tests passed: 1/1
 - smoke tests passed: 10/10
 - Expo web export passed with `npx.cmd expo export --platform web --output-dir dist-check`
@@ -305,10 +311,11 @@ Implemented in schema and migration source:
 - RLS policies for the new tables and flows
 - `confirm_listing_handoff` RPC for atomic exchange confirmation and finalization
 - optional `plants.age_description` life-stage field and constraint
+- `common_plant_care_profiles` reference table for deterministic species-based care autofill
 
 Important limitation:
 
-The repo now contains the server-side finalization path and plant age/life-stage column, but the live Supabase project must have the updated migrations applied before the frontend can rely on them safely. Until that SQL is run remotely, the app code and the deployed database may be out of sync.
+The repo now contains the server-side finalization path, plant age/life-stage column, and common care profile reference table, but the live Supabase project must have the updated migrations applied before the frontend can rely on them safely. Until that SQL is run remotely, the app code and the deployed database may be out of sync.
 
 ### Tests
 
@@ -335,7 +342,7 @@ These are the best next actions in priority order.
 ### 1. Apply the updated migrations to live Supabase
 
 Why this matters:
-The repo now expects `confirm_listing_handoff`, hardened RLS, `watering_frequency_unit`, and `age_description` to exist in the database.
+The repo now expects `confirm_listing_handoff`, hardened RLS, `watering_frequency_unit`, `age_description`, and `common_plant_care_profiles` to exist in the database.
 
 Recommended outcome:
 
@@ -343,13 +350,16 @@ Recommended outcome:
 - run `android_only/db/2026_05_20_security_rls_hardening.sql`
 - run `android_only/db/2026_05_23_watering_frequency_unit.sql`
 - run `android_only/db/2026_06_01_plant_age_description.sql`
+- run `android_only/db/2026_06_01_common_plant_care_profiles.sql`
 - verify the `confirm_listing_handoff` function exists and executes as `authenticated`
 - confirm completed exchanges update plant ownership and listing status remotely
+- confirm Add/Edit Plant can read active common care profiles for autofill
 
 Likely files:
 
 - `android_only/db/2026_05_19_marketplace_alignment.sql`
 - `android_only/db/2026_06_01_plant_age_description.sql`
+- `android_only/db/2026_06_01_common_plant_care_profiles.sql`
 - live Supabase project
 
 ### 2. Continue exchanges inbox polish
@@ -412,16 +422,16 @@ Likely files:
 - `android_only/db/rls_policies.sql`
 - a future Supabase migration file
 
-### 5. Add species-based smart plant-profile suggestions
+### 5. Expand species-based smart plant-profile suggestions
 
 Why this matters:
-Add Plant currently collects care details manually. Species-based suggestions would help users fill in watering frequency, light requirements, humidity needs, and likely location or room guidance faster, especially if they do not know plant-care terminology.
+Add Plant now has deterministic species-based autofill for common plants. Expanding the coverage would help more users fill in watering frequency, light requirements, humidity needs, and likely location or room guidance faster, especially if they do not know plant-care terminology.
 
 Recommended outcome:
 
-- when a user enters or selects a species, suggest editable defaults for watering cadence, light, humidity, location/room guidance, and care notes
-- clearly label suggestions as editable guidance, not guaranteed care facts
-- base the first version on a small local care-knowledge table for common species before adding AI
+- add more rows to `common_plant_care_profiles`
+- add more age-specific rows where care changes meaningfully
+- keep suggestions editable guidance, not guaranteed care facts
 - later, consider AI-assisted suggestions that combine species, user notes, local climate, and current season
 - never overwrite user-entered values without confirmation
 - add tests for suggestion lookup, fallback behavior, and manual override behavior
@@ -429,8 +439,9 @@ Recommended outcome:
 Likely files:
 
 - `react_webiosand/src/screens/AddEditPlantScreen.js`
-- `react_webiosand/src/utils/plantCareSuggestions.js`
-- `react_webiosand/test/unit/plantCareSuggestions.test.cjs`
+- `react_webiosand/src/utils/plantCareProfiles.js`
+- `react_webiosand/test/unit/plantCareProfiles.test.cjs`
+- `android_only/db/2026_06_01_common_plant_care_profiles.sql`
 - `docs/ai-opportunities.md`
 
 ### 6. Add anti-spam and text-field threat safeguards

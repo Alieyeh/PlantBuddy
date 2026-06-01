@@ -61,14 +61,17 @@ The schema file creates tables, enum types, indexes, and the `handle_new_user()`
 
 The RLS file enables Row Level Security and creates access policies.
 
-If your Supabase database already existed before watering frequency units and plant age/life-stage options were added, run these migrations too:
+If your Supabase database already existed before watering frequency units, plant age/life-stage options, and common plant care profiles were added, run these migrations too:
 
 3. `android_only/db/2026_05_23_watering_frequency_unit.sql`
 4. `android_only/db/2026_06_01_plant_age_description.sql`
+5. `android_only/db/2026_06_01_common_plant_care_profiles.sql`
 
 That migration adds `plants.watering_frequency_unit` with allowed values `days`, `weeks`, and `months`, while keeping existing plant rows as `days`.
 
 The age migration adds `plants.age_description` and constrains it to the current Add/Edit Plant dropdown choices. Existing custom age strings outside those choices are cleared to `NULL`.
+
+The common care profiles migration creates and fills `common_plant_care_profiles`, which powers the Add/Edit Plant species-based autofill button.
 
 ## 4. Check Auth Settings
 
@@ -184,7 +187,7 @@ To make a plant appear in Browse:
 4. Create a sale, gift, swap, or sitter listing for that plant.
 5. Confirm the matching `plant_listings` row has `status = 'OPEN'`.
 
-If Browse shows an error mentioning `watering_frequency_unit`, run `android_only/db/2026_05_23_watering_frequency_unit.sql` in the Supabase SQL Editor. If it mentions `age_description`, run `android_only/db/2026_06_01_plant_age_description.sql`. Those columns must exist before the updated Browse query can join plant care details.
+If Browse shows an error mentioning `watering_frequency_unit`, run `android_only/db/2026_05_23_watering_frequency_unit.sql` in the Supabase SQL Editor. If it mentions `age_description`, run `android_only/db/2026_06_01_plant_age_description.sql`. If Add/Edit Plant care autofill mentions `common_plant_care_profiles`, run `android_only/db/2026_06_01_common_plant_care_profiles.sql`.
 
 ### RLS Permission Errors
 

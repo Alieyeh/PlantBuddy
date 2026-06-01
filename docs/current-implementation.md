@@ -40,6 +40,8 @@ Files:
 - `react_webiosand/src/screens/PlantsScreen.js`
 - `react_webiosand/src/screens/AddEditPlantScreen.js`
 - `react_webiosand/src/api/apiService.js`
+- `react_webiosand/src/api/commonPlantCareService.js`
+- `react_webiosand/src/utils/plantCareProfiles.js`
 
 Current behavior:
 
@@ -48,6 +50,8 @@ Current behavior:
 - Users can edit plant profiles.
 - The add/edit plant form now uses a designed plant-profile hero, grouped form cards, and care preview tiles for water, light, and humidity.
 - The add/edit plant form validates user input against the database shape before saving, including varchar-style text limits, positive whole-number watering frequency, allowed watering units, and the controlled age/life-stage options.
+- The add/edit plant form can autofill editable care guidance from `common_plant_care_profiles` using the entered species/common name and, when available, the selected age/life-stage.
+- Autofill prefers age-specific rows over generic species rows and asks before replacing care fields the user already typed.
 - Delete is implemented as a soft delete by setting `is_active = false` and `archived_at`.
 - Plant data is read/written directly through the `plants` table in Supabase.
 
@@ -183,6 +187,7 @@ The schema defines tables for:
 - plants
 - plant photos
 - plant care tasks
+- common plant care profiles
 - plant listings
 - listing applications
 - swap proposals

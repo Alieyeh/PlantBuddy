@@ -38,6 +38,8 @@ Run this after dependency install, `.env` setup, and Supabase schema/RLS setup.
 - Add a plant with only a name.
 - Add a plant with full care details.
 - Confirm the Add/Edit Plant screen shows the designed plant-profile hero, grouped form sections, optional age/life-stage choices, live care preview tiles, and watering frequency unit choices for days/weeks/months.
+- Enter a common plant species such as `Monstera deliciosa`, choose `Seedling`, tap care autofill, and confirm the suggested watering, light, humidity, location, and care notes are editable before saving.
+- Try autofill when care fields already contain text and confirm the app asks whether to fill blanks or replace care fields.
 - Try invalid plant form values, such as `weekly` or `2.5` for watering frequency, and confirm the form blocks them before saving.
 - Type a deliberately misspelled word into a natural-language field such as Description or Special Instructions and confirm the browser/mobile keyboard offers spellcheck suggestions when OS/browser spellcheck is enabled.
 - Edit the plant.
@@ -72,6 +74,7 @@ In Supabase, confirm:
 - `plants` rows point to the current user's UUID.
 - `plants.watering_frequency_unit` exists and accepts only `days`, `weeks`, or `months`.
 - `plants.age_description` exists and accepts only the current dropdown choices or `NULL`.
+- `common_plant_care_profiles` exists, has active seeded rows, and authenticated users can read active profiles.
 - `plant_listings` rows point to the current user's UUID.
 
 ## Recommended Frontend Test Layers
@@ -83,6 +86,7 @@ Continue expanding tests for pure logic:
 - date validation
 - date range formatting
 - plant form payload construction
+- common plant care profile matching and autofill patch construction
 - listing form payload construction
 - browse listing search, filtering, and sorting
 - exchange inbox counts, action-needed state, and date/participant helpers

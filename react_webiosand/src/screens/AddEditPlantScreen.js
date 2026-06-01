@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { api } from '../api/apiService';
+import { commonPlantCareService } from '../api/commonPlantCareService';
 import { C, T, S, shared } from '../lib/theme';
 import {
   MACHINE_TEXTBOX_PROPS,
@@ -20,6 +21,11 @@ import {
   normalizeWateringFrequencyUnit,
   validatePlantForm,
 } from '../utils/plantForm';
+import {
+  buildCareProfilePatch,
+  findBestPlantCareProfile,
+  hasExistingCareValues,
+} from '../utils/plantCareProfiles';
 
 function SectionDivider({ label }) {
   return (
@@ -124,6 +130,70 @@ export default function AddEditPlantScreen({ route, navigation }) {
   );
   const [specialInstructions, setSpecialInstructions] = useState(existing?.special_instructions ?? '');
   const [loading, setLoading] = useState(false);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+
+  const getCareFormSnapshot = () => ({
+    wateringFrequency,
+    wateringFrequencyUnit,
+    lightRequirements,
+    humidityRequirements,
+    locationNotes,
+    specialInstructions,
+  });
+
+  const applyCareProfile = (profile, overwrite = false) => {
+    const patch = buildCareProfilePatch(profile, getCareFormSnapshot(), overwrite);
+
+    if (patch.wateringFrequency != null) setWateringFrequency(patch.wateringFrequency);
+    if (patch.wateringFrequencyUnit != null) setWateringFrequencyUnit(patch.wateringFrequencyUnit);
+    if (patch.lightRequirements != null) setLightRequirements(patch.lightRequirements);
+    if (patch.humidityRequirements != null) setHumidityRequirements(patch.humidityRequirements);
+    if (patch.locationNotes != null) setLocationNotes(patch.locationNotes);
+    if (patch.specialInstructions != null) setSpecialInstructions(patch.specialInstructions);
+  };
+
+  const handleAutofillCare = async () => {
+    if (!species.trim()) {
+      Alert.alert('Species needed', 'Enter a species or common plant name first.');
+      return;
+    }
+
+    setSuggestionLoading(true);
+    try {
+      const profiles = await commonPlantCareService.getActiveProfiles();
+      const profile = findBestPlantCareProfile(profiles, species, ageDescription);
+
+      if (!profile) {
+        Alert.alert('No suggestion found', 'No common care profile matched this species yet.');
+        return;
+      }
+
+      const currentCare = getCareFormSnapshot();
+      if (hasExistingCareValues(currentCare)) {
+        Alert.alert(
+          'Autofill care?',
+          `Use the common care profile for ${profile.common_name}?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Fill blanks', onPress: () => applyCareProfile(profile, false) },
+            { text: 'Replace care', style: 'destructive', onPress: () => applyCareProfile(profile, true) },
+          ]
+        );
+      } else {
+        applyCareProfile(profile, true);
+        Alert.alert('Care added', `Used the common care profile for ${profile.common_name}.`);
+      }
+    } catch (err) {
+      Alert.alert(
+        'Care suggestions unavailable',
+        err.message?.includes('common_plant_care_profiles')
+          ? 'Run the common plant care profiles Supabase migration, then try again.'
+          : err.message || 'Could not load common plant care profiles.'
+      );
+    } finally {
+      setSuggestionLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     const validation = validatePlantForm({
@@ -229,6 +299,25 @@ export default function AddEditPlantScreen({ route, navigation }) {
 
         <SectionDivider label="Care" />
         <FormSection title="Care rhythm" subtitle="These fields become the quick care snapshot on plant and listing detail pages.">
+          <View style={styles.suggestionPanel}>
+            <View>
+              <Text style={styles.suggestionTitle}>Care suggestions</Text>
+              <Text style={styles.suggestionMeta}>{ageDescription ? `${ageDescription} profile preferred` : 'Common profile'}</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.suggestionButton, suggestionLoading && styles.suggestionButtonDisabled]}
+              onPress={handleAutofillCare}
+              disabled={suggestionLoading}
+              activeOpacity={0.85}
+            >
+              {suggestionLoading ? (
+                <ActivityIndicator color={C.forest} />
+              ) : (
+                <Text style={styles.suggestionButtonText}>Autofill</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
           <CarePreview
             wateringFrequency={wateringFrequency}
             wateringFrequencyUnit={wateringFrequencyUnit}
@@ -481,6 +570,35 @@ const styles = StyleSheet.create({
     gap: S.sm,
     marginBottom: S.md,
   },
+  suggestionPanel: {
+    backgroundColor: C.mist,
+    borderRadius: S.md,
+    borderWidth: 1,
+    borderColor: C.sage,
+    padding: S.md,
+    marginBottom: S.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: S.md,
+  },
+  suggestionTitle: { ...T.label, color: C.forest },
+  suggestionMeta: { ...T.caption, color: C.stone, marginTop: 2 },
+  suggestionButton: {
+    minHeight: 40,
+    minWidth: 88,
+    borderRadius: S.button,
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.amberLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: S.md,
+  },
+  suggestionButtonDisabled: {
+    opacity: 0.65,
+  },
+  suggestionButtonText: { ...T.label, color: C.forest, fontWeight: '700' },
   carePreviewTile: {
     flexGrow: 1,
     flexBasis: 136,

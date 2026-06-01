@@ -24,6 +24,7 @@ ALTER TABLE store_owner_profiles    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plants                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plant_photos            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plant_care_tasks        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE common_plant_care_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plant_listings          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE listing_applications    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE swap_proposals          ENABLE ROW LEVEL SECURITY;
@@ -146,6 +147,15 @@ CREATE POLICY "plants_update_own"
   WITH CHECK (current_owner_user_id = auth.uid());
 
 -- Soft-delete only (handled via update above; no hard delete allowed from client)
+
+-- =========================================================
+-- COMMON PLANT CARE PROFILES
+-- =========================================================
+
+CREATE POLICY "common_plant_care_profiles_select_authenticated"
+  ON common_plant_care_profiles FOR SELECT
+  TO authenticated
+  USING (is_active = TRUE);
 
 -- =========================================================
 -- PLANT PHOTOS

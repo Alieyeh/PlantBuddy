@@ -73,7 +73,8 @@ This is a prioritized list of what remains to make PlantBuddy usable.
 - Add plant photos with Supabase Storage.
 - Add separate plant size value and unit fields, such as `size_value` plus a cm/inch/unit dropdown.
 - Reflect plant size unit fields in the database, migrations, form validation, and Browse/search filters.
-- Add smart plant-profile suggestions based on species, such as suggested watering frequency, light requirements, humidity needs, and likely location/room guidance when adding or editing a plant.
+- Expand the new common plant care profile table with more species, cultivar notes, and age-specific rows.
+- Later, add AI-assisted wording or less-common species suggestions on top of the deterministic common-care table.
 - Keep species-based suggestions editable and clearly marked as suggestions, not facts, because care needs vary by cultivar, pot, soil, season, room temperature, and local climate.
 - Add recurring care tasks.
 - Add profile completeness indicators.

@@ -19,6 +19,7 @@ There is no active Java/Tomcat backend in the current project direction.
 - `android_only/db/rls_policies.sql` - Row Level Security policies.
 - `android_only/db/2026_05_23_watering_frequency_unit.sql` - forward migration for plant watering frequency units.
 - `android_only/db/2026_06_01_plant_age_description.sql` - forward migration for the optional plant age/life-stage dropdown.
+- `android_only/db/2026_06_01_common_plant_care_profiles.sql` - reference table and seed data for common plant care autofill.
 - `react_webiosand/src/lib/supabase.js` - frontend Supabase client.
 
 ## Schema Summary
@@ -44,6 +45,7 @@ This is handled by the `handle_new_user()` trigger.
 - `plants`
 - `plant_photos`
 - `plant_care_tasks`
+- `common_plant_care_profiles`
 
 Plants are owned through `current_owner_user_id`, which references `owner_profiles(user_id)`.
 
@@ -52,6 +54,8 @@ Plant care fields now include:
 - `watering_frequency_days` - the numeric frequency amount retained for backward compatibility.
 - `watering_frequency_unit` - the frequency unit, constrained to `days`, `weeks`, or `months`, with existing rows defaulting to `days`.
 - `age_description` - an optional life-stage value constrained to `Cutting / propagation`, `Seedling`, `Young plant`, `Mature plant`, or `Established plant`.
+
+`common_plant_care_profiles` stores deterministic reference guidance for common plants. It includes common/scientific names, aliases, optional age-specific rows, usual watering cadence, light needs, humidity needs, room/location guidance, and care notes. The Add/Edit Plant form reads these rows to offer editable autofill suggestions; the table is not personalized plant-care advice.
 
 ### Listings And Matching
 
@@ -168,6 +172,8 @@ CHECK (
 ```
 
 This is also saved in `android_only/db/2026_06_01_plant_age_description.sql`. The cleanup step clears old custom age strings that do not match the current dropdown choices.
+
+For an existing Supabase database that does not have common plant care profiles, run `android_only/db/2026_06_01_common_plant_care_profiles.sql`. It creates `common_plant_care_profiles`, enables RLS, allows authenticated users to read active profiles, and seeds common houseplants including Monstera, Pothos, Snake plant, Spider plant, Peace lily, ZZ plant, Fiddle leaf fig, Rubber plant, Aloe vera, Calathea, Moth orchid, Jade plant, Boston fern, and Chinese money plant.
 
 ## Important Schema Warning
 

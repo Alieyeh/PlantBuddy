@@ -53,7 +53,7 @@ Guardrails:
 
 - Treat species-based suggestions as editable guidance, not guaranteed care facts.
 - Do not overwrite fields the user has already typed without asking.
-- Keep a small deterministic care-knowledge table for common species as the first version; AI can be added later for richer wording or less common plants.
+- Keep the deterministic `common_plant_care_profiles` table as the first source of truth for common species; AI can be added later for richer wording or less common plants.
 - Remind users that care varies by cultivar, pot, soil, season, room temperature, and local climate.
 
 ### 3. Listing And Application Writing Help

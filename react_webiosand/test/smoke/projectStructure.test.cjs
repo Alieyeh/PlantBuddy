@@ -24,8 +24,10 @@ test('active Expo app has the expected screen and service files', () => {
     'react_webiosand/src/lib/theme.js',
     'react_webiosand/src/storage/SessionManager.js',
     'react_webiosand/src/api/apiService.js',
+    'react_webiosand/src/api/commonPlantCareService.js',
     'react_webiosand/src/api/listingsService.js',
     'react_webiosand/src/utils/browseListings.js',
+    'react_webiosand/src/utils/plantCareProfiles.js',
     'react_webiosand/src/utils/exchangeInbox.js',
     'react_webiosand/src/utils/textInputProps.js',
     'react_webiosand/src/screens/LoginScreen.js',
@@ -78,6 +80,7 @@ test('database schema and RLS files include the current MVP tables', () => {
   const securityMigration = read('android_only/db/2026_05_20_security_rls_hardening.sql');
   const wateringMigration = read('android_only/db/2026_05_23_watering_frequency_unit.sql');
   const ageMigration = read('android_only/db/2026_06_01_plant_age_description.sql');
+  const careProfilesMigration = read('android_only/db/2026_06_01_common_plant_care_profiles.sql');
 
   assert.ok(schema.includes("CREATE TYPE listing_type AS ENUM ('SITTING_REQUEST', 'GIFT', 'SWAP', 'SALE')"));
 
@@ -86,6 +89,7 @@ test('database schema and RLS files include the current MVP tables', () => {
     'CREATE TABLE IF NOT EXISTS owner_profiles',
     'CREATE TABLE IF NOT EXISTS sitter_profiles',
     'CREATE TABLE IF NOT EXISTS plants',
+    'CREATE TABLE IF NOT EXISTS common_plant_care_profiles',
     'CREATE TABLE IF NOT EXISTS plant_listings',
     'CREATE TABLE IF NOT EXISTS listing_applications',
     'CREATE TABLE IF NOT EXISTS contracts',
@@ -96,8 +100,10 @@ test('database schema and RLS files include the current MVP tables', () => {
   [
     'ALTER TABLE users',
     'ALTER TABLE plants',
+    'ALTER TABLE common_plant_care_profiles',
     'ALTER TABLE plant_listings',
     'CREATE POLICY "plants_insert_own"',
+    'CREATE POLICY "common_plant_care_profiles_select_authenticated"',
     'CREATE POLICY "plant_listings_select_open"',
     'CREATE POLICY "listing_handoffs_select"',
   ].forEach((statement) => assert.match(rls, new RegExp(statement)));
@@ -111,6 +117,11 @@ test('database schema and RLS files include the current MVP tables', () => {
   assert.match(schema, /plants_age_description_chk/);
   assert.match(ageMigration, /ADD COLUMN IF NOT EXISTS age_description/);
   assert.match(ageMigration, /'Cutting \/ propagation'/);
+  assert.match(schema, /common_plant_care_profiles/);
+  assert.match(schema, /profile_key\s+VARCHAR\(120\) NOT NULL UNIQUE/);
+  assert.match(careProfilesMigration, /CREATE TABLE IF NOT EXISTS public\.common_plant_care_profiles/);
+  assert.match(careProfilesMigration, /monstera-deliciosa-seedling/);
+  assert.match(careProfilesMigration, /ON CONFLICT \(profile_key\) DO UPDATE/);
 });
 
 test('RLS hardening guards listing ownership, sitter applications, and swap offers', () => {
@@ -193,6 +204,8 @@ test('browse listings screen has search, filters, sorting, and shared utility wi
 test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   const inputProps = read('react_webiosand/src/utils/textInputProps.js');
   const plantScreen = read('react_webiosand/src/screens/AddEditPlantScreen.js');
+  const careProfileUtils = read('react_webiosand/src/utils/plantCareProfiles.js');
+  const careProfileService = read('react_webiosand/src/api/commonPlantCareService.js');
   const listingScreen = read('react_webiosand/src/screens/PostListingScreen.js');
   const detailScreen = read('react_webiosand/src/screens/ListingDetailScreen.js');
 
@@ -209,6 +222,12 @@ test('user-facing text boxes share spellcheck and suggestion defaults', () => {
   assert.match(plantScreen, /ageDescription/);
   assert.match(plantScreen, /WATERING_FREQUENCY_UNITS/);
   assert.match(plantScreen, /wateringFrequencyUnit/);
+  assert.match(plantScreen, /handleAutofillCare/);
+  assert.match(plantScreen, /commonPlantCareService/);
+  assert.match(plantScreen, /Autofill/);
+  assert.match(careProfileUtils, /findBestPlantCareProfile/);
+  assert.match(careProfileUtils, /buildCareProfilePatch/);
+  assert.match(careProfileService, /common_plant_care_profiles/);
   assert.match(listingScreen, /TEXTBOX_SPELLCHECK_PROPS/);
   assert.match(listingScreen, /navigateToBrowseAfterPost/);
   assert.match(listingScreen, /getParent\(\)\?\.navigate\('Browse'/);
